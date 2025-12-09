@@ -1,10 +1,9 @@
-import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
-import MenuInterface from "@/components/menu/MenuInterface"; // حواست باشه این مسیر درست باشه
+import ClientWrapper from "./ClientWrapper";
+import { supabase } from "@/lib/supabase";
 
-// --- Server Data Fetching ---
-async function getMenuData(slug) {
-  // 1. پیدا کردن رستوران
+async function getMenuData(slug, tableId) {
+  console.log("🔍 Fetching for:", slug, tableId);
   const { data: restaurant, error: rError } = await supabase
     .from("restaurants")
     .select("*")
@@ -12,11 +11,9 @@ async function getMenuData(slug) {
     .single();
 
   if (rError || !restaurant) {
-    console.error("Restaurant Error:", rError);
+    console.error("❌ Restaurant Error:", rError);
     return null;
   }
-
-  // 2. گرفتن دسته‌بندی‌ها و محصولاتشون
   const { data: categories, error: cError } = await supabase
     .from("categories")
     .select(
@@ -31,29 +28,32 @@ async function getMenuData(slug) {
     .order("sort_order", { ascending: true });
 
   if (cError) {
-    console.error("Categories Error:", cError);
+    console.error("❌ Categories Error:", cError);
   }
 
   return { restaurant, categories };
 }
 
-// --- Main Page Component ---
-export default async function MenuPage({ params }) {
-  // گرفتن پارامترها (تو نسخه‌های جدید نکست باید await بشه)
-  const { slug, table_id } = await params;
+export default async function Page({ params }) {
+  const resolvedParams = await params;
+  const { slug, table_id } = resolvedParams;
 
-  // فچ کردن دیتا
-  const data = await getMenuData(slug);
+  if (!slug || !table_id) {
+    console.error("❌ URL Params are missing! Check folder structure.");
+    return notFound();
+  }
 
-  // اگه رستوران نبود، 404 بده
+  const decodedSlug = decodeURIComponent(slug);
+  const decodedTableId = decodeURIComponent(table_id);
+
+  const data = await getMenuData(decodedSlug, decodedTableId);
   if (!data) return notFound();
 
-  // پاس دادن دیتا به کلاینت (MenuInterface)
   return (
-    <MenuInterface
+    <ClientWrapper
       restaurant={data.restaurant}
-      categories={data.categories}
-      tableId={table_id}
+      categories={data.categories || []}
+      tableId={decodedTableId}
     />
   );
 }

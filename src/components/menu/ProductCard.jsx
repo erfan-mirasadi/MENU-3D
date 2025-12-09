@@ -1,5 +1,4 @@
 "use client";
-
 export default function ProductCard({ product, onClick }) {
   // تابع کمکی برای ترجمه (چون هنوز store کامل نیست دستی هندل میکنیم)
   const getTitle = (obj) => {
@@ -12,13 +11,15 @@ export default function ProductCard({ product, onClick }) {
       onClick={onClick}
       className="group relative mt-12 bg-[#252836] rounded-2xl p-4 pt-16 cursor-pointer hover:bg-[#2d303e] transition-colors border border-white/5"
     >
-      {/* --- عکس غذا (بیرون زده از کادر) --- */}
+      {/* image section */}
       <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-28 h-28 rounded-full border-4 border-[#1F1D2B] bg-gray-800 shadow-xl overflow-hidden group-hover:scale-105 transition-transform duration-300">
         {product.image_url ? (
           <img
             src={product.image_url}
             alt={getTitle(product.title)}
             className="w-full h-full object-cover"
+            width={112}
+            height={112}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
@@ -26,7 +27,7 @@ export default function ProductCard({ product, onClick }) {
           </div>
         )}
 
-        {/* بج 3D */}
+        {/* 3d badge */}
         {product.model_url && (
           <div className="absolute bottom-2 right-1/2 translate-x-1/2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full flex items-center gap-1 border border-white/10">
             <span className="text-[9px] font-bold text-white tracking-widest">
