@@ -3,7 +3,12 @@ import { useState } from "react";
 import MenuInterface from "@/components/menu/MenuInterface";
 import LandingInterface from "@/components/ui/LandingInterface";
 
-export default function ClientWrapper({ restaurant, categories, tableId }) {
+export default function ClientWrapper({
+  restaurant,
+  categories,
+  tableId,
+  featuredProducts,
+}) {
   const [showMenu, setShowMenu] = useState(false);
 
   return (
@@ -17,6 +22,7 @@ export default function ClientWrapper({ restaurant, categories, tableId }) {
           restaurant={restaurant}
           tableId={tableId}
           onEnter={() => setShowMenu(true)}
+          featuredProducts={featuredProducts}
         />
       </div>
 
