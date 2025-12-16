@@ -192,59 +192,66 @@ export default function MenuInterface({ restaurant, categories, tableId }) {
             <div className="h-80 relative group bg-[#1a1c25] w-full">
               {selectedProduct.model_url ? (
                 <div className="w-full h-full">
+                  {/* === MODEL VIEWER SETTINGS === */}
                   <model-viewer
-                    src={selectedProduct.model_url}
-                    // اگر فایل USDZ داری برای آیفون اینجا بده، اگر نه که هیچی
-                    // ios-src={selectedProduct.model_url.replace(".glb", ".usdz")}
-
-                    poster={selectedProduct.image_url} // عکس قبل از لود شدن
-                    alt={getTitle(selectedProduct.title)}
-                    // --- تنظیمات حیاتی AR ---
+                    // 1. SOURCE: اولویت با مدل اصلیه، ولی اگه lowpoly داری اونو بده که سریع باز شه
+                    src={
+                      selectedProduct.model_url ||
+                      selectedProduct.model_lowpoly_url
+                    }
+                    ios-src={selectedProduct.model_url} // اگه فایل usdz نداری همینو بده، خود iOS جدیدا هندل میکنه
+                    // 2. POSTER: حیاتی برای سرعت. تا مدل لود شه عکس رو نشون میده
+                    poster={selectedProduct.image_url}
+                    // 3. AR MODES (راز اصلی): ترتیب رو تغییر دادم. اول scene-viewer (نیتیv اندروید)
+                    // این باعث میشه به جای زور زدن توی کروم، اپلیکیشن Google AR باز شه که خیلی سریعه
                     ar
-                    // ترتیب خیلی مهمه! اول scene-viewer (سریعتر برای اندروید)، بعد quick-look (آیفون)، آخر webxr
                     ar-modes="scene-viewer quick-look webxr"
-                    ar-scale="fixed" // سایز رو قفل کن که کاربر گیج نشه مدل بزرگ/کوچیک شه
-                    ar-placement="floor" // تاکید روی سطح افقی (میز)
-                    // --- بهینه‌سازی پرفورمنس ---
-                    loading="eager" // اولویت دانلود بالا
-                    reveal="auto"
-                    shadow-intensity="1"
-                    shadow-softness="0.5"
-                    camera-controls
-                    auto-rotate
-                    touch-action="pan-y" // جلوگیری از تداخل اسکرول
-                    style={{ width: "100%", height: "100%" }}
+                    ar-scale="auto" // بذار خودش سایز رو بفهمه، fixed باگ میده روی بعضی مدلها
+                    ar-placement="floor" // تاکید روی سطح صاف
+                    // 4. PERFORMANCE:
+                    loading="eager" // فورس میکنیم که همین الان دانلود کنه
+                    camera-controls // اجازه چرخش
+                    auto-rotate // چرخش خودکار برای جذابیت
+                    shadow-intensity="1" // سایه برای واقع گرایی
+                    shadow-softness="0.8"
+                    touch-action="pan-y" // باگ اسکرول رو میگیره
+                    style={{ width: "100%", height: "100%", outline: "none" }}
                   >
-                    {/* دکمه AR */}
+                    {/* --- CUSTOM AR BUTTON --- */}
+                    {/* این دکمه فقط وقتی میاد که مدل آماده AR باشه */}
                     <button
                       slot="ar-button"
-                      className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white text-black px-6 py-3 rounded-full font-bold shadow-2xl flex items-center gap-2 active:scale-95 transition-transform z-50 cursor-pointer border border-gray-200"
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white text-black h-12 px-6 rounded-full font-bold shadow-[0_0_30px_rgba(255,255,255,0.4)] flex items-center gap-2 active:scale-95 transition-all z-50 border-2 border-white/50"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6"
-                        fill="none"
                         viewBox="0 0 24 24"
-                        stroke="currentColor"
+                        fill="currentColor"
+                        className="w-5 h-5"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"
-                        />
+                        <path d="M12.378 1.602a.75.75 0 00-.756 0L3 6.632l9 5.25 9-5.25-8.622-5.03zM21.75 7.93l-9 5.25v9l8.628-5.032a.75.75 0 00.372-.648V7.93zM11.25 22.18v-9l-9-5.25v8.57a.75.75 0 00.372.648l8.628 5.033z" />
                       </svg>
-                      <span className="uppercase tracking-wider text-xs font-black">
+                      <span className="whitespace-nowrap text-sm">
                         See in AR
                       </span>
                     </button>
 
-                    {/* لودینگ کاستوم (وقتی داره زور میزنه مدل رو بیاره) */}
+                    {/* --- CUSTOM PROGRESS BAR --- */}
+                    {/* تا وقتی مدل لود نشده این پر میشه، یوزر میفهمه خبریه */}
                     <div
                       slot="progress-bar"
                       className="absolute top-0 left-0 w-full h-1 bg-white/10"
                     >
-                      <div className="h-full bg-[#ea7c69] transition-all duration-300 logic-bar"></div>
+                      <div className="h-full bg-[#ea7c69] w-full origin-left animate-[progress_2s_ease-in-out_infinite]"></div>
+                    </div>
+
+                    {/* --- ERROR MESSAGE --- */}
+                    {/* اگه AR ساپورت نشه این متن میاد */}
+                    <div
+                      slot="ar-failure"
+                      className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-500/80 text-white text-xs px-3 py-1 rounded-full backdrop-blur"
+                    >
+                      AR not supported on this device
                     </div>
                   </model-viewer>
                 </div>
