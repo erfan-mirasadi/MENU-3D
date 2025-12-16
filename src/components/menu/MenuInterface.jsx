@@ -194,66 +194,50 @@ export default function MenuInterface({ restaurant, categories, tableId }) {
                 <div className="w-full h-full">
                   {/* === MODEL VIEWER SETTINGS === */}
                   <model-viewer
-                    // 1. DATA SOURCE
+                    // 1. منبع اصلی (فقط همین رو بده)
                     src={
                       selectedProduct.model_url ||
                       selectedProduct.model_lowpoly_url
                     }
-                    // نکته مهم: اگر فایل usdz داشتی اینجا بذار، اگر نه خالی بذار تا خودش بسازه
-                    ios-src={selectedProduct.model_url}
+                    // 2. IOS FIX: این خط رو کامل پاک کردم!
+                    // ios-src={...} <--- این باعث باگ بود چون فایل usdz نداری.
+
+                    // 3. پوستر
                     poster={selectedProduct.image_url}
                     alt={getTitle(selectedProduct.title)}
-                    // 2. AR MODES (ترتیب حیاتی برای رفع کرش iOS)
+                    // 4. AR MODES (استانداردترین حالت ممکن)
                     ar
-                    // اولویت اول: scene-viewer (اندروید)، دوم: quick-look (آیفون)
-                    ar-modes="scene-viewer quick-look webxr"
-                    // این خط به سافاری میگه با انجین خودش باز کنه نه وب
-                    quick-look-browsers="safari chrome"
-                    // 3. SCALE MANAGEMENT (درخواست خودت)
-                    // این باعث میشه مدل با ۵۰ درصد سایز اصلی لود بشه تا راحت روی میز جا بشه
+                    // ترتیب رو برگردوندم به حالت دیفالت که پایدارترینه
+                    ar-modes="webxr scene-viewer quick-look"
+                    // 5. SCALE (همون که خواستی 50 درصد باشه)
                     scale="0.5 0.5 0.5"
-                    ar-scale="auto" // اجازه میده کاربر بعدا زوم کنه (fixed نذار)
-                    ar-placement="floor" // تاکید روی سطح افقی
-                    // 4. PERFORMANCE & CAMERA
+                    ar-scale="auto" // توی AR بذار خودش تصمیم بگیره (باگ پرش رو میگیره)
+                    ar-placement="floor"
+                    // 6. CAMERA & PERFORMANCE
                     loading="eager"
                     camera-controls
                     auto-rotate
                     shadow-intensity="1"
-                    shadow-softness="0.6"
                     touch-action="pan-y"
-                    // 5. STYLE
                     style={{ width: "100%", height: "100%", outline: "none" }}
                   >
                     {/* --- AR BUTTON --- */}
                     <button
                       slot="ar-button"
-                      className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white text-black h-12 px-6 rounded-full font-bold shadow-[0_10px_30px_rgba(0,0,0,0.2)] flex items-center gap-2 active:scale-90 transition-all z-50 border border-white/40 backdrop-blur-md"
+                      className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-[#ea7c69] text-white h-12 px-8 rounded-full font-bold shadow-2xl flex items-center gap-2 active:scale-95 transition-all z-50"
                     >
-                      <div className="w-5 h-5 relative">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          className="w-full h-full text-[#ea7c69]"
-                        >
-                          <path d="M12.378 1.602a.75.75 0 00-.756 0L3 6.632l9 5.25 9-5.25-8.622-5.03zM21.75 7.93l-9 5.25v9l8.628-5.032a.75.75 0 00.372-.648V7.93zM11.25 22.18v-9l-9-5.25v8.57a.75.75 0 00.372.648l8.628 5.033z" />
-                        </svg>
-                        <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                        </span>
-                      </div>
-                      <span className="text-sm font-bold tracking-wide">
-                        View in Room
+                      <span className="text-lg">📦</span>
+                      <span className="whitespace-nowrap text-sm font-bold tracking-wide">
+                        Start AR
                       </span>
                     </button>
 
-                    {/* --- LOADING BAR --- */}
+                    {/* --- LOADING --- */}
                     <div
                       slot="progress-bar"
                       className="absolute top-0 left-0 w-full h-1 bg-white/10"
                     >
-                      <div className="h-full bg-[#ea7c69] origin-left animate-[progress_1.5s_ease-in-out_infinite] w-full scale-x-0"></div>
+                      <div className="h-full bg-[#ea7c69] w-full origin-left animate-[progress_1s_ease-in-out_infinite]"></div>
                     </div>
                   </model-viewer>
                 </div>
