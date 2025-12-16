@@ -20,7 +20,6 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        {/* اسکریپت مدل ویوور برای فعال‌سازی AR */}
         <script
           type="module"
           src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"
