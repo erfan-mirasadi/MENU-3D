@@ -194,64 +194,66 @@ export default function MenuInterface({ restaurant, categories, tableId }) {
                 <div className="w-full h-full">
                   {/* === MODEL VIEWER SETTINGS === */}
                   <model-viewer
-                    // 1. SOURCE: اولویت با مدل اصلیه، ولی اگه lowpoly داری اونو بده که سریع باز شه
+                    // 1. DATA SOURCE
                     src={
                       selectedProduct.model_url ||
                       selectedProduct.model_lowpoly_url
                     }
-                    ios-src={selectedProduct.model_url} // اگه فایل usdz نداری همینو بده، خود iOS جدیدا هندل میکنه
-                    // 2. POSTER: حیاتی برای سرعت. تا مدل لود شه عکس رو نشون میده
+                    // نکته مهم: اگر فایل usdz داشتی اینجا بذار، اگر نه خالی بذار تا خودش بسازه
+                    ios-src={selectedProduct.model_url}
                     poster={selectedProduct.image_url}
-                    // 3. AR MODES (راز اصلی): ترتیب رو تغییر دادم. اول scene-viewer (نیتیv اندروید)
-                    // این باعث میشه به جای زور زدن توی کروم، اپلیکیشن Google AR باز شه که خیلی سریعه
+                    alt={getTitle(selectedProduct.title)}
+                    // 2. AR MODES (ترتیب حیاتی برای رفع کرش iOS)
                     ar
+                    // اولویت اول: scene-viewer (اندروید)، دوم: quick-look (آیفون)
                     ar-modes="scene-viewer quick-look webxr"
-                    ar-scale="auto" // بذار خودش سایز رو بفهمه، fixed باگ میده روی بعضی مدلها
-                    ar-placement="floor" // تاکید روی سطح صاف
-                    // 4. PERFORMANCE:
-                    loading="eager" // فورس میکنیم که همین الان دانلود کنه
-                    camera-controls // اجازه چرخش
-                    auto-rotate // چرخش خودکار برای جذابیت
-                    shadow-intensity="1" // سایه برای واقع گرایی
-                    shadow-softness="0.8"
-                    touch-action="pan-y" // باگ اسکرول رو میگیره
+                    // این خط به سافاری میگه با انجین خودش باز کنه نه وب
+                    quick-look-browsers="safari chrome"
+                    // 3. SCALE MANAGEMENT (درخواست خودت)
+                    // این باعث میشه مدل با ۵۰ درصد سایز اصلی لود بشه تا راحت روی میز جا بشه
+                    scale="0.5 0.5 0.5"
+                    ar-scale="auto" // اجازه میده کاربر بعدا زوم کنه (fixed نذار)
+                    ar-placement="floor" // تاکید روی سطح افقی
+                    // 4. PERFORMANCE & CAMERA
+                    loading="eager"
+                    camera-controls
+                    auto-rotate
+                    shadow-intensity="1"
+                    shadow-softness="0.6"
+                    touch-action="pan-y"
+                    // 5. STYLE
                     style={{ width: "100%", height: "100%", outline: "none" }}
                   >
-                    {/* --- CUSTOM AR BUTTON --- */}
-                    {/* این دکمه فقط وقتی میاد که مدل آماده AR باشه */}
+                    {/* --- AR BUTTON --- */}
                     <button
                       slot="ar-button"
-                      className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white text-black h-12 px-6 rounded-full font-bold shadow-[0_0_30px_rgba(255,255,255,0.4)] flex items-center gap-2 active:scale-95 transition-all z-50 border-2 border-white/50"
+                      className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white text-black h-12 px-6 rounded-full font-bold shadow-[0_10px_30px_rgba(0,0,0,0.2)] flex items-center gap-2 active:scale-90 transition-all z-50 border border-white/40 backdrop-blur-md"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="w-5 h-5"
-                      >
-                        <path d="M12.378 1.602a.75.75 0 00-.756 0L3 6.632l9 5.25 9-5.25-8.622-5.03zM21.75 7.93l-9 5.25v9l8.628-5.032a.75.75 0 00.372-.648V7.93zM11.25 22.18v-9l-9-5.25v8.57a.75.75 0 00.372.648l8.628 5.033z" />
-                      </svg>
-                      <span className="whitespace-nowrap text-sm">
-                        See in AR
+                      <div className="w-5 h-5 relative">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="w-full h-full text-[#ea7c69]"
+                        >
+                          <path d="M12.378 1.602a.75.75 0 00-.756 0L3 6.632l9 5.25 9-5.25-8.622-5.03zM21.75 7.93l-9 5.25v9l8.628-5.032a.75.75 0 00.372-.648V7.93zM11.25 22.18v-9l-9-5.25v8.57a.75.75 0 00.372.648l8.628 5.033z" />
+                        </svg>
+                        <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                        </span>
+                      </div>
+                      <span className="text-sm font-bold tracking-wide">
+                        View in Room
                       </span>
                     </button>
 
-                    {/* --- CUSTOM PROGRESS BAR --- */}
-                    {/* تا وقتی مدل لود نشده این پر میشه، یوزر میفهمه خبریه */}
+                    {/* --- LOADING BAR --- */}
                     <div
                       slot="progress-bar"
                       className="absolute top-0 left-0 w-full h-1 bg-white/10"
                     >
-                      <div className="h-full bg-[#ea7c69] w-full origin-left animate-[progress_2s_ease-in-out_infinite]"></div>
-                    </div>
-
-                    {/* --- ERROR MESSAGE --- */}
-                    {/* اگه AR ساپورت نشه این متن میاد */}
-                    <div
-                      slot="ar-failure"
-                      className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-500/80 text-white text-xs px-3 py-1 rounded-full backdrop-blur"
-                    >
-                      AR not supported on this device
+                      <div className="h-full bg-[#ea7c69] origin-left animate-[progress_1.5s_ease-in-out_infinite] w-full scale-x-0"></div>
                     </div>
                   </model-viewer>
                 </div>
