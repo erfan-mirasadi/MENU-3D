@@ -27,7 +27,6 @@ export default function ClientWrapper({
       </div>
 
       <div className="absolute inset-0 z-40 h-full w-full">
-        {/* for best experience, use in landscape mode */}
         <div className="h-full overflow-y-auto bg-[#1F1D2B]">
           <MenuInterface
             restaurant={restaurant}

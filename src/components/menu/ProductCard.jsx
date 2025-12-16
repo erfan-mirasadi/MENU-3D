@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 export default function ProductCard({ product, onClick }) {
   const [isMounted, setIsMounted] = useState(false);
@@ -52,7 +53,7 @@ export default function ProductCard({ product, onClick }) {
           )}
 
           {/* Container Asli Model/Ax */}
-          <div className="w-full h-full drop-shadow-[0_20px_20px_rgba(0,0,0,0.4)]">
+          <div className="relative w-full h-full drop-shadow-[0_20px_20px_rgba(0,0,0,0.4)]">
             {product.model_lowpoly_url && isMounted ? (
               <div className="w-full h-full">
                 <model-viewer
@@ -73,10 +74,12 @@ export default function ProductCard({ product, onClick }) {
                 <div className="absolute inset-0 z-10 bg-transparent" />
               </div>
             ) : (
-              <img
+              <Image
                 src={product.image_url}
                 alt={getTitle(product.title)}
-                className="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-500"
+                fill
+                sizes="176px"
+                className="object-contain transform group-hover:scale-105 transition-transform duration-500"
               />
             )}
           </div>

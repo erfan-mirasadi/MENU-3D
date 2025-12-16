@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import ProductCard from "./ProductCard";
 
 export default function MenuInterface({ restaurant, categories, tableId }) {
@@ -21,10 +22,13 @@ export default function MenuInterface({ restaurant, categories, tableId }) {
         {/* Background Overlay */}
         {restaurant.bg_image ? (
           <div className="absolute inset-0 z-0">
-            <img
+            <Image
               src={restaurant.bg_image}
               alt="header-bg"
-              className="w-full h-full object-cover opacity-50"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover opacity-50"
             />
             <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-[#1F1D2B]/95 to-[#1F1D2B]" />
           </div>
@@ -37,11 +41,14 @@ export default function MenuInterface({ restaurant, categories, tableId }) {
             {/* LOGO & INFO */}
             <div className="flex items-center gap-3">
               {restaurant.logo ? (
-                <div className="w-12 h-12 rounded-2xl border border-white/10 p-0.5 bg-[#252836] shadow-lg">
-                  <img
+                <div className="relative w-12 h-12 rounded-2xl border border-white/10 p-0.5 bg-[#252836] shadow-lg">
+                  <Image
                     src={restaurant.logo}
                     alt="logo"
-                    className="w-full h-full object-cover rounded-xl"
+                    fill
+                    priority
+                    sizes="48px"
+                    className="object-cover rounded-xl"
                   />
                 </div>
               ) : (
@@ -87,9 +94,11 @@ export default function MenuInterface({ restaurant, categories, tableId }) {
                 >
                   {isActive && cat.image_url && (
                     <div className="absolute inset-0 z-0">
-                      <img
+                      <Image
                         src={cat.image_url}
-                        className="w-full h-full object-cover brightness-50"
+                        fill
+                        sizes="160px"
+                        className="object-cover brightness-50"
                         alt="bg"
                       />
                       <div className="absolute inset-0 bg-[#ea7c69]/40 mix-blend-overlay"></div>
@@ -101,11 +110,15 @@ export default function MenuInterface({ restaurant, categories, tableId }) {
                     }`}
                   >
                     {cat.image_url ? (
-                      <img
-                        src={cat.image_url}
-                        alt=""
-                        className="w-6 h-6 object-contain grayscale opacity-70 group-hover:grayscale-0"
-                      />
+                      <div className="relative w-6 h-6">
+                        <Image
+                          src={cat.image_url}
+                          alt=""
+                          fill
+                          sizes="24px"
+                          className="object-contain grayscale opacity-70 group-hover:grayscale-0"
+                        />
+                      </div>
                     ) : (
                       <span className="text-lg">🍔</span>
                     )}
@@ -228,10 +241,12 @@ export default function MenuInterface({ restaurant, categories, tableId }) {
                   </model-viewer>
                 </div>
               ) : (
-                <img
+                <Image
                   src={selectedProduct.image_url}
                   alt=""
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="(max-width: 640px) 100vw, 448px"
+                  className="object-cover"
                 />
               )}
               {/* Gradient & Close Button */}

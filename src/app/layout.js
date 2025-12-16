@@ -22,7 +22,7 @@ export default function RootLayout({ children }) {
       <head>
         <script
           type="module"
-          src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"
+          src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"
           async
         ></script>
       </head>

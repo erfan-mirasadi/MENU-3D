@@ -6,7 +6,6 @@ async function getMenuData(slug, tableId) {
   console.log("🔍 Fetching data for:", { slug, tableId });
   console.log("📡 Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
 
-  // 1. گرفتن رستوران
   const { data: restaurant, error: rError } = await supabase
     .from("restaurants")
     .select("*")
@@ -14,7 +13,6 @@ async function getMenuData(slug, tableId) {
     .single();
 
   console.log("🏪 Restaurant:", restaurant);
-  console.log("❌ Restaurant Error:", rError);
 
   if (rError || !restaurant) {
     return {
@@ -22,15 +20,12 @@ async function getMenuData(slug, tableId) {
       restaurant: null,
     };
   }
-
-  // 2. گرفتن تمام کتگوری‌ها (برای منوی اصلی)
   const { data: categories } = await supabase
     .from("categories")
     .select(`*, products(*)`)
     .eq("restaurant_id", restaurant.id)
     .order("sort_order", { ascending: true });
 
-  // 3. گرفتن محصولات پیشنهادی (اولین 5 تا محصول)
   const { data: featuredProducts } = await supabase
     .from("products")
     .select("*")
@@ -52,10 +47,7 @@ export default async function Page({ params }) {
   const { slug, table_id } = resolvedParams;
   const decodedSlug = decodeURIComponent(slug);
   const decodedTableId = decodeURIComponent(table_id);
-
   const data = await getMenuData(decodedSlug, decodedTableId);
-
-  // نمایش ارور برای debugging
   if (data?.error) {
     return (
       <div className="min-h-screen bg-red-900 text-white p-8 font-mono">

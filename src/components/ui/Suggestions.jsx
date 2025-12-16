@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 export default function Suggestions({ products }) {
   const [isVisible, setIsVisible] = useState(false);
@@ -59,12 +60,13 @@ export default function Suggestions({ products }) {
                 <span className="text-[8px] opacity-80">OFF</span>
               </div>
             </div>
-
-            {/* 2. عکس فول سایز */}
-            <img
+            <Image
               src={product.image_url}
               alt={getTitle(product.title)}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              fill
+              sizes="(max-width: 768px) 100vw, 400px"
+              priority={index === 0}
+              className="object-cover transition-transform duration-700 group-hover:scale-110"
             />
 
             {/* 3. گرادینت تیره از پایین */}

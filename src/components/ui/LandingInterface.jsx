@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Suggestions from "./Suggestions";
 
 export default function LandingInterface({
@@ -24,10 +25,13 @@ export default function LandingInterface({
       <div className="absolute inset-0 z-0 pointer-events-none">
         {restaurant.bg_image ? (
           <>
-            <img
+            <Image
               src={restaurant.bg_image}
               alt="Ambience"
-              className={`w-full h-full object-cover transition-transform duration-[3s] ease-out ${
+              fill
+              priority
+              sizes="100vw"
+              className={`object-cover transition-transform duration-[3s] ease-out ${
                 isLoaded ? "scale-105" : "scale-100"
               }`}
             />
@@ -49,10 +53,12 @@ export default function LandingInterface({
           <div className="absolute -inset-4 bg-[#ea7c69]/20 rounded-full blur-xl animate-pulse"></div>
           {restaurant.logo ? (
             <div className="relative w-24 h-24 rounded-[2rem] border border-white/10 p-1 bg-[#252836]/50 backdrop-blur-xl shadow-2xl">
-              <img
+              <Image
                 src={restaurant.logo}
                 alt={restaurant.name}
-                className="w-full h-full object-cover rounded-[1.8rem]"
+                fill
+                sizes="96px"
+                className="object-cover rounded-[1.8rem]"
               />
             </div>
           ) : (
