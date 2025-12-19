@@ -78,10 +78,11 @@ export default function ProductCard({ product, onClick, onAdd }) {
               <video
                 src={videoUrl}
                 autoPlay
+                // style={{ mixBlendMode: "screen" }}
                 loop
                 muted // حتما باید باشه وگرنه اتوپلی نمیشه
                 playsInline // برای iOS حیاتیه
-                className="w-full h-full object-contain animate-in fade-in duration-700"
+                className="w-full h-full object-contain mix-blend-screen animate-in fade-in duration-700"
                 // poster رو حذف کردم چون گفتی نمیخوای
               />
             ) : (
