@@ -1,76 +1,89 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 
-// Prop "onAdd" ro ezafe kardim
 export default function ProductCard({ product, onClick, onAdd }) {
-  const [isMounted, setIsMounted] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = useRef(null);
 
+  // --- VARIABLES ---
+  // فرض بر اینه که لینک ویدیو یا WebP رو توی این فیلد ذخیره کردی
+  const videoUrl = product.model_lowpoly_url;
+  const hasVideo = !!videoUrl;
+  const isPromo = !!product.original_price;
+
+  // --- 1. LAZY LOAD OBSERVER ---
+  // ویدیو فقط وقتی لود میشه که کاربر اسکرول کنه برسه بهش
   useEffect(() => {
-    const timer = setTimeout(() => setIsMounted(true), 0);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!hasVideo) return;
 
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect(); // Stop observing once loaded
+        }
+      },
+      { rootMargin: "100px" } // ۱۰۰ پیکسل قبل از رسیدن، لود رو شروع کن که پرش نداشته باشه
+    );
+
+    if (cardRef.current) observer.observe(cardRef.current);
+
+    return () => observer.disconnect();
+  }, [hasVideo]);
+
+  // --- HELPER ---
   const getTitle = (obj) => {
     if (!obj) return "";
     return typeof obj === "object" ? obj["tr"] || obj["en"] : obj;
   };
 
-  const has3D = product.model_url || product.model_lowpoly_url;
-  const isPromo = !!product.original_price;
-
   return (
     <div
+      ref={cardRef}
       onClick={onClick}
-      className="group relative w-full max-w-[320px] mx-auto mt-24 mb-6 select-none"
+      className="group relative w-full max-w-[320px] mx-auto mt-24 mb-6 select-none cursor-pointer"
     >
-      {/*CONDITIONAL GLOW */}
-      {has3D && (
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-40 h-40 bg-[#ea7c69] opacity-30 blur-[60px] rounded-full pointer-events-none animate-pulse" />
+      {/* GLOW EFFECT (Only if video exists) */}
+      {hasVideo && (
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-40 h-40 bg-[#ea7c69] opacity-20 blur-[60px] rounded-full pointer-events-none" />
       )}
 
       {/* CARD BASE */}
       <div className="relative bg-[#252836] rounded-t-[40px] rounded-b-[24px] pt-20 pb-5 px-5 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] border-t border-white/10 active:scale-[0.98] transition-transform duration-200">
-        {/* --- FLOATING VISUAL  --- */}
+        {/* --- VISUAL SECTION --- */}
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-44 h-44 z-20">
-          {has3D && (
-            <div className="absolute bottom-2 right-0 z-30">
+          {/* 360 BADGE */}
+          {hasVideo && (
+            <div className="absolute bottom-2 right-0 z-30 animate-pulse">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onClick();
                 }}
-                className="flex items-center gap-1 bg-[#1F1D2B]/90 backdrop-blur border border-[#ea7c69]/40 pl-2 pr-3 py-1.5 rounded-full shadow-lg transform translate-y-2 hover:-translate-y-1 transition-all"
+                className="flex items-center gap-1 bg-[#1F1D2B]/80 backdrop-blur border border-[#ea7c69]/30 pl-2 pr-3 py-1 rounded-full shadow-lg"
               >
-                <div className="w-2 h-2 rounded-full bg-[#ea7c69] animate-ping" />
-                <span className="text-[10px] font-black text-white uppercase tracking-wider ml-1">
-                  360°
+                <div className="w-1.5 h-1.5 rounded-full bg-[#ea7c69] animate-ping" />
+                <span className="text-[9px] font-black text-white uppercase tracking-wider ml-1">
+                  View
                 </span>
               </button>
             </div>
           )}
 
           <div className="relative w-full h-full drop-shadow-[0_20px_20px_rgba(0,0,0,0.4)]">
-            {product.model_lowpoly_url && isMounted ? (
-              <div className="w-full h-full">
-                <model-viewer
-                  src={product.model_lowpoly_url}
-                  poster={product.image_url}
-                  alt={getTitle(product.title)}
-                  auto-rotate
-                  rotation-per-second="25deg"
-                  camera-orbit="0deg 80deg 105%"
-                  shadow-intensity="1"
-                  shadow-softness="0.8"
-                  disable-zoom
-                  disable-pan
-                  interaction-prompt="none"
-                  loading="lazy"
-                  style={{ width: "100%", height: "100%" }}
-                />
-                <div className="absolute inset-0 z-10 bg-transparent" />
-              </div>
+            {/* Logic: اگر ویدیو داشت و اسکرول رسید -> ویدیو پخش شه. در غیر این صورت -> عکس ثابت */}
+            {hasVideo && isVisible ? (
+              <video
+                src={videoUrl}
+                autoPlay
+                loop
+                muted // حتما باید باشه وگرنه اتوپلی نمیشه
+                playsInline // برای iOS حیاتیه
+                className="w-full h-full object-contain animate-in fade-in duration-700"
+                // poster رو حذف کردم چون گفتی نمیخوای
+              />
             ) : (
               <Image
                 src={product.image_url}
@@ -78,21 +91,25 @@ export default function ProductCard({ product, onClick, onAdd }) {
                 fill
                 sizes="176px"
                 className="object-contain transform group-hover:scale-105 transition-transform duration-500"
+                priority={false}
               />
             )}
           </div>
         </div>
 
+        {/* --- INFO SECTION --- */}
         <div className="flex flex-col items-center text-center mt-2">
           <h3 className="text-white text-xl font-bold leading-tight w-full line-clamp-2 h-[3.5rem] flex items-center justify-center">
             {getTitle(product.title)}
           </h3>
+
           <div className="w-10 h-1 bg-[#ea7c69] rounded-full my-3 opacity-80"></div>
+
           <p className="text-gray-400 text-xs font-medium leading-relaxed line-clamp-2 h-[2.5rem] w-full px-2 overflow-hidden">
             {getTitle(product.description)}
           </p>
 
-          {/* FOOTER */}
+          {/* FOOTER: Price & Add Button */}
           <div className="w-full mt-5 bg-[#1F1D2B] rounded-2xl p-3 flex items-center justify-between border border-white/5">
             <div className="flex flex-col items-start pl-1">
               {isPromo && (
@@ -108,11 +125,10 @@ export default function ProductCard({ product, onClick, onAdd }) {
               </div>
             </div>
 
-            {/* --- ADD BUTTON --- */}
             <button
               onClick={(e) => {
-                e.stopPropagation(); // Don't open modal
-                onAdd(); // Call the hook function
+                e.stopPropagation();
+                onAdd();
               }}
               className="relative overflow-hidden bg-[#ea7c69] text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-all"
             >
@@ -128,7 +144,6 @@ export default function ProductCard({ product, onClick, onAdd }) {
                   clipRule="evenodd"
                 />
               </svg>
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
           </div>
         </div>

@@ -1,6 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
+
+// Load 3D viewer dynamically
+const ThreeDViewer = dynamic(() => import("@/components/ui/ThreeDViewer"), {
+  ssr: false,
+});
 
 const getTitle = (obj) => {
   if (!obj) return "";
@@ -25,7 +31,8 @@ export default function ProductModal({ product, onClose, onAddToCart }) {
         <div className="h-80 relative group bg-[#1a1c25] w-full">
           {product.model_url ? (
             <div className="w-full h-full">
-              <model-viewer
+              {/* REUSABLE COMPONENT */}
+              <ThreeDViewer
                 src={product.model_url || product.model_lowpoly_url}
                 poster={product.image_url}
                 alt={getTitle(product.title)}
@@ -33,11 +40,6 @@ export default function ProductModal({ product, onClose, onAddToCart }) {
                 ar-modes="webxr scene-viewer quick-look"
                 ar-scale="auto"
                 ar-placement="floor"
-                loading="eager"
-                camera-controls
-                auto-rotate
-                shadow-intensity="1"
-                style={{ width: "100%", height: "100%", outline: "none" }}
               >
                 <button
                   slot="ar-button"
@@ -48,7 +50,7 @@ export default function ProductModal({ product, onClose, onAddToCart }) {
                     Show on Table
                   </span>
                 </button>
-              </model-viewer>
+              </ThreeDViewer>
             </div>
           ) : (
             <div className="relative w-full h-full">
@@ -72,7 +74,7 @@ export default function ProductModal({ product, onClose, onAddToCart }) {
           </button>
         </div>
 
-        {/* Content Section */}
+        {/* Content Section (بدون تغییر) */}
         <div className="p-8 -mt-12 relative pointer-events-none">
           <div className="pointer-events-auto">
             <div className="flex justify-between items-start mb-4">
