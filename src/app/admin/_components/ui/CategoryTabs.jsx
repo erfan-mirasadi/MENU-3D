@@ -1,22 +1,32 @@
 "use client";
-
-export default function CategoryTabs({ categories }) {
+export default function CategoryTabs({ categories, activeTab, onTabChange }) {
   return (
-    <div className="w-full border-b bg-white">
-      <div className="flex overflow-x-auto py-4 px-6 gap-4 no-scrollbar">
-        {/* دکمه "همه" */}
-        <button className="whitespace-nowrap px-4 py-2 rounded-full bg-black text-white text-sm font-medium">
-          همه محصولات
+    <div className="w-full border-b border-gray-700 mb-8">
+      <div className="flex gap-8 overflow-x-auto pb-2 no-scrollbar px-4 sm:px-0">
+        {/* تب "همه" */}
+        <button
+          onClick={() => onTabChange("all")}
+          className={`pb-2 text-sm font-semibold transition-all whitespace-nowrap ${
+            activeTab === "all"
+              ? "text-primary border-b-2 border-primary"
+              : "text-text-dim hover:text-white"
+          }`}
+        >
+          Hot Dishes (All)
         </button>
 
-        {/* لیست دسته‌بندی‌ها */}
+        {/* بقیه تب‌ها */}
         {categories.map((cat) => (
           <button
             key={cat.id}
-            className="whitespace-nowrap px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 text-sm font-medium transition-colors"
+            onClick={() => onTabChange(cat.id)}
+            className={`whitespace-nowrap pb-2 text-sm font-semibold transition-all ${
+              activeTab === cat.id
+                ? "text-primary border-b-2 border-primary"
+                : "text-text-dim hover:text-white"
+            }`}
           >
-            {/* هندل کردن تایتل چند زبانه */}
-            {cat.title?.en || cat.title?.tr || "بدون نام"}
+            {cat.title?.en || "Category"}
           </button>
         ))}
       </div>
