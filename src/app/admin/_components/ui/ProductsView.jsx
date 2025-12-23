@@ -4,6 +4,7 @@ import CategoryTabs from "./CategoryTabs";
 import ProductCard from "./ProductCard";
 import SlidePanel from "./SlidePanel";
 import ProductForm from "./ProductForm";
+import CategoryForm from "./CategoryForm"; // <--- Import CategoryForm
 import { RiAddLine } from "react-icons/ri";
 
 export default function ProductsView({
@@ -14,9 +15,13 @@ export default function ProductsView({
 }) {
   const [activeTab, setActiveTab] = useState("all");
 
-  // State to manage panel visibility and editing mode
+  // --- Product Panel States ---
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+
+  // --- Category Panel States (New) ---
+  const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
 
   // Filter products based on selected category tab
   const filteredProducts = useMemo(() => {
@@ -29,23 +34,36 @@ export default function ProductsView({
       ? supportedLanguages[0]
       : "tr";
 
-  // Handler to open panel for creating a new product
+  // --- Product Handlers ---
   const handleCreateClick = () => {
-    setEditingProduct(null); // Clear editing data
+    setEditingProduct(null);
     setIsPanelOpen(true);
   };
 
-  // Handler to open panel for editing an existing product
   const handleEditClick = (product) => {
-    setEditingProduct(product); // Set data to form
+    setEditingProduct(product);
     setIsPanelOpen(true);
   };
 
-  // Handler to close panel
   const handleClosePanel = () => {
     setIsPanelOpen(false);
-    // Delay clearing data to avoid UI flickering during close animation
     setTimeout(() => setEditingProduct(null), 300);
+  };
+
+  // --- Category Handlers (New) ---
+  const handleCategoryCreate = () => {
+    setEditingCategory(null);
+    setIsCategoryPanelOpen(true);
+  };
+
+  const handleCategoryEdit = (category) => {
+    setEditingCategory(category);
+    setIsCategoryPanelOpen(true);
+  };
+
+  const closeCategoryPanel = () => {
+    setIsCategoryPanelOpen(false);
+    setTimeout(() => setEditingCategory(null), 300);
   };
 
   return (
@@ -56,6 +74,10 @@ export default function ProductsView({
           categories={categories}
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          // Added props for category management
+          onEditCategory={handleCategoryEdit}
+          onAddCategory={handleCategoryCreate}
+          defaultLang={defaultLang}
         />
       </div>
 
@@ -87,11 +109,11 @@ export default function ProductsView({
         </div>
       </div>
 
-      {/* Slide Panel for Form */}
+      {/* --- PANEL 1: PRODUCT FORM --- */}
       <SlidePanel
         isOpen={isPanelOpen}
         onClose={handleClosePanel}
-        title={editingProduct ? "Edit Product" : "Add New Product"} // Dynamic Title
+        title={editingProduct ? "Edit Product" : "Add New Product"}
       >
         <ProductForm
           onClose={handleClosePanel}
@@ -102,6 +124,22 @@ export default function ProductsView({
           initialData={editingProduct}
           key={editingProduct ? editingProduct.id : "new-product"}
           activeCategory={activeTab}
+        />
+      </SlidePanel>
+
+      {/* --- PANEL 2: CATEGORY FORM (New) --- */}
+      <SlidePanel
+        isOpen={isCategoryPanelOpen}
+        onClose={closeCategoryPanel}
+        title={editingCategory ? "Edit Category" : "Add New Category"}
+      >
+        <CategoryForm
+          key={editingCategory ? editingCategory.id : "new-category"}
+          onClose={closeCategoryPanel}
+          restaurantId={restaurantId}
+          supportedLanguages={supportedLanguages || ["en"]}
+          defaultLang={defaultLang}
+          initialData={editingCategory}
         />
       </SlidePanel>
     </div>
