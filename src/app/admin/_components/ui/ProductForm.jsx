@@ -1,17 +1,15 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   RiTranslate2,
   RiMoneyDollarCircleLine,
   RiImageLine,
-  RiVideoLine,
-  RiSmartphoneLine,
-  RiBox3Line,
   RiSave3Line,
-  RiPriceTag3Line,
   RiPercentLine,
   RiErrorWarningLine,
+  RiDeleteBin6Line,
+  RiLock2Line,
 } from "react-icons/ri";
 import toast from "react-hot-toast";
 
@@ -21,14 +19,16 @@ export default function ProductForm({
   restaurantId,
   supportedLanguages,
   defaultLang,
+  initialData,
 }) {
   const [activeLang, setActiveLang] = useState(defaultLang);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  // لاجیک نمایش فیلد تخفیف
+  // Logic to toggle discount input
   const [hasDiscount, setHasDiscount] = useState(false);
 
-  // State اولیه فرم
+  // Form State
   const [formData, setFormData] = useState({
     category_id: "",
     title: {},
@@ -42,6 +42,29 @@ export default function ProductForm({
     animation_url_ios: "",
   });
 
+  // Populate form if initialData exists (Edit Mode)
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        category_id: initialData.category_id || "",
+        title: initialData.title || {},
+        description: initialData.description || {},
+        price: initialData.price || "",
+        original_price: initialData.original_price || "",
+        is_available: initialData.is_available,
+        image_url: initialData.image_url || "",
+        model_url: initialData.model_url || "",
+        animation_url_android: initialData.animation_url_android || "",
+        animation_url_ios: initialData.animation_url_ios || "",
+      });
+      // Set discount toggle if original price exists
+      if (initialData.original_price) {
+        setHasDiscount(true);
+      }
+    }
+  }, [initialData]);
+
+  // Handle text changes for multi-language fields
   const handleLangChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
@@ -49,46 +72,29 @@ export default function ProductForm({
     }));
   };
 
+  // Submit Handler (Create or Update)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 1. Validation: Category Selection
+    // Validations
     if (!formData.category_id) return toast.error("Please select a category");
-
-    // 2. Validation: Price Existence
     if (!formData.price) return toast.error("Please enter the final price");
 
-    // 3. Validation: Discount Logic (Price vs Original Price)
     const finalPrice = parseFloat(formData.price);
     if (hasDiscount) {
       const originalPrice = parseFloat(formData.original_price);
-
-      if (!formData.original_price) {
-        return toast.error("Please enter the original price for the discount");
-      }
-
+      if (!formData.original_price)
+        return toast.error("Please enter the original price");
       if (originalPrice <= finalPrice) {
-        return toast.error(
-          "Original price must be HIGHER than the final price!",
-          {
-            icon: "📉",
-            style: {
-              background: "#333",
-              color: "#fff",
-            },
-          }
-        );
+        return toast.error("Original price must be HIGHER than final price!");
       }
     }
 
-    // 4. Validation: Check ALL Supported Languages for Title
-    // loop through all supported languages to find missing titles
+    // Check all languages for title
     for (const lang of supportedLanguages) {
       if (!formData.title[lang] || formData.title[lang].trim() === "") {
-        setActiveLang(lang); // Switch tab to the missing language automatically
-        return toast.error(`Please enter the title for ${lang.toUpperCase()}`, {
-          icon: <RiTranslate2 className="text-yellow-500" />,
-        });
+        setActiveLang(lang);
+        return toast.error(`Please enter title for ${lang.toUpperCase()}`);
       }
     }
 
@@ -101,7 +107,6 @@ export default function ProductForm({
         title: formData.title,
         description: formData.description,
         price: finalPrice,
-        // اگر تخفیف نداشته باشه نال میشه
         original_price: hasDiscount
           ? parseFloat(formData.original_price)
           : null,
@@ -112,7 +117,22 @@ export default function ProductForm({
         animation_url_ios: formData.animation_url_ios || null,
       };
 
-      const { error } = await supabase.from("products").insert([payload]);
+      let error;
+
+      if (initialData) {
+        // UPDATE MODE
+        const { error: updateError } = await supabase
+          .from("products")
+          .update(payload)
+          .eq("id", initialData.id);
+        error = updateError;
+      } else {
+        // INSERT MODE
+        const { error: insertError } = await supabase
+          .from("products")
+          .insert([payload]);
+        error = insertError;
+      }
 
       if (error) reject(error);
       else resolve();
@@ -120,9 +140,9 @@ export default function ProductForm({
 
     toast
       .promise(savePromise, {
-        loading: "Adding product to menu...",
-        success: "Product created successfully!",
-        error: "Failed to create product.",
+        loading: initialData ? "Updating product..." : "Adding product...",
+        success: initialData ? "Product updated!" : "Product created!",
+        error: "Operation failed.",
       })
       .then(() => {
         setLoading(false);
@@ -133,6 +153,31 @@ export default function ProductForm({
         console.error(err);
         setLoading(false);
       });
+  };
+
+  // Delete Handler
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this product?"))
+      return;
+
+    setDeleting(true);
+    const deletePromise = supabase
+      .from("products")
+      .delete()
+      .eq("id", initialData.id);
+
+    toast
+      .promise(deletePromise, {
+        loading: "Deleting product...",
+        success: "Product deleted successfully",
+        error: "Failed to delete product",
+      })
+      .then(() => {
+        setDeleting(false);
+        onClose();
+        window.location.reload();
+      })
+      .catch(() => setDeleting(false));
   };
 
   return (
@@ -148,7 +193,7 @@ export default function ProductForm({
           onChange={(e) =>
             setFormData({ ...formData, category_id: e.target.value })
           }
-          className="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white focus:border-primary focus:outline-none appearance-none cursor-pointer hover:border-gray-500 transition-colors"
+          className="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white focus:border-primary focus:outline-none appearance-none cursor-pointer"
         >
           <option value="" disabled>
             Select a category...
@@ -163,10 +208,10 @@ export default function ProductForm({
 
       <hr className="border-gray-800" />
 
-      {/* Language Switcher (Improved Visibility) */}
+      {/* Language Switcher */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-400 flex items-center gap-2">
-          <RiTranslate2 /> Language Support (Fill all)
+          <RiTranslate2 /> Language Support
         </label>
         <div className="bg-dark-800 p-1.5 rounded-xl flex gap-2 border border-gray-700 overflow-x-auto no-scrollbar">
           {supportedLanguages.map((lang) => {
@@ -179,12 +224,11 @@ export default function ProductForm({
                 onClick={() => setActiveLang(lang)}
                 className={`flex-1 min-w-[70px] py-2.5 text-sm font-bold rounded-lg transition-all relative ${
                   activeLang === lang
-                    ? "bg-primary text-white shadow-lg border-2 border-white scale-[1.02]" // Active State
-                    : "text-gray-400 hover:text-white hover:bg-gray-700 border-2 border-transparent" // Inactive
+                    ? "bg-primary text-white shadow-lg border-2 border-white scale-[1.02]"
+                    : "text-gray-400 hover:text-white hover:bg-gray-700 border-2 border-transparent"
                 }`}
               >
                 {lang.toUpperCase()}
-                {/* Green dot if filled */}
                 {isFilled && (
                   <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-green-400 rounded-full" />
                 )}
@@ -194,7 +238,7 @@ export default function ProductForm({
         </div>
       </div>
 
-      {/* Title & Desc */}
+      {/* Title & Description Inputs */}
       <div
         className="space-y-4 animate-in fade-in duration-300"
         key={activeLang}
@@ -212,7 +256,6 @@ export default function ProductForm({
           </label>
           <input
             type="text"
-            // We don't put 'required' here on the input itself, because we validate manually in handleSubmit
             value={formData.title[activeLang] || ""}
             onChange={(e) => handleLangChange("title", e.target.value)}
             placeholder={`e.g. Delicious Burger`}
@@ -236,23 +279,19 @@ export default function ProductForm({
 
       <hr className="border-gray-800" />
 
-      {/* Pricing Logic */}
+      {/* Pricing Section */}
       <div className="space-y-4">
         <h3 className="text-white font-semibold flex items-center gap-2">
           <RiMoneyDollarCircleLine className="text-primary" /> Pricing
         </h3>
 
         <div className="grid grid-cols-1 gap-4">
-          {/* Main Price */}
           <div>
             <label className="block text-xs text-gray-500 mb-1 ml-1">
-              Final Price (Customer pays this){" "}
-              <span className="text-red-500">*</span>
+              Final Price <span className="text-red-500">*</span>
             </label>
             <div className="relative group">
-              <span className="absolute left-3 top-3 text-gray-500 group-focus-within:text-primary transition-colors">
-                ₺
-              </span>
+              <span className="absolute left-3 top-3 text-gray-500">₺</span>
               <input
                 type="number"
                 step="0.01"
@@ -261,13 +300,12 @@ export default function ProductForm({
                 onChange={(e) =>
                   setFormData({ ...formData, price: e.target.value })
                 }
-                className="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 pl-8 text-white focus:border-primary focus:outline-none font-bold text-lg transition-colors"
+                className="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 pl-8 text-white focus:border-primary focus:outline-none font-bold text-lg"
               />
             </div>
           </div>
 
-          {/* Discount Toggle */}
-          <div className="flex items-center justify-between bg-dark-800/50 p-3 rounded-xl border border-gray-700 hover:border-gray-600 transition-colors">
+          <div className="flex items-center justify-between bg-dark-800/50 p-3 rounded-xl border border-gray-700">
             <div className="flex items-center gap-2 text-sm text-gray-300">
               <RiPercentLine
                 className={`text-xl ${
@@ -291,11 +329,10 @@ export default function ProductForm({
             </button>
           </div>
 
-          {/* Original Price (Conditional with Validation Logic) */}
           {hasDiscount && (
             <div className="animate-in fade-in slide-in-from-top-2 duration-300 p-4 bg-primary/5 rounded-xl border border-primary/20">
               <label className="block text-xs text-primary mb-1 ml-1 font-bold">
-                Original Price (Before Discount)
+                Original Price
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-3 text-primary/50 line-through">
@@ -309,33 +346,15 @@ export default function ProductForm({
                     setFormData({ ...formData, original_price: e.target.value })
                   }
                   className="w-full bg-dark-900 border border-primary/30 rounded-xl p-3 pl-8 text-white focus:border-primary focus:outline-none"
-                  placeholder="e.g. 150"
                 />
-              </div>
-              <div className="flex gap-2 mt-2 items-start">
-                <RiErrorWarningLine className="text-primary mt-0.5 text-xs shrink-0" />
-                <p className="text-[10px] text-gray-400">
-                  Must be higher than the final price.{" "}
-                  {formData.price &&
-                  formData.original_price &&
-                  parseFloat(formData.original_price) >
-                    parseFloat(formData.price) ? (
-                    <span className="text-green-400 font-bold">
-                      Valid Discount!
-                    </span>
-                  ) : (
-                    ""
-                  )}
-                </p>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Available Toggle */}
       <div
-        className="flex items-center gap-3 bg-dark-800 p-3 rounded-xl border border-gray-700 cursor-pointer hover:bg-gray-700/50 transition select-none"
+        className="flex items-center gap-3 bg-dark-800 p-3 rounded-xl border border-gray-700 cursor-pointer select-none"
         onClick={() =>
           setFormData((p) => ({ ...p, is_available: !p.is_available }))
         }
@@ -356,14 +375,21 @@ export default function ProductForm({
 
       <hr className="border-gray-800" />
 
-      {/* Media Inputs */}
+      {/* Media Links - Read Only for Editing */}
       <div className="space-y-4">
         <h3 className="text-white font-semibold flex items-center gap-2">
-          <RiImageLine className="text-primary" /> Media Links
+          <RiImageLine className="text-primary" /> Media Assets
         </h3>
 
+        {/* If editing, show read-only message */}
+        {initialData && (
+          <div className="text-xs text-yellow-500 flex items-center gap-1 mb-2">
+            <RiLock2Line /> Media editing is currently disabled.
+          </div>
+        )}
+
         <div className="relative group">
-          <RiImageLine className="absolute left-3 top-3.5 text-gray-500 group-focus-within:text-primary transition-colors" />
+          <RiImageLine className="absolute left-3 top-3.5 text-gray-500" />
           <input
             type="text"
             placeholder="Image URL..."
@@ -371,14 +397,37 @@ export default function ProductForm({
             onChange={(e) =>
               setFormData({ ...formData, image_url: e.target.value })
             }
-            className="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 pl-10 text-white focus:border-primary focus:outline-none text-sm transition-colors"
+            readOnly={!!initialData} // Read-only if editing
+            className={`w-full bg-dark-800 border border-gray-700 rounded-xl p-3 pl-10 text-white focus:outline-none text-sm ${
+              initialData
+                ? "opacity-50 cursor-not-allowed"
+                : "focus:border-primary"
+            }`}
           />
         </div>
-        {/* You can add video/model inputs here similarly if needed */}
+        {/* Additional media inputs follow same pattern... */}
       </div>
 
       {/* Action Buttons */}
-      <div className="pt-4 flex gap-4 pb-10">
+      <div className="pt-4 flex gap-4 pb-10 flex-col-reverse sm:flex-row">
+        {/* Delete Button (Only in Edit Mode) */}
+        {initialData && (
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="py-3 px-4 rounded-xl border border-red-500/50 text-red-500 hover:bg-red-500/10 transition font-medium active:scale-95 flex items-center justify-center gap-2"
+          >
+            {deleting ? (
+              "Deleting..."
+            ) : (
+              <>
+                <RiDeleteBin6Line /> Delete Product
+              </>
+            )}
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onClose}
@@ -386,6 +435,7 @@ export default function ProductForm({
         >
           Cancel
         </button>
+
         <button
           type="submit"
           disabled={loading}
@@ -395,7 +445,8 @@ export default function ProductForm({
             "Saving..."
           ) : (
             <>
-              <RiSave3Line size={20} /> Create Product
+              <RiSave3Line size={20} />{" "}
+              {initialData ? "Update Product" : "Create Product"}
             </>
           )}
         </button>

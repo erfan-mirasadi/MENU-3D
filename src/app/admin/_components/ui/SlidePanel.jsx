@@ -3,15 +3,19 @@ import { useEffect, useState } from "react";
 import { RiCloseLine } from "react-icons/ri";
 
 export default function SlidePanel({ isOpen, onClose, title, children }) {
-  const [show, setShow] = useState(isOpen);
+  const [show, setShow] = useState(false);
+  const [animate, setAnimate] = useState(false); 
 
   useEffect(() => {
     if (isOpen) {
       setShow(true);
-      document.body.style.overflow = "hidden"; // قفل کردن اسکرول صفحه اصلی
+      document.body.style.overflow = "hidden";
+      const timer = setTimeout(() => setAnimate(true), 10);
+      return () => clearTimeout(timer);
     } else {
-      const timer = setTimeout(() => setShow(false), 300); // صبر برای تمام شدن انیمیشن
+      setAnimate(false);
       document.body.style.overflow = "unset";
+      const timer = setTimeout(() => setShow(false), 300);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
@@ -20,20 +24,17 @@ export default function SlidePanel({ isOpen, onClose, title, children }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex justify-end">
-      {/* Backdrop with Blur Effect */}
       <div
-        className={`fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
-          isOpen ? "opacity-100" : "opacity-0"
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${
+          animate ? "opacity-100" : "opacity-0"
         }`}
         onClick={onClose}
       />
-
-      {/* The Sliding Panel */}
       <div
-        className={`relative w-full md:max-w-xl h-full bg-dark-900 border-l border-gray-800 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${
-          isOpen
-            ? "translate-y-0 md:translate-x-0"
-            : "translate-y-full md:translate-x-full"
+        className={`relative w-full md:max-w-xl h-full bg-dark-900 border-l border-gray-800 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col ${
+          animate
+            ? "translate-y-0 md:translate-x-0" 
+            : "translate-y-full md:translate-x-full" 
         }`}
       >
         {/* Header */}
@@ -48,8 +49,6 @@ export default function SlidePanel({ isOpen, onClose, title, children }) {
             <RiCloseLine size={28} />
           </button>
         </div>
-
-        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar pb-24">
           {children}
         </div>
