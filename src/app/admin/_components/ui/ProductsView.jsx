@@ -65,7 +65,7 @@ export default function ProductsView({
           {/* Create New Product Button */}
           <button
             onClick={handleCreateClick}
-            className="group h-full min-h-[320px] w-full rounded-2xl border-2 border-dashed border-gray-700 bg-dark-800/30 flex flex-col items-center justify-center gap-4 hover:bg-dark-800 hover:border-primary transition-all cursor-pointer"
+            className="group h-full min-h-[320px] w-full rounded-2xl border-2 mt-9 border-dashed border-gray-700 bg-dark-800/30 flex flex-col items-center justify-center gap-4 hover:bg-dark-800 hover:border-primary transition-all cursor-pointer"
           >
             <div className="w-14 h-14 rounded-full bg-gray-800 group-hover:bg-primary flex items-center justify-center text-primary group-hover:text-white transition-colors duration-300 shadow-lg">
               <RiAddLine size={32} />
