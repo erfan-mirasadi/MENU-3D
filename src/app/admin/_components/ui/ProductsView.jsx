@@ -27,7 +27,7 @@ export default function ProductsView({
   const defaultLang =
     supportedLanguages && supportedLanguages.length > 0
       ? supportedLanguages[0]
-      : "en";
+      : "tr";
 
   // Handler to open panel for creating a new product
   const handleCreateClick = () => {
@@ -100,6 +100,8 @@ export default function ProductsView({
           supportedLanguages={supportedLanguages || ["en"]}
           defaultLang={defaultLang}
           initialData={editingProduct}
+          key={editingProduct ? editingProduct.id : "new-product"}
+          activeCategory={activeTab}
         />
       </SlidePanel>
     </div>

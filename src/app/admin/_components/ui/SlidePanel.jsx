@@ -4,7 +4,7 @@ import { RiCloseLine } from "react-icons/ri";
 
 export default function SlidePanel({ isOpen, onClose, title, children }) {
   const [show, setShow] = useState(false);
-  const [animate, setAnimate] = useState(false); 
+  const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -33,8 +33,8 @@ export default function SlidePanel({ isOpen, onClose, title, children }) {
       <div
         className={`relative w-full md:max-w-xl h-full bg-dark-900 border-l border-gray-800 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col ${
           animate
-            ? "translate-y-0 md:translate-x-0" 
-            : "translate-y-full md:translate-x-full" 
+            ? "translate-y-0 md:translate-x-0"
+            : "translate-y-full md:translate-x-full"
         }`}
       >
         {/* Header */}

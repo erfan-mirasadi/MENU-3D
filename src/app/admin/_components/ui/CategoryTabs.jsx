@@ -3,7 +3,6 @@ export default function CategoryTabs({ categories, activeTab, onTabChange }) {
   return (
     <div className="w-full border-b border-gray-700 mb-8">
       <div className="flex gap-8 overflow-x-auto pb-2 no-scrollbar px-4 sm:px-0">
-        {/* تب "همه" */}
         <button
           onClick={() => onTabChange("all")}
           className={`pb-2 text-sm font-semibold transition-all whitespace-nowrap ${
@@ -12,10 +11,9 @@ export default function CategoryTabs({ categories, activeTab, onTabChange }) {
               : "text-text-dim hover:text-white"
           }`}
         >
-          Hot Dishes (All)
+          All Dishes
         </button>
 
-        {/* بقیه تب‌ها */}
         {categories.map((cat) => (
           <button
             key={cat.id}
