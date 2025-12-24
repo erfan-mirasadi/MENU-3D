@@ -4,12 +4,9 @@ import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
 
-const TEST_OWNER_ID = "795d61c8-a279-4716-830c-b5919180a75f";
-
 export default function GeneralForm() {
   const [loading, setLoading] = useState(true);
-
-  // Form state matching database columns
+  const [userId, setUserId] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -20,39 +17,55 @@ export default function GeneralForm() {
     bg_image: "", // Read-only for now
   });
 
-  // 1. Fetch current restaurant data
   useEffect(() => {
     async function fetchData() {
-      const { data, error } = await supabase
-        .from("restaurants")
-        .select("*")
-        .eq("owner_id", TEST_OWNER_ID)
-        .single();
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (data) {
-        setFormData({
-          name: data.name || "",
-          slug: data.slug || "",
-          wifi_pass: data.wifi_pass || "",
-          // Handle potential null values for social_links
-          instagram: data.social_links?.instagram || "",
-          website: data.social_links?.website || "",
-          logo: data.logo || "",
-          bg_image: data.bg_image || "",
-        });
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        setUserId(user.id);
+
+        const { data, error } = await supabase
+          .from("restaurants")
+          .select("*")
+          .eq("owner_id", user.id)
+          .single();
+
+        if (data) {
+          setFormData({
+            name: data.name || "",
+            slug: data.slug || "",
+            wifi_pass: data.wifi_pass || "",
+            instagram: data.social_links?.instagram || "",
+            website: data.social_links?.website || "",
+            logo: data.logo || "",
+            bg_image: data.bg_image || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching general info:", error);
+        toast.error("Failed to load restaurant info.");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     fetchData();
   }, []);
-
-  // 2. Save changes using Toast Promise
   const handleSave = async (e) => {
     e.preventDefault();
 
-    // Create a promise for the update operation
+    if (!userId) {
+      toast.error("User not authenticated.");
+      return;
+    }
+
     const savePromise = new Promise(async (resolve, reject) => {
-      // Construct the JSON object for social links
       const socialJson = {
         instagram: formData.instagram,
         website: formData.website,
@@ -66,13 +79,12 @@ export default function GeneralForm() {
           wifi_pass: formData.wifi_pass,
           social_links: socialJson,
         })
-        .eq("owner_id", TEST_OWNER_ID);
+        .eq("owner_id", userId);
 
       if (error) reject(error);
       else resolve();
     });
 
-    // Trigger toast notification
     toast.promise(savePromise, {
       loading: "Updating restaurant info...",
       success: "Changes saved successfully!",
@@ -194,7 +206,7 @@ export default function GeneralForm() {
           </div>
         </div>
 
-        {/* Website Field (Added Here) */}
+        {/* Website Field */}
         <div>
           <label className="block text-sm font-medium mb-2 text-gray-300">
             Website URL

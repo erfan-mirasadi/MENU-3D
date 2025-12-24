@@ -6,7 +6,7 @@ import { RiCheckLine, RiLayoutMasonryLine } from "react-icons/ri";
 import Loader from "@/app/admin/_components/ui/Loader";
 
 // Hardcoded Owner ID (Replace with auth later)
-const TEST_OWNER_ID = "795d61c8-a279-4716-830c-b5919180a75f";
+// const TEST_OWNER_ID = "795d61c8-a279-4716-830c-b5919180a75f";
 
 // Template Definitions (All pointing to your video for now)
 const TEMPLATES = [
@@ -40,22 +40,33 @@ export default function TemplatesPage() {
   const [activeTemplate, setActiveTemplate] = useState("classic");
   const [loading, setLoading] = useState(true);
   const [activatingId, setActivatingId] = useState(null);
+  const [userId, setUserId] = useState(null);
 
-  // 1. Fetch Current Active Template
   useEffect(() => {
-    async function fetchTemplate() {
-      const { data, error } = await supabase
-        .from("restaurants")
-        .select("template_style")
-        .eq("owner_id", TEST_OWNER_ID)
-        .single();
+    async function initData() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
 
-      if (data) {
-        setActiveTemplate(data.template_style || "modern");
+        setUserId(user.id);
+        const { data, error } = await supabase
+          .from("restaurants")
+          .select("template_id")
+          .eq("owner_id", user.id)
+          .single();
+
+        if (data) {
+          setActiveTemplate(data.template_id || "classic");
+        }
+      } catch (error) {
+        console.error("Error init templates:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
-    fetchTemplate();
+    initData();
   }, []);
 
   // 2. Handle Template Selection

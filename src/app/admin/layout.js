@@ -1,16 +1,25 @@
-import AdminMobileNav from "./_components/layouts/AdminMobileNav";
-import AdminSidebar from "./_components/layouts/AdminSidebar";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import AdminLayoutClient from "./AdminLayoutClient"; // فایل جدید رو ایمپورت کن
 
-export default function AdminLayout({ children }) {
+export default async function AdminLayout({ children }) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let restaurant = null;
+  if (user) {
+    const { data } = await supabase
+      .from("restaurants")
+      .select("name, image_url")
+      .eq("owner_id", user.id)
+      .single();
+    restaurant = data;
+  }
+
   return (
-    <div className="flex w-full h-[100dvh] bg-dark-900 text-text-light font-sans overflow-hidden">
-      <AdminSidebar />
-      <main className="flex-1 flex flex-col h-full relative min-w-0">
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 pb-24 md:pb-8">
-          {children}
-        </div>
-      </main>
-      <AdminMobileNav />
-    </div>
+    <AdminLayoutClient user={user} restaurant={restaurant}>
+      {children}
+    </AdminLayoutClient>
   );
 }

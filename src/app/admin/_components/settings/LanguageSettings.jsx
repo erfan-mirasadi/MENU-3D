@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase"; // کلاینت سمت کاربر
 import { RiCheckLine, RiGlobalLine } from "react-icons/ri";
 import toast from "react-hot-toast";
 
@@ -13,37 +13,51 @@ const AVAILABLE_LANGUAGES = [
   { code: "de", name: "Deutsch", flag: "🇩🇪" },
 ];
 
-// Hardcoded Owner ID for testing
-const TEST_OWNER_ID = "795d61c8-a279-4716-830c-b5919180a75f";
-
 export default function LanguageSettings() {
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
 
   // State for language preferences
   const [selectedLangs, setSelectedLangs] = useState(["en"]);
   const [defaultLang, setDefaultLang] = useState("en");
 
   useEffect(() => {
-    async function fetchLanguages() {
-      const { data, error } = await supabase
-        .from("restaurants")
-        .select("supported_languages, default_language")
-        .eq("owner_id", TEST_OWNER_ID)
-        .single();
+    async function initData() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (data) {
-        // Fallback to array if null
-        setSelectedLangs(data.supported_languages || ["en"]);
-        setDefaultLang(data.default_language || "en");
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        setUserId(user.id);
+
+        const { data, error } = await supabase
+          .from("restaurants")
+          .select("supported_languages, default_language")
+          .eq("owner_id", user.id)
+          .single();
+
+        if (data) {
+          setSelectedLangs(data.supported_languages || ["en"]);
+          setDefaultLang(data.default_language || "en");
+        }
+      } catch (error) {
+        console.error("Error loading languages:", error);
+        toast.error("Failed to load language settings.");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
-    fetchLanguages();
+
+    initData();
   }, []);
 
   const toggleLanguage = (code) => {
     if (selectedLangs.includes(code)) {
-      // Validation: Cannot remove the default language
       if (code === defaultLang) {
         toast.error(
           "Cannot remove the default language. Change default first."
@@ -56,9 +70,12 @@ export default function LanguageSettings() {
     }
   };
 
-  // 3. Save changes using Toast Promise
   const handleSave = async () => {
-    // Create the promise
+    if (!userId) {
+      toast.error("User not identified.");
+      return;
+    }
+
     const savePromise = new Promise(async (resolve, reject) => {
       const { error } = await supabase
         .from("restaurants")
@@ -66,13 +83,12 @@ export default function LanguageSettings() {
           supported_languages: selectedLangs,
           default_language: defaultLang,
         })
-        .eq("owner_id", TEST_OWNER_ID);
+        .eq("owner_id", userId);
 
       if (error) reject(error);
       else resolve();
     });
 
-    // Run the toast
     toast.promise(savePromise, {
       loading: "Saving language preferences...",
       success: "Settings updated successfully!",
@@ -81,7 +97,7 @@ export default function LanguageSettings() {
   };
 
   if (loading)
-    return <div className="p-4 text-gray-400">Loading languages...</div>;
+    return <div className="p-4 text-gray-400">Loading settings...</div>;
 
   return (
     <div className="bg-dark-800 rounded-2xl p-6 border border-gray-800">
