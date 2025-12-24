@@ -23,16 +23,39 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      // 1. اول لاگین کن
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
+
+      // 2. حالا سریع چک کن ببین رستوران داره یا نه؟
+      const { data: restaurant } = await supabase
+        .from("restaurants")
+        .select("id") // فقط آیدی رو بگیر که سبک باشه
+        .eq("owner_id", user.id)
+        .maybeSingle();
 
       toast.success("Welcome back!");
-      router.push("/admin/dashboard");
+
+      // 3. تصمیم‌گیری هوشمند برای ریدارکت
+      if (restaurant) {
+        // اگه رستوران داشت -> داشبورد
+        router.push("/admin/dashboard");
+      } else {
+        // اگه نداشت -> آنبوردینگ
+        router.push("/admin/onboarding");
+      }
+
+      // 4. رفرش برای اینکه هدرهای سرور آپدیت بشن
+      router.refresh();
     } catch (error) {
+      console.error(error);
       toast.error(error.message || "Login failed");
     } finally {
       setLoading(false);
@@ -55,7 +78,7 @@ export default function LoginPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white tracking-tight">
-              Welcome Back
+              Welcome
             </h1>
             <p className="text-gray-500 text-sm mt-1">
               Manage your restaurant efficiently

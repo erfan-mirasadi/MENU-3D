@@ -81,7 +81,7 @@ export default function ProductsView({
 
       {/* Product Grid */}
       <div className="flex-1 overflow-y-auto px-4 sm:px-8 pb-20">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-12 pt-6 pb-15">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-18 pt-3 pb-15">
           {/* Create New Product Button */}
           <button
             onClick={handleCreateClick}

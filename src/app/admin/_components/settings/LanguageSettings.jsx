@@ -18,8 +18,8 @@ export default function LanguageSettings() {
   const [userId, setUserId] = useState(null);
 
   // State for language preferences
-  const [selectedLangs, setSelectedLangs] = useState(["en"]);
-  const [defaultLang, setDefaultLang] = useState("en");
+  const [selectedLangs, setSelectedLangs] = useState(["tr"]);
+  const [defaultLang, setDefaultLang] = useState("tr");
 
   useEffect(() => {
     async function initData() {
@@ -42,8 +42,8 @@ export default function LanguageSettings() {
           .single();
 
         if (data) {
-          setSelectedLangs(data.supported_languages || ["en"]);
-          setDefaultLang(data.default_language || "en");
+          setSelectedLangs(data.supported_languages || ["tr"]);
+          setDefaultLang(data.default_language || "tr");
         }
       } catch (error) {
         console.error("Error loading languages:", error);

@@ -3,6 +3,7 @@ import { getCategories } from "@/services/categoryService";
 import { getProducts } from "@/services/productService";
 import ProductsView from "@/app/admin/_components/ui/ProductsView";
 import { redirect } from "next/navigation";
+import Image from "next/image";
 
 // Ensure page is always fresh (no cache)
 export const dynamic = "force-dynamic";
@@ -14,27 +15,18 @@ export default async function DashboardPage() {
     error: authError,
   } = await supabase.auth.getUser();
 
-  // If no user found (Middleware should catch this, but just in case)
-  if (authError || !user) {
-    redirect("/admin/login");
-  }
   const { data: restaurant, error: restaurantError } = await supabase
     .from("restaurants")
-    .select("id, name, supported_languages")
+    .select("id, name, supported_languages, logo")
     .eq("owner_id", user.id)
     .single();
 
-  // Handle case where user logged in but has no restaurant created yet
+  if (authError || !user) {
+    redirect("/admin/login");
+  }
+
   if (restaurantError || !restaurant) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-white">
-        <h2 className="text-xl font-bold">No Restaurant Found</h2>
-        <p className="text-gray-400">
-          Please contact support or create a restaurant.
-        </p>
-        <div className="mt-4 text-xs text-gray-600">User ID: {user.id}</div>
-      </div>
-    );
+    redirect("/admin/onboarding");
   }
 
   const [categories, products] = await Promise.all([
@@ -53,9 +45,20 @@ export default async function DashboardPage() {
           <p className="text-text-dim text-sm mt-1">{restaurant.name}</p>
         </div>
 
-        <button className="hidden sm:flex items-center gap-2 border border-gray-600 rounded-lg px-4 py-2 text-sm text-text-light hover:bg-dark-800 transition">
-          Manage Categories
-        </button>
+        <div className="flex items-center gap-3">
+          <button className="hidden sm:flex items-center gap-2 border border-gray-600 rounded-lg px-4 py-2 text-sm text-text-light hover:bg-dark-800 transition">
+            Manage Categories
+          </button>
+          {restaurant.logo && (
+            <Image
+              src={restaurant.logo}
+              alt="Logo"
+              width={40}
+              height={40}
+              className="w-10 h-10 rounded-full object-cover opacity-60"
+            />
+          )}
+        </div>
       </div>
 
       <ProductsView

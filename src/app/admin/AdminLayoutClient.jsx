@@ -5,9 +5,11 @@ import AdminSidebar from "./_components/layouts/AdminSidebar";
 
 export default function AdminLayoutClient({ children, user, restaurant }) {
   const pathname = usePathname();
-  const isLoginPage = pathname === "/admin/login";
 
-  if (isLoginPage) {
+  const isFullScreen =
+    pathname.includes("/login") || pathname.includes("/onboarding");
+
+  if (isFullScreen) {
     return (
       <main className="w-full h-[100dvh] bg-dark-900 flex items-center justify-center overflow-auto">
         {children}
