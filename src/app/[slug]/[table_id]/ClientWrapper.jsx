@@ -11,9 +11,7 @@ export default function ClientWrapper({
   tableId,
   featuredProducts,
 }) {
-  const style = restaurant.template_style || "modern";
-
-  console.log("🎨 Current Template Style:", style);
+  const style = restaurant.template_style;
 
   if (style === "modern") {
     return (
