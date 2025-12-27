@@ -1,12 +1,9 @@
 "use client";
 import SmartMedia from "@/components/ui/SmartMedia";
-
-const getTitle = (obj) => {
-  if (!obj) return "";
-  return typeof obj === "object" ? obj["tr"] || obj["en"] : obj;
-};
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ClassicRow({ product, onClick, onAdd }) {
+  const { content, t } = useLanguage();
   return (
     <div className="group relative flex items-center justify-between py-6 border-b border-[#E5E0D8] last:border-0">
       {/* Click Area for Details */}
@@ -18,14 +15,14 @@ export default function ClassicRow({ product, onClick, onAdd }) {
         <div className="flex-1">
           <div className="flex flex-col mb-2">
             <h3 className="text-xl font-bold text-[#2C1810] group-hover:text-[#D4AF37] transition-colors duration-300">
-              {getTitle(product.title)}
+              {content(product.title)}
             </h3>
             <span className="text-[#D4AF37] font-bold font-sans mt-1">
-              {Number(product.price).toLocaleString()} ₺
+              {Number(product.price).toLocaleString()} {t("currency")}
             </span>
           </div>
           <p className="text-sm text-[#8A7E72] line-clamp-2 leading-relaxed font-light italic">
-            {getTitle(product.description)}
+            {content(product.description)}
           </p>
         </div>
 
@@ -41,7 +38,7 @@ export default function ClassicRow({ product, onClick, onAdd }) {
                 animation_url_ios: product.animation_url_ios,
                 animation_url_android: product.animation_url_android,
               }}
-              alt={getTitle(product.title)}
+              alt={content(product.title)}
               className="w-full h-full object-cover"
             />
           </div>

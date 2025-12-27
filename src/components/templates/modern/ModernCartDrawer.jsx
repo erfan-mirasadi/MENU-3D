@@ -2,13 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-
-const getTitle = (obj) => {
-  if (!obj) return "";
-  return typeof obj === "object"
-    ? obj["en"] || obj["tr"] || Object.values(obj)[0]
-    : obj;
-};
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ModernCartDrawer({
   isOpen,
@@ -17,6 +11,7 @@ export default function ModernCartDrawer({
   onRemove,
   onSubmit,
 }) {
+  const { content, t } = useLanguage();
   const [isAnimating, setIsAnimating] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
 
@@ -76,10 +71,10 @@ export default function ModernCartDrawer({
         <div className="shrink-0 p-6 pb-2 flex items-center justify-between border-b border-white/5">
           <div>
             <h2 className="text-2xl font-black text-white tracking-tight">
-              Your Order
+              {t("yourOrder")}
             </h2>
             <p className="text-gray-400 text-xs font-mono mt-1">
-              Table No. <span className="text-[#ea7c69]">Active</span>
+              {t("table")} <span className="text-[#ea7c69]">{t("active")}</span>
             </p>
           </div>
           <button
@@ -95,7 +90,7 @@ export default function ModernCartDrawer({
           {cartItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 opacity-50">
               <span className="text-4xl mb-2">🛒</span>
-              <p className="text-sm">Your cart is empty</p>
+              <p className="text-sm">{t("emptyCart")}</p>
             </div>
           ) : (
             <>
@@ -105,7 +100,7 @@ export default function ModernCartDrawer({
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-2 h-2 rounded-full bg-[#ea7c69] animate-pulse" />
                     <span className="text-xs font-bold text-[#ea7c69] uppercase tracking-widest">
-                      New Items (Not Sent)
+                      {t("newItems")}
                     </span>
                   </div>
 
@@ -118,7 +113,7 @@ export default function ModernCartDrawer({
                       <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-black/20 shrink-0">
                         <Image
                           src={item.product?.image_url}
-                          alt={getTitle(item.product?.title)}
+                          alt={content(item.product?.title)}
                           fill
                           className="object-cover"
                         />
@@ -127,10 +122,11 @@ export default function ModernCartDrawer({
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <h4 className="text-white font-bold text-sm truncate">
-                          {getTitle(item.product?.title)}
+                          {content(item.product?.title)}
                         </h4>
                         <p className="text-[#ea7c69] text-xs font-bold mt-1">
-                          {Number(item.unit_price_at_order).toLocaleString()} ₺
+                          {Number(item.unit_price_at_order).toLocaleString()}{" "}
+                          {t("currency")}
                         </p>
                       </div>
 
@@ -145,7 +141,7 @@ export default function ModernCartDrawer({
                           onClick={() => onRemove(item.id)}
                           className="text-red-400 text-[10px] hover:text-red-200 underline decoration-red-400/30"
                         >
-                          Remove
+                          {t("remove")}
                         </button>
                       </div>
                     </div>
@@ -159,7 +155,7 @@ export default function ModernCartDrawer({
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-2 h-2 rounded-full bg-green-500" />
                     <span className="text-xs font-bold text-green-500 uppercase tracking-widest">
-                      Sent to Kitchen
+                      {t("sentToKitchen")}
                     </span>
                   </div>
 
@@ -171,14 +167,14 @@ export default function ModernCartDrawer({
                       <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 grayscale">
                         <Image
                           src={item.product?.image_url}
-                          alt={getTitle(item.product?.title)}
+                          alt={content(item.product?.title)}
                           fill
                           className="object-cover"
                         />
                       </div>
                       <div className="flex-1">
                         <h4 className="text-gray-300 font-medium text-xs truncate">
-                          {getTitle(item.product?.title)}
+                          {content(item.product?.title)}
                         </h4>
                       </div>
                       <span className="text-gray-500 text-xs font-mono">
@@ -195,12 +191,12 @@ export default function ModernCartDrawer({
         {/* --- FOOTER --- */}
         <div className="shrink-0 bg-[#252836] p-6 border-t border-white/5">
           <div className="flex justify-between items-end mb-6">
-            <span className="text-gray-400 text-sm">Total Amount</span>
+            <span className="text-gray-400 text-sm">{t("totalAmount")}</span>
             <div className="flex items-baseline gap-1">
               <span className="text-3xl font-black text-white">
                 {totalAmount.toLocaleString()}
               </span>
-              <span className="text-[#ea7c69] font-bold">₺</span>
+              <span className="text-[#ea7c69] font-bold">{t("currency")}</span>
             </div>
           </div>
 
@@ -212,14 +208,14 @@ export default function ModernCartDrawer({
               }}
               className="w-full bg-[#ea7c69] hover:bg-[#ff8f7d] text-white h-14 rounded-2xl font-bold text-lg shadow-[0_10px_30px_-5px_rgba(234,124,105,0.4)] active:scale-95 transition-all flex items-center justify-center gap-2"
             >
-              <span>Confirm Order</span>
+              <span>{t("confirmOrder")}</span>
               <span className="bg-white/20 px-2 py-0.5 rounded text-sm">
-                {draftItems.reduce((a, b) => a + b.quantity, 0)} Items
+                {draftItems.reduce((a, b) => a + b.quantity, 0)} {t("items")}
               </span>
             </button>
           ) : (
             <div className="w-full h-14 rounded-2xl border border-white/10 flex items-center justify-center text-gray-500 text-sm font-medium cursor-not-allowed">
-              No new items to order
+              {t("noNewItems")}
             </div>
           )}
         </div>

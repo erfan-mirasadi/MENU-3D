@@ -1,17 +1,13 @@
 "use client";
-
-const getTitle = (obj) => {
-  if (!obj) return "";
-  return typeof obj === "object"
-    ? obj["en"] || obj["tr"] || Object.values(obj)[0]
-    : obj;
-};
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ImmersiveHeader({
   categories,
   activeCategory,
   setActiveCategory,
 }) {
+  const { content } = useLanguage();
   return (
     <div className="sticky top-4 z-40 px-4">
       <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl flex overflow-x-auto no-scrollbar gap-2 snap-x">
@@ -31,10 +27,14 @@ export default function ImmersiveHeader({
               {isActive && (
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 -z-10"></div>
               )}
-              {getTitle(cat.title)}
+              {content(cat.title)}
             </button>
           );
         })}
+      </div>
+      {/* Language Switcher */}
+      <div className="absolute top-18 right-6">
+        <LanguageSwitcher />
       </div>
     </div>
   );

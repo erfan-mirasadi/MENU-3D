@@ -1,12 +1,10 @@
 "use client";
 import ARViewer from "@/components/ui/ARViewer";
-
-const getTitle = (obj) => {
-  if (!obj) return "";
-  return typeof obj === "object" ? obj["tr"] || obj["en"] : obj;
-};
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ClassicModal({ product, onClose, onAddToCart }) {
+  const { content, t } = useLanguage();
+
   if (!product) return null;
 
   return (
@@ -34,7 +32,7 @@ export default function ClassicModal({ product, onClose, onAddToCart }) {
               <ARViewer
                 modelUrl={product.model_url || product.model_lowpoly_url}
                 posterUrl={product.image_url}
-                alt={getTitle(product.title)}
+                alt={content(product.title)}
               >
                 <button
                   slot="ar-button"
@@ -56,7 +54,7 @@ export default function ClassicModal({ product, onClose, onAddToCart }) {
           <div className="p-8 overflow-y-auto">
             <div className="flex justify-between items-start mb-4">
               <h2 className="text-3xl font-serif font-bold text-[#2C1810]">
-                {getTitle(product.title)}
+                {content(product.title)}
               </h2>
               <span className="text-xl font-sans font-bold text-[#D4AF37]">
                 {Number(product.price).toLocaleString()} ₺
@@ -66,7 +64,7 @@ export default function ClassicModal({ product, onClose, onAddToCart }) {
             <div className="w-12 h-0.5 bg-[#D4AF37] mb-6"></div>
 
             <p className="text-[#5C504A] leading-loose font-serif italic mb-8">
-              {getTitle(product.description)}
+              {content(product.description)}
             </p>
 
             <button

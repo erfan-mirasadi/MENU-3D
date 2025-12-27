@@ -1,11 +1,15 @@
 "use client";
 
+import { useLanguage } from "@/context/LanguageContext";
+
 export default function ModernCart({
   totalAmount,
   totalCount,
   isLoading,
   onClick,
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-30">
       <button
@@ -21,7 +25,7 @@ export default function ModernCart({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-bold">View Cart</span>
+          <span className="font-bold">{t("viewCart")}</span>
           <div className="bg-white/20 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
             {totalCount}
           </div>

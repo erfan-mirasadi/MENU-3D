@@ -1,12 +1,9 @@
 "use client";
 import SmartMedia from "@/components/ui/SmartMedia";
-
-const getTitle = (obj) => {
-  if (!obj) return "";
-  return typeof obj === "object" ? obj["tr"] || obj["en"] : obj;
-};
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function MinimalCard({ product, onClick, onAdd }) {
+  const { content, t } = useLanguage();
   const has3D = !!(product.model_url || product.model_lowpoly_url);
 
   return (
@@ -23,7 +20,7 @@ export default function MinimalCard({ product, onClick, onAdd }) {
               animation_url_ios: product.animation_url_ios,
               animation_url_android: product.animation_url_android,
             }}
-            alt={getTitle(product.title)}
+            alt={content(product.title)}
             className="w-full h-full object-contain drop-shadow-lg scale-140"
           />
         </div>
@@ -55,7 +52,7 @@ export default function MinimalCard({ product, onClick, onAdd }) {
         {/* ROW 1: Title & Price (Side by Side) */}
         <div className="flex justify-between items-start gap-4 mb-1">
           <h3 className="text-base font-black uppercase leading-tight text-black line-clamp-2">
-            {getTitle(product.title)}
+            {content(product.title)}
           </h3>
 
           <div className="shrink-0 flex items-baseline gap-0.5">
@@ -68,7 +65,7 @@ export default function MinimalCard({ product, onClick, onAdd }) {
 
         {/* ROW 2: Description */}
         <p className="text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">
-          {getTitle(product.description)}
+          {content(product.description)}
         </p>
 
         {/* 'Add to Order' Text Button (Mobile friendly fallback) */}

@@ -1,12 +1,10 @@
 "use client";
 import ARViewer from "@/components/ui/ARViewer";
-
-const getTitle = (obj) => {
-  if (!obj) return "";
-  return typeof obj === "object" ? obj["tr"] || obj["en"] : obj;
-};
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ImmersiveModal({ product, onClose, onAddToCart }) {
+  const { content, t } = useLanguage();
+
   if (!product) return null;
 
   return (
@@ -28,13 +26,13 @@ export default function ImmersiveModal({ product, onClose, onAddToCart }) {
             <ARViewer
               modelUrl={product.model_url || product.model_lowpoly_url}
               posterUrl={product.image_url}
-              alt={getTitle(product.title)}
+              alt={content(product.title)}
             >
               <button
                 slot="ar-button"
                 className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-white text-black px-6 py-2 rounded-full font-bold shadow-[0_0_20px_rgba(255,255,255,0.4)]"
               >
-                View in AR 🧊
+                {t("viewInAR")}
               </button>
             </ARViewer>
           ) : (
@@ -48,14 +46,14 @@ export default function ImmersiveModal({ product, onClose, onAddToCart }) {
         {/* Info Card */}
         <div className="w-full bg-white/5 border border-white/10 backdrop-blur-md rounded-3xl p-6 text-center">
           <h2 className="text-3xl font-black text-white mb-2">
-            {getTitle(product.title)}
+            {content(product.title)}
           </h2>
           <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-blue-300 mb-6">
-            {Number(product.price).toLocaleString()} ₺
+            {Number(product.price).toLocaleString()} {t("currency")}
           </div>
 
           <p className="text-white/70 font-light leading-relaxed mb-8">
-            {getTitle(product.description)}
+            {content(product.description)}
           </p>
 
           <button

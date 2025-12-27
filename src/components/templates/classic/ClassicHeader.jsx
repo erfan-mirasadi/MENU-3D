@@ -1,11 +1,6 @@
 "use client";
-
-const getTitle = (obj) => {
-  if (!obj) return "";
-  return typeof obj === "object"
-    ? obj["en"] || obj["tr"] || Object.values(obj)[0]
-    : obj;
-};
+import { useLanguage } from "@/context/LanguageContext";
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 
 export default function ClassicHeader({
   restaurant,
@@ -13,13 +8,17 @@ export default function ClassicHeader({
   activeCategory,
   setActiveCategory,
 }) {
+  const { content } = useLanguage();
   return (
     <div className="sticky top-0 z-30 bg-[#FDFBF7]/95 backdrop-blur-sm border-b border-[#D4AF37]/20 shadow-sm">
       <div className="flex items-center justify-between px-6 py-4">
         <h1 className="text-lg font-bold text-[#2C1810] tracking-wider">
           {restaurant.name}
         </h1>
-        <div className="w-2 h-2 rounded-full bg-[#D4AF37]"></div>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+          <div className="w-2 h-2 rounded-full bg-[#D4AF37]"></div>
+        </div>
       </div>
 
       {/* Categories Scroller */}
@@ -42,7 +41,7 @@ export default function ClassicHeader({
                     isActive ? "font-bold italic" : "font-medium"
                   }`}
                 >
-                  {getTitle(cat.title)}
+                  {content(cat.title)}
                 </span>
 
                 {/* Active Indicator (Underline) */}

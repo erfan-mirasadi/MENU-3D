@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ModernSuggestions({ products }) {
+  const { content, t } = useLanguage();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -11,13 +13,6 @@ export default function ModernSuggestions({ products }) {
   }, []);
 
   if (!products || products.length === 0) return null;
-
-  const getTitle = (obj) => {
-    if (!obj) return "";
-    return typeof obj === "object"
-      ? obj["en"] || obj["tr"] || Object.values(obj)[0]
-      : obj;
-  };
 
   return (
     <div
@@ -59,7 +54,7 @@ export default function ModernSuggestions({ products }) {
             </div>
             <Image
               src={product.image_url}
-              alt={getTitle(product.title)}
+              alt={content(product.title)}
               fill
               sizes="(max-width: 768px) 100vw, 400px"
               priority={index === 0}
@@ -69,11 +64,11 @@ export default function ModernSuggestions({ products }) {
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90" />
             <div className="absolute bottom-0 left-0 w-full p-5">
               <h3 className="text-white text-2xl font-black leading-none drop-shadow-md mb-1">
-                {getTitle(product.title)}
+                {content(product.title)}
               </h3>
 
               <p className="text-gray-300 text-xs line-clamp-1 font-light opacity-80 mb-3">
-                {getTitle(product.description)}
+                {content(product.description)}
               </p>
               <div className="flex items-end justify-between">
                 <div className="flex flex-col">

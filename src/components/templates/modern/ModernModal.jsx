@@ -1,15 +1,11 @@
 "use client";
 import Image from "next/image";
 import ARViewer from "@/components/ui/ARViewer";
-
-const getTitle = (obj) => {
-  if (!obj) return "";
-  return typeof obj === "object"
-    ? obj["en"] || obj["tr"] || Object.values(obj)[0]
-    : obj;
-};
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ModernModal({ product, onClose, onAddToCart }) {
+  const { content, t } = useLanguage();
+
   if (!product) return null;
 
   return (
@@ -27,7 +23,7 @@ export default function ModernModal({ product, onClose, onAddToCart }) {
             <ARViewer
               modelUrl={product.model_url || product.model_lowpoly_url}
               posterUrl={product.image_url}
-              alt={getTitle(product.title)}
+              alt={content(product.title)}
             >
               {/* AR BUTTON (Passed as children) */}
               <button
@@ -77,7 +73,7 @@ export default function ModernModal({ product, onClose, onAddToCart }) {
           <div className="pointer-events-auto">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-white text-3xl font-black leading-tight w-3/4">
-                {getTitle(product.title)}
+                {content(product.title)}
               </h3>
               <div className="bg-[#ea7c69] px-3 py-1.5 rounded-xl shadow-lg shadow-orange-900/30">
                 <p className="text-white font-bold text-lg">
@@ -87,7 +83,7 @@ export default function ModernModal({ product, onClose, onAddToCart }) {
             </div>
 
             <p className="text-gray-400 text-sm mb-10 leading-relaxed font-light">
-              {getTitle(product.description)}
+              {content(product.description)}
             </p>
 
             <button

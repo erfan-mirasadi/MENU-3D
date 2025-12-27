@@ -1,12 +1,10 @@
 "use client";
 import ARViewer from "@/components/ui/ARViewer";
-
-const getTitle = (obj) => {
-  if (!obj) return "";
-  return typeof obj === "object" ? obj["tr"] || obj["en"] : obj;
-};
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function MinimalModal({ product, onClose, onAddToCart }) {
+  const { content, t } = useLanguage();
+
   if (!product) return null;
 
   return (
@@ -33,7 +31,7 @@ export default function MinimalModal({ product, onClose, onAddToCart }) {
             <ARViewer
               modelUrl={product.model_url || product.model_lowpoly_url}
               posterUrl={product.image_url}
-              alt={getTitle(product.title)}
+              alt={content(product.title)}
             >
               <button
                 slot="ar-button"
@@ -54,7 +52,7 @@ export default function MinimalModal({ product, onClose, onAddToCart }) {
         <div className="p-8 md:p-12 flex-1 flex flex-col">
           <div className="flex justify-between items-baseline mb-6">
             <h2 className="text-4xl font-black uppercase leading-none w-3/4">
-              {getTitle(product.title)}
+              {content(product.title)}
             </h2>
             <span className="text-2xl font-mono font-bold">
               {Number(product.price).toLocaleString()} ₺
@@ -62,7 +60,7 @@ export default function MinimalModal({ product, onClose, onAddToCart }) {
           </div>
 
           <p className="text-gray-600 text-lg leading-relaxed mb-12 flex-1">
-            {getTitle(product.description)}
+            {content(product.description)}
           </p>
 
           <button

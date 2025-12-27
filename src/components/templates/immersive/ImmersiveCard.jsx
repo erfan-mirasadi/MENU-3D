@@ -1,12 +1,9 @@
 "use client";
 import SmartMedia from "@/components/ui/SmartMedia";
-
-const getTitle = (obj) => {
-  if (!obj) return "";
-  return typeof obj === "object" ? obj["tr"] || obj["en"] : obj;
-};
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ImmersiveCard({ product, onClick, onAdd }) {
+  const { content, t } = useLanguage();
   const has3D = !!(product.model_url || product.model_lowpoly_url);
 
   return (
@@ -26,7 +23,7 @@ export default function ImmersiveCard({ product, onClick, onAdd }) {
                 animation_url_ios: product.animation_url_ios,
                 animation_url_android: product.animation_url_android,
               }}
-              alt={getTitle(product.title)}
+              alt={content(product.title)}
               className="w-full h-full object-contain transform transition-transform duration-500 group-hover:-translate-y-2 group-hover:scale-105"
             />
           </div>
@@ -47,12 +44,12 @@ export default function ImmersiveCard({ product, onClick, onAdd }) {
         <div className="mt-[60%] flex flex-col items-center text-center">
           {/* Title */}
           <h3 className="text-xl font-black text-white mb-2 leading-tight px-2">
-            {getTitle(product.title)}
+            {content(product.title)}
           </h3>
 
           {/* Description */}
           <p className="text-white/50 text-[11px] line-clamp-2 mb-5 h-8 font-medium leading-relaxed px-2">
-            {getTitle(product.description)}
+            {content(product.description)}
           </p>
 
           {/* Price & Add Bar */}

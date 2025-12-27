@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-
-const getTitle = (obj) => (typeof obj === "object" ? obj["en"] : obj);
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function MinimalCartDrawer({
   isOpen,
@@ -11,6 +10,7 @@ export default function MinimalCartDrawer({
   onRemove,
   onSubmit,
 }) {
+  const { content, t } = useLanguage();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -70,7 +70,7 @@ export default function MinimalCartDrawer({
               <div className="flex-1 flex flex-col justify-between py-1">
                 <div className="flex justify-between items-start">
                   <h4 className="font-bold uppercase text-sm leading-tight pr-2">
-                    {getTitle(item.product?.title)}
+                    {content(item.product?.title)}
                   </h4>
                   <span className="font-mono text-sm">
                     {Number(item.unit_price_at_order).toLocaleString()}

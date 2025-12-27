@@ -1,6 +1,8 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ImmersiveCartBar({ totalCount, totalAmount, onClick }) {
+  const { t } = useLanguage();
   return (
     // Fixed position with high z-index
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[50] w-[90%] max-w-md pointer-events-auto">
@@ -18,7 +20,7 @@ export default function ImmersiveCartBar({ totalCount, totalAmount, onClick }) {
 
         <div className="flex flex-col items-end pl-4">
           <span className="text-[9px] uppercase tracking-[0.2em] text-white/50 mb-0.5">
-            Total Order
+            {t("totalOrder")}
           </span>
           <div className="flex items-baseline gap-1">
             <span className="text-2xl font-black text-white">

@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-
-const getTitle = (obj) => (typeof obj === "object" ? obj["en"] : obj);
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ImmersiveCartDrawer({
   isOpen,
@@ -11,6 +10,7 @@ export default function ImmersiveCartDrawer({
   onRemove,
   onSubmit,
 }) {
+  const { content, t } = useLanguage();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -66,7 +66,7 @@ export default function ImmersiveCartDrawer({
               </div>
               <div className="flex-1">
                 <h4 className="font-bold text-white text-sm">
-                  {getTitle(item.product?.title)}
+                  {content(item.product?.title)}
                 </h4>
                 <div className="flex justify-between items-end mt-2">
                   <span className="text-purple-300 font-mono text-sm">

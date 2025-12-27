@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-
-const getTitle = (obj) => (typeof obj === "object" ? obj["en"] : obj);
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ClassicCartDrawer({
   isOpen,
@@ -11,6 +10,7 @@ export default function ClassicCartDrawer({
   onRemove,
   onSubmit,
 }) {
+  const { content, t } = useLanguage();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export default function ClassicCartDrawer({
                   </div>
                   <div className="flex-1">
                     <h4 className="text-[#2C1810] font-bold">
-                      {getTitle(item.product?.title)}
+                      {content(item.product?.title)}
                     </h4>
                     <p className="text-[#8A7E72] text-sm">
                       x{item.quantity} —{" "}
@@ -118,7 +118,7 @@ export default function ClassicCartDrawer({
                   </div>
                   <div className="flex-1">
                     <h4 className="text-[#2C1810] font-bold text-sm">
-                      {getTitle(item.product?.title)}
+                      {content(item.product?.title)}
                     </h4>
                     <p className="text-[#8A7E72] text-xs">x{item.quantity}</p>
                   </div>

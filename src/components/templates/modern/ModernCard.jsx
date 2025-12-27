@@ -2,14 +2,15 @@
 
 import { useState, useRef, useEffect } from "react";
 import SmartMedia from "@/components/ui/SmartMedia";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ModernCard({ product, onClick, onAdd }) {
+  const { content, t } = useLanguage();
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef(null);
   const iosUrl = product.animation_url_ios;
   const androidUrl = product.animation_url_android;
   const hasVideo = !!(iosUrl || androidUrl);
-
   const isPromo = !!product.original_price;
 
   // همون IntersectionObserver قبلی برای تریگر کردن
@@ -30,11 +31,6 @@ export default function ModernCard({ product, onClick, onAdd }) {
 
     return () => observer.disconnect();
   }, [hasVideo]);
-
-  const getTitle = (obj) => {
-    if (!obj) return "";
-    return typeof obj === "object" ? obj["tr"] || obj["en"] : obj;
-  };
 
   return (
     <div
@@ -77,7 +73,7 @@ export default function ModernCard({ product, onClick, onAdd }) {
                 animation_url_ios: product.animation_url_ios,
                 animation_url_android: product.animation_url_android,
               }}
-              alt={getTitle(product.title)}
+              alt={content(product.title)}
               // خود SmartMedia لاجیک نمایش رو داره، ولی ما isVisible رو پاس میدیم تا با اسکرول سینک باشه
               isVisible={isVisible}
               className="transform group-hover:scale-105 transition-transform duration-500"
@@ -88,13 +84,13 @@ export default function ModernCard({ product, onClick, onAdd }) {
         {/* --- INFO SECTION --- */}
         <div className="flex flex-col items-center text-center mt-2">
           <h3 className="text-white text-xl font-bold leading-tight w-full line-clamp-2 h-[3.5rem] flex items-center justify-center">
-            {getTitle(product.title)}
+            {content(product.title)}
           </h3>
 
           <div className="w-10 h-1 bg-[#ea7c69] rounded-full my-3 opacity-80"></div>
 
           <p className="text-gray-400 text-xs font-medium leading-relaxed line-clamp-2 h-[2.5rem] w-full px-2 overflow-hidden">
-            {getTitle(product.description)}
+            {content(product.description)}
           </p>
 
           {/* FOOTER */}
@@ -109,7 +105,9 @@ export default function ModernCard({ product, onClick, onAdd }) {
                 <span className="text-white text-2xl font-black tracking-tight">
                   {Number(product.price).toLocaleString()}
                 </span>
-                <span className="text-[#ea7c69] text-xs font-bold">₺</span>
+                <span className="text-[#ea7c69] text-xs font-bold">
+                  {t("currency")}
+                </span>
               </div>
             </div>
 

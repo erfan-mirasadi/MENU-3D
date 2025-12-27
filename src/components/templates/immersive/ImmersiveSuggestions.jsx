@@ -2,15 +2,10 @@
 
 import { useState, useEffect } from "react";
 import SmartMedia from "@/components/ui/SmartMedia";
-
-const getTitle = (obj) => {
-  if (!obj) return "";
-  return typeof obj === "object"
-    ? obj["en"] || obj["tr"] || Object.values(obj)[0]
-    : obj;
-};
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ImmersiveSuggestions({ products }) {
+  const { content, t } = useLanguage();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -56,7 +51,7 @@ export default function ImmersiveSuggestions({ products }) {
                   animation_url_ios: product.animation_url_ios,
                   animation_url_android: product.animation_url_android,
                 }}
-                alt={getTitle(product.title)}
+                alt={content(product.title)}
                 className="w-full h-full object-cover opacity-90"
               />
               {/* Dark Gradient Overlay for Text Readability */}
@@ -68,10 +63,10 @@ export default function ImmersiveSuggestions({ products }) {
               <div className="flex justify-between items-end">
                 <div className="w-2/3">
                   <h3 className="text-xl font-black text-white leading-tight mb-1 drop-shadow-md">
-                    {getTitle(product.title)}
+                    {content(product.title)}
                   </h3>
                   <p className="text-gray-300 text-xs line-clamp-1 font-light">
-                    {getTitle(product.description)}
+                    {content(product.description)}
                   </p>
                 </div>
                 <div className="text-right">

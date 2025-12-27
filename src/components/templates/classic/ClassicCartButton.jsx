@@ -1,10 +1,12 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ClassicCartButton({
   totalCount,
   totalAmount,
   onClick,
 }) {
+  const { t } = useLanguage();
   if (totalCount === 0) return null;
 
   return (
@@ -15,7 +17,7 @@ export default function ClassicCartButton({
       >
         <div className="flex flex-col items-start">
           <span className="text-[10px] uppercase tracking-[0.2em] text-[#D4AF37]">
-            Total
+            {t("total")}
           </span>
           <span className="text-xl font-serif font-bold">
             {totalAmount.toLocaleString()} ₺
@@ -24,7 +26,7 @@ export default function ClassicCartButton({
 
         <div className="flex items-center gap-3">
           <span className="text-sm uppercase tracking-widest font-bold">
-            View Cart
+            {t("viewCart")}
           </span>
           <div className="w-8 h-8 bg-[#D4AF37] text-[#2C1810] flex items-center justify-center font-bold rounded-full">
             {totalCount}

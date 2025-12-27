@@ -1,13 +1,8 @@
 "use client";
 
 import Image from "next/image";
-
-const getTitle = (obj) => {
-  if (!obj) return "";
-  return typeof obj === "object"
-    ? obj["en"] || obj["tr"] || Object.values(obj)[0]
-    : obj;
-};
+import { useLanguage } from "@/context/LanguageContext";
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 
 export default function ModernHeader({
   restaurant,
@@ -16,6 +11,7 @@ export default function ModernHeader({
   activeCategory,
   setActiveCategory,
 }) {
+  const { content, t } = useLanguage();
   return (
     <div className="sticky top-0 z-20 border-b border-white/5 shadow-2xl transition-all bg-[#1F1D2B]">
       {/* Background Overlay */}
@@ -36,6 +32,11 @@ export default function ModernHeader({
       )}
 
       <div className="relative z-10 p-6 pb-0">
+        {/* Language Switcher */}
+        <div className="absolute top-4 right-4">
+          <LanguageSwitcher />
+        </div>
+
         <div className="flex justify-between items-start mb-6">
           {/* LOGO & INFO */}
           <div className="flex items-center gap-3">
@@ -61,7 +62,7 @@ export default function ModernHeader({
                 {restaurant.name}
               </h1>
               <p className="text-gray-400 text-[10px] mt-0.5 font-mono uppercase tracking-widest opacity-80">
-                Masa: {tableId}
+                {t("table")}: {tableId}
               </p>
             </div>
           </div>
@@ -71,7 +72,7 @@ export default function ModernHeader({
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
               <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">
-                Open
+                {t("open")}
               </span>
             </div>
           </div>
@@ -130,7 +131,7 @@ export default function ModernHeader({
                   }`}
                 >
                   <span className="text-sm font-bold text-white drop-shadow-md whitespace-nowrap">
-                    {getTitle(cat.title)}
+                    {content(cat.title)}
                   </span>
                   <span className="bg-white/20 backdrop-blur-md px-1.5 py-0.5 rounded text-[9px] font-mono text-white">
                     {cat.products?.length}

@@ -1,11 +1,6 @@
 "use client";
-
-const getTitle = (obj) => {
-  if (!obj) return "";
-  return typeof obj === "object"
-    ? obj["en"] || obj["tr"] || Object.values(obj)[0]
-    : obj;
-};
+import { useLanguage } from "@/context/LanguageContext";
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 
 export default function MinimalHeader({
   restaurant,
@@ -13,6 +8,7 @@ export default function MinimalHeader({
   activeCategory,
   setActiveCategory,
 }) {
+  const { content } = useLanguage();
   return (
     <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 pt-4 pb-2 px-3">
       {/* Brand - Mobile Only */}
@@ -20,7 +16,10 @@ export default function MinimalHeader({
         <h1 className="text-2xl font-black uppercase tracking-tighter">
           {restaurant.name}
         </h1>
-        <div className="w-2 h-2 bg-black rounded-full animate-pulse"></div>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+          <div className="w-2 h-2 bg-black rounded-full animate-pulse"></div>
+        </div>
       </div>
 
       {/* Categories - Pill Design */}
@@ -39,7 +38,7 @@ export default function MinimalHeader({
                     : "bg-white text-gray-400 border-gray-200 hover:border-black hover:text-black"
                 }`}
               >
-                {getTitle(cat.title)}
+                {content(cat.title)}
               </button>
             );
           })}

@@ -3,9 +3,10 @@ import ClientWrapper from "./ClientWrapper.jsx";
 import { getCategories } from "@/services/categoryService";
 import { getProducts } from "@/services/productService";
 import { getRestaurantBySlug } from "@/services/restaurantService";
+import { LanguageProvider } from "@/context/LanguageContext.jsx";
 
-// این فانکشن رو کش (Cache) نمیکنیم تا تغییرات دیتابیس رو سریع ببینی
-export const dynamic = "force-dynamic";
+// // این فانکشن رو کش (Cache) نمیکنیم تا تغییرات دیتابیس رو سریع ببینی
+// export const dynamic = "force-dynamic";
 
 async function getMenuData(slug) {
   const restaurant = await getRestaurantBySlug(slug);
@@ -48,11 +49,18 @@ export default async function Page({ params }) {
   }
 
   return (
-    <ClientWrapper
-      restaurant={data.restaurant}
-      categories={data.categories}
-      tableId={decodedTableId}
-      featuredProducts={data.featuredProducts}
-    />
+    <LanguageProvider
+      dbSettings={{
+        supported_languages: data.restaurant.supported_languages,
+        default_language: data.restaurant.default_language,
+      }}
+    >
+      <ClientWrapper
+        restaurant={data.restaurant}
+        categories={data.categories}
+        tableId={decodedTableId}
+        featuredProducts={data.featuredProducts}
+      />
+    </LanguageProvider>
   );
 }
