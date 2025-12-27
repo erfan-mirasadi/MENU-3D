@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { Loader } from "@react-three/drei";
 import Image from "next/image";
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
+import { useLanguage } from "@/context/LanguageContext";
 
 const styles = `
   @keyframes blurFadeIn {
@@ -21,15 +23,6 @@ const styles = `
     animation: swipeHint 2s infinite;
   }
 `;
-
-// تابع کمکی زبان (همینجا تعریف شده)
-const getLang = (field) => {
-  if (!field) return "";
-  if (typeof field === "object") {
-    return field.en || field.tr || field.ru || Object.values(field)[0] || "";
-  }
-  return field;
-};
 
 // --- کامپوننت راهنمای Swipe ---
 function SwipeHint() {
@@ -68,6 +61,8 @@ export default function UIOverlay({
   focusedProduct,
   categoryMounted,
 }) {
+  const { content } = useLanguage();
+
   return (
     <>
       <style>{styles}</style>
@@ -75,16 +70,21 @@ export default function UIOverlay({
       <SwipeHint />
 
       {/* --- HEADER --- */}
-      <div className="absolute top-0 left-0 w-full z-10 p-6 pt-16 text-center pointer-events-none">
+      <div className="absolute top-0 left-0 w-full z-10 p-6 pt-10 text-center pointer-events-none">
+        {/* Language Switcher */}
+        <div className="absolute top-3 right-3 pointer-events-auto">
+          <LanguageSwitcher />
+        </div>
+
         <h3 className="text-white/40 text-[10px] font-bold tracking-[0.4em] uppercase mb-2">
-          {getLang(restaurant.name)}
+          {content(restaurant.name)}
         </h3>
 
         {focusedProduct && categoryMounted && (
           <div key={focusedProduct.id} className="flex flex-col items-center">
             <div className="overflow-hidden">
               <h1 className="text-white text-5xl font-black uppercase tracking-tighter drop-shadow-2xl animate-text-change">
-                {getLang(focusedProduct.title)}
+                {content(focusedProduct.title)}
               </h1>
             </div>
 
@@ -102,7 +102,7 @@ export default function UIOverlay({
               className="text-white/60 text-xs mt-4 max-w-[280px] leading-relaxed animate-text-change"
               style={{ animationDelay: "0.2s" }}
             >
-              {getLang(focusedProduct.description) ||
+              {content(focusedProduct.description) ||
                 "Premium quality ingredients."}
             </p>
           </div>
@@ -135,7 +135,7 @@ export default function UIOverlay({
                     {cat.image_url ? (
                       <Image
                         src={cat.image_url}
-                        alt={getLang(cat.title)}
+                        alt={content(cat.title)}
                         width={56}
                         height={56}
                         className="w-full h-full object-cover"
@@ -149,7 +149,7 @@ export default function UIOverlay({
                       isActive ? "text-[#ea7c69]" : "text-white/50"
                     }`}
                   >
-                    {getLang(cat.title)}
+                    {content(cat.title)}
                   </span>
                 </button>
               );
