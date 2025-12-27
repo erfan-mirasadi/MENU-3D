@@ -31,15 +31,15 @@ export default function ModernHeader({
         <div className="absolute inset-0 z-0 bg-[#1F1D2B]/95 backdrop-blur-md" />
       )}
 
-      <div className="relative z-10 p-6 pb-0">
+      <div className="relative z-10 pt-4.5 pb-0">
         {/* Language Switcher */}
-        <div className="absolute top-4 right-4">
+        <div className="absolute top-5 right-4">
           <LanguageSwitcher />
         </div>
 
-        <div className="flex justify-between items-start mb-6">
+        <div className="flex justify-between items-start mb-1.5">
           {/* LOGO & INFO */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 px-3.5">
             {restaurant.logo ? (
               <div className="relative w-12 h-12 rounded-2xl border border-white/10 p-0.5 bg-[#252836] shadow-lg">
                 <Image
@@ -68,25 +68,25 @@ export default function ModernHeader({
           </div>
 
           {/* STATUS BADGE */}
-          <div className="bg-[#252836]/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/5">
+          {/* <div className="bg-[#252836]/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/5">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
               <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">
                 {t("open")}
               </span>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* CATEGORIES PILLS */}
-        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-6 min-h-[70px]">
+        <div className="flex items-center gap-4 overflow-x-auto no-scrollbar pb-4 pt-5 px-7 min-h-[70px] ">
           {categories?.map((cat) => {
             const isActive = activeCategory === cat.id;
             return (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`relative h-[50px] rounded-full flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] flex-shrink-0 group ${
+                className={`relative h-[50px] rounded-full flex items-center justify-center overflow-hidden transition-all scale-120 duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] flex-shrink-0 group ${
                   isActive
                     ? "w-[160px] shadow-[0_0_20px_-5px_#ea7c69]"
                     : "w-[50px] bg-[#252836] border border-white/10 hover:bg-[#2d303e]"
@@ -97,7 +97,7 @@ export default function ModernHeader({
                     <Image
                       src={cat.image_url}
                       fill
-                      sizes="160px"
+                      sizes="160spx"
                       className="object-cover brightness-50"
                       alt="bg"
                     />
@@ -110,12 +110,12 @@ export default function ModernHeader({
                   }`}
                 >
                   {cat.image_url ? (
-                    <div className="relative w-6 h-6">
+                    <div className="relative w-16 h-16">
                       <Image
                         src={cat.image_url}
                         alt=""
                         fill
-                        sizes="24px"
+                        sizes="35px"
                         className="object-contain grayscale opacity-70 group-hover:grayscale-0"
                       />
                     </div>

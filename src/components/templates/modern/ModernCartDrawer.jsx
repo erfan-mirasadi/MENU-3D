@@ -19,7 +19,6 @@ export default function ModernCartDrawer({
     if (isOpen) {
       document.body.style.overflow = "hidden";
       setShouldRender(true);
-      // شروع انیمیشن بعد از یک تیک
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setIsAnimating(true);
