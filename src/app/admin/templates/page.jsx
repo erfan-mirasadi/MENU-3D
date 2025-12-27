@@ -34,6 +34,12 @@ const TEMPLATES = [
     description: "Colorful and high energy.",
     videoSrc: "/templates/immersive.mov",
   },
+  {
+    id: "three-d",
+    name: "3D Experience",
+    description: "Interactive 3D food models.",
+    videoSrc: "/templates/3d.mov",
+  },
 ];
 
 export default function TemplatesPage() {
