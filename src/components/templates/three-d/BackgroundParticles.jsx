@@ -26,7 +26,7 @@ const CONFIG = {
   TOUCH_STRENGTH: 0.05, // قدرت هُل دادن (هرچی بیشتر، ذرات بیشتر فرار میکنن)
 
   // 5. تنظیمات سنسور گوشی
-  SENSOR_STRENGTH: 0.5, // قدرت جابجایی با تکون دادن گوشی
+  SENSOR_STRENGTH: 0.3, // قدرت جابجایی با تکون دادن گوشی
 };
 
 export default function BackgroundParticles({ gyroData }) {
