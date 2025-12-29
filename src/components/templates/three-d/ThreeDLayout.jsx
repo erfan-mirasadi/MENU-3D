@@ -150,14 +150,19 @@ export default function ThreeDLayout({ restaurant, categories }) {
   useEffect(() => {
     const element = document.querySelector(".three-d-container");
     if (!element) return;
-    const handleTouchMove = (e) => e.preventDefault();
+    const handleTouchMove = (e) => {
+      // Only prevent default if not scrolling horizontally in category bar
+      if (!e.target.closest(".category-scroll")) {
+        e.preventDefault();
+      }
+    };
     element.addEventListener("touchmove", handleTouchMove, { passive: false });
     return () => element.removeEventListener("touchmove", handleTouchMove);
   }, []);
 
   return (
     <div
-      className="three-d-container relative w-full h-[100dvh] bg-black overflow-hidden select-none font-sans touch-none"
+      className="three-d-container relative w-full h-[100dvh] bg-black overflow-hidden select-none font-sans"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
