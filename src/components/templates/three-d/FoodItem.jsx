@@ -12,8 +12,7 @@ const VISIBLE_RANGE = 1;
 const RENDER_WINDOW = 2;
 const ITEM_SCALE_ACTIVE = 10;
 const ITEM_SCALE_SIDE = 6;
-// How much the object tilts when phone moves (lower = less sensitivity)
-// --- تنظیمات سنسور رو دقیقاً همون که خواستی گذاشتم ---
+// Sensor sensitivity
 const GYRO_INTENSITY = 40;
 
 // --- 1. Real Model Component ---
@@ -61,7 +60,7 @@ export default function FoodItem({
   const group = useRef();
   const modelRef = useRef();
 
-  // Reference to store gyroscope data without causing re-renders
+  // Reference to store gyroscope data
   const gyro = useRef({ x: 0, y: 0 });
 
   // Guard Clause
@@ -74,7 +73,7 @@ export default function FoodItem({
   const shouldLoadModel = absOffset <= VISIBLE_RANGE;
   const isVisible = absOffset <= RENDER_WINDOW;
 
-  // --- NEW: Universal Gyroscope Listener (Android + iOS Fix) ---
+  // --- GYROSCOPE LOGIC (iOS + Android) ---
   useEffect(() => {
     const handleOrientation = (event) => {
       const x = (event.beta || 0) / GYRO_INTENSITY;
@@ -82,38 +81,45 @@ export default function FoodItem({
       gyro.current = { x, y };
     };
 
-    // 1. Try to add listener immediately (Works for Android)
-    if (typeof window !== "undefined" && window.DeviceOrientationEvent) {
+    // 1. Android / Standard (Works immediately if allowed)
+    if (
+      typeof window !== "undefined" &&
+      window.DeviceOrientationEvent &&
+      typeof window.DeviceOrientationEvent.requestPermission !== "function"
+    ) {
       window.addEventListener("deviceorientation", handleOrientation);
     }
 
-    // 2. iOS FIX: Add a one-time click listener to request permission hiddenly
-    // آیفون نیاز به "اجازه با کلیک" داره. این کد میگه اولین باری که کاربر
-    // هر جای صفحه کلیک کرد، دسترسی سنسور رو بگیر.
-    const enableIOS = async () => {
+    // 2. iOS Specific Handler (Must be triggered by user interaction)
+    const handleIOSPermission = async () => {
       if (
         typeof DeviceOrientationEvent !== "undefined" &&
         typeof DeviceOrientationEvent.requestPermission === "function"
       ) {
         try {
-          const permission = await DeviceOrientationEvent.requestPermission();
-          if (permission === "granted") {
+          const permissionState =
+            await DeviceOrientationEvent.requestPermission();
+          if (permissionState === "granted") {
             window.addEventListener("deviceorientation", handleOrientation);
           }
         } catch (error) {
-          // console.log(error);
+          // console.error("iOS Sensor Error:", error);
         }
       }
     };
 
+    // Add a one-time listener to the window for ANY touch interaction
     if (typeof window !== "undefined") {
-      window.addEventListener("click", enableIOS, { once: true });
+      // Use 'pointerdown' (covers touch and click) for faster response on iOS
+      window.addEventListener("pointerdown", handleIOSPermission, {
+        once: true,
+      });
     }
 
     return () => {
       if (typeof window !== "undefined") {
         window.removeEventListener("deviceorientation", handleOrientation);
-        window.removeEventListener("click", enableIOS);
+        window.removeEventListener("pointerdown", handleIOSPermission);
       }
     };
   }, []);
@@ -121,14 +127,12 @@ export default function FoodItem({
   useFrame((state, delta) => {
     if (!group.current) return;
 
-    // --- A. Position Movement (Flight Animation) ---
+    // --- A. Position Movement (Slower Animation) ---
     const targetX = offset * X_SPACING;
     const targetZ = -Math.abs(offset) * 3;
     const targetY = categoryMounted ? -1 : -12;
 
-    // --- FIX: Slower Entry Animation ---
-    // عدد سوم (0.8) رو زیاد کردم که پروازش آروم‌تر و قابل دیدن باشه
-    // قبلا 0.3 بود که خیلی سریع بود
+    // Slow entry animation (0.8)
     easing.damp3(
       group.current.position,
       [targetX, targetY, targetZ],
@@ -141,24 +145,24 @@ export default function FoodItem({
     const gyroY = gyro.current.y;
 
     if (isActive) {
-      // Scale logic
+      // Scale
       const targetScale = ITEM_SCALE_ACTIVE;
       const currentScale = group.current.scale.x;
       group.current.scale.setScalar(
         THREE.MathUtils.lerp(currentScale, targetScale, delta * 5)
       );
 
-      // Rotation logic + Gyro
+      // Rotation + Gyro
       easing.dampE(group.current.rotation, [gyroX, gyroY, 0], 0.4, delta);
     } else {
-      // Inactive logic
+      // Inactive Scale
       const targetScale = ITEM_SCALE_SIDE;
       const currentScale = group.current.scale.x;
       group.current.scale.setScalar(
         THREE.MathUtils.lerp(currentScale, targetScale, delta * 5)
       );
 
-      // Rotation logic + Gyro
+      // Rotation + Gyro
       easing.dampE(
         group.current.rotation,
         [gyroX, offset * -0.2 + gyroY, 0],
@@ -166,7 +170,7 @@ export default function FoodItem({
         delta
       );
 
-      // Reset user interaction rotation
+      // Reset interaction
       if (modelRef.current) {
         easing.dampE(modelRef.current.rotation, [0, 0, 0], 0.5, delta);
       }
