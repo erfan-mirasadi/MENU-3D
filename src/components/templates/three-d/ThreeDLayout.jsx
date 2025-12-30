@@ -3,11 +3,10 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Scene from "./Scene";
 import UIOverlay from "./UIOverlay";
-import { useGLTF, useProgress } from "@react-three/drei"; // Added useProgress for real loading state
+import { useGLTF } from "@react-three/drei";
 
 // --- GLOBAL VARIABLES ---
-// Shared object for gyroscope data to avoid React re-renders.
-// This logic remains UNTOUCHED as requested.
+// Shared object for gyroscope data to avoid React re-renders
 const gyroData = { x: 0, y: 0 };
 const GYRO_INTENSITY = 40;
 
@@ -16,17 +15,12 @@ export default function ThreeDLayout({ restaurant, categories }) {
   const [activeCatId, setActiveCatId] = useState(categories[0]?.id);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // REAL LOADER LOGIC:
-  // 'active' is true whenever Three.js is downloading/processing assets.
-  const { active } = useProgress();
+  // State for the custom smooth transition loader
+  const [isLoading, setIsLoading] = useState(false);
 
   const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
 
-  // Refs for permission logic
-  const isPermissionGranted = useRef(false);
-  const lastPermissionDenyTime = useRef(0);
-
-  // Compute active products
+  // Compute active products based on selected category
   const activeProducts = useMemo(() => {
     return categories.find((c) => c.id === activeCatId)?.products || [];
   }, [activeCatId, categories]);
@@ -35,13 +29,20 @@ export default function ThreeDLayout({ restaurant, categories }) {
 
   // --- LOGIC: CATEGORY TRANSITION ---
   useEffect(() => {
+    // 1. Start Loading Effect (Blur + Spinner)
+    setIsLoading(true);
     setActiveIndex(0);
 
-    // Clear GLTF Cache when category changes to free memory
+    // 2. Clear GLTF Cache to free memory
     useGLTF.clear();
 
-    // We don't need artificial timeouts anymore.
-    // The 'active' state from useProgress will automatically handle the UI.
+    // 3. Stop Loading Effect after a short delay to allow React to render
+    // This creates the smooth "blur-swap-unblur" effect
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 600);
+
+    return () => clearTimeout(timer);
   }, [activeCatId]);
 
   // --- LOGIC: SMART PRELOADING ---
@@ -67,68 +68,57 @@ export default function ThreeDLayout({ restaurant, categories }) {
     });
   }, [activeIndex, activeProducts]);
 
-  // --- LOGIC: GYROSCOPE SENSOR (Android Auto-Start ONLY) ---
+  // --- LOGIC: GYROSCOPE SENSOR (iOS FIX) ---
   useEffect(() => {
     const handleOrientation = (event) => {
       gyroData.x = (event.beta || 0) / GYRO_INTENSITY;
       gyroData.y = (event.gamma || 0) / GYRO_INTENSITY;
     };
 
-    // Android/Standard (No permission needed)
+    const requestAccess = async () => {
+      if (
+        typeof DeviceOrientationEvent !== "undefined" &&
+        typeof DeviceOrientationEvent.requestPermission === "function"
+      ) {
+        try {
+          const permission = await DeviceOrientationEvent.requestPermission();
+          if (permission === "granted") {
+            window.addEventListener("deviceorientation", handleOrientation);
+          }
+        } catch (error) {
+          // console.warn("Gyro permission denied");
+        }
+      }
+    };
+
+    // Android/Standard
     if (
       typeof window !== "undefined" &&
       window.DeviceOrientationEvent &&
       typeof window.DeviceOrientationEvent.requestPermission !== "function"
     ) {
       window.addEventListener("deviceorientation", handleOrientation);
-      isPermissionGranted.current = true;
+    }
+
+    // iOS Trigger (Wait for first interaction)
+    if (typeof window !== "undefined") {
+      const options = { once: true, capture: true };
+      window.addEventListener("touchstart", requestAccess, options);
+      window.addEventListener("click", requestAccess, options);
+      window.addEventListener("pointerdown", requestAccess, options);
     }
 
     return () => {
       if (typeof window !== "undefined") {
+        window.removeEventListener("pointerdown", requestAccess);
+        window.removeEventListener("touchstart", requestAccess);
         window.removeEventListener("deviceorientation", handleOrientation);
+        window.removeEventListener("click", requestAccess);
       }
     };
   }, []);
 
-  // --- HELPER: iOS PERMISSION REQUEST ---
-  // This function is manually called ONLY when a user Swipes.
-  const requestIOSAccess = async () => {
-    // 1. If already granted or active, stop.
-    if (isPermissionGranted.current) return;
-
-    // 2. Check if it's actually iOS/Requires Permission
-    if (
-      typeof DeviceOrientationEvent === "undefined" ||
-      typeof DeviceOrientationEvent.requestPermission !== "function"
-    ) {
-      return;
-    }
-
-    // 3. Cooldown Check (Don't spam if they just said No)
-    if (Date.now() - lastPermissionDenyTime.current < 30000) {
-      return;
-    }
-
-    try {
-      // 4. The actual request
-      const permission = await DeviceOrientationEvent.requestPermission();
-      if (permission === "granted") {
-        isPermissionGranted.current = true;
-        window.addEventListener("deviceorientation", (event) => {
-          gyroData.x = (event.beta || 0) / GYRO_INTENSITY;
-          gyroData.y = (event.gamma || 0) / GYRO_INTENSITY;
-        });
-      } else {
-        lastPermissionDenyTime.current = Date.now();
-      }
-    } catch (error) {
-      // console.warn("Gyro denied");
-      lastPermissionDenyTime.current = Date.now();
-    }
-  };
-
-  // --- LOGIC: TOUCH GESTURES (Trigger Permission on Swipe) ---
+  // --- LOGIC: TOUCH GESTURES ---
   const handleTouchStart = useCallback((e) => {
     const touch = e.touches[0];
     touchStartRef.current = {
@@ -152,11 +142,6 @@ export default function ThreeDLayout({ restaurant, categories }) {
         deltaTime < 500;
 
       if (isSwipe) {
-        // 🔥 HERE IS THE MAGIC FIX 🔥
-        // We trigger the permission request EXACTLY when the swipe finishes.
-        // Safari considers 'touchend' a valid user gesture.
-        requestIOSAccess();
-
         if (deltaX > 0 && activeIndex > 0) {
           setActiveIndex((prev) => prev - 1);
         } else if (deltaX < 0 && activeIndex < activeProducts.length - 1) {
@@ -170,35 +155,31 @@ export default function ThreeDLayout({ restaurant, categories }) {
   useEffect(() => {
     const element = document.querySelector(".three-d-container");
     if (!element) return;
-    const handleTouchMove = (e) => {
-      // Only prevent default if not scrolling horizontally in category bar
-      if (!e.target.closest(".category-scroll")) {
-        e.preventDefault();
-      }
-    };
+    const handleTouchMove = (e) => e.preventDefault();
     element.addEventListener("touchmove", handleTouchMove, { passive: false });
     return () => element.removeEventListener("touchmove", handleTouchMove);
   }, []);
 
   return (
     <div
-      className="three-d-container relative w-full h-[100dvh] bg-black overflow-hidden select-none font-sans"
+      className="three-d-container relative w-full h-[100dvh] bg-black overflow-hidden select-none font-sans touch-none"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* --- REAL LOADER UI ---
-         Controlled by 'active' from useProgress().
-         Only visible when actual network requests are happening.
+      {/* --- CUSTOM SMOOTH LOADER ---
+        Applies a blur effect to the canvas when loading/switching categories.
+        This hides the rendering glitch and provides a premium feel.
       */}
       <div
-        className={`absolute inset-0 z-10 pointer-events-none transition-all duration-300 flex items-center justify-center
+        className={`absolute inset-0 z-10 pointer-events-none transition-all duration-500 flex items-center justify-center
         ${
-          active
+          isLoading
             ? "backdrop-blur-md bg-black/40 opacity-100"
             : "backdrop-blur-0 bg-transparent opacity-0"
         }`}
       >
-        {active && (
+        {/* Simple CSS Spinner */}
+        {isLoading && (
           <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
         )}
       </div>
@@ -215,8 +196,7 @@ export default function ThreeDLayout({ restaurant, categories }) {
         activeCatId={activeCatId}
         setActiveCatId={setActiveCatId}
         focusedProduct={focusedProduct}
-        // UI shows when loading finishes
-        categoryMounted={!active}
+        categoryMounted={!isLoading} // Only show UI details when loading is done
       />
     </div>
   );
