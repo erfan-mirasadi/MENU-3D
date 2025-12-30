@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Scene from "./Scene";
 import UIOverlay from "./UIOverlay";
 import { useGLTF } from "@react-three/drei";
-// --- Import Hooks ---
 import { useParams } from "next/navigation";
 import { useCart } from "@/app/hooks/useCart";
 
@@ -14,10 +13,7 @@ const gyroData = { x: 0, y: 0 };
 const GYRO_INTENSITY = 40;
 
 export default function ThreeDLayout({ restaurant, categories }) {
-  // --- USE CART HOOK INITIALIZATION ---
   const params = useParams();
-  // We assume the route param is named 'table_id' or similar.
-  // If your folder is [tableId], change this to params.tableId
   const {
     cartItems,
     addToCart,
@@ -31,7 +27,7 @@ export default function ThreeDLayout({ restaurant, categories }) {
   const [activeCatId, setActiveCatId] = useState(categories[0]?.id);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // State for the custom smooth transition loader
+  // Loading state
   const [isLoading, setIsLoading] = useState(false);
 
   const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
@@ -43,28 +39,33 @@ export default function ThreeDLayout({ restaurant, categories }) {
 
   const focusedProduct = activeProducts[activeIndex] || activeProducts[0];
 
-  // --- LOGIC: CATEGORY TRANSITION ---
+  // --- LOGIC: CATEGORY TRANSITION (REAL LOADING) ---
   useEffect(() => {
-    // 1. Start Loading Effect (Blur + Spinner)
-    setIsLoading(true);
+    // 1. Reset index
     setActiveIndex(0);
 
-    // 2. Clear GLTF Cache to free memory
-    useGLTF.clear();
+    // 2. Check if the selected category has products
+    // We access 'categories' directly to ensure we have the latest data for this ID
+    const selectedCategory = categories.find((c) => c.id === activeCatId);
+    const hasProducts = selectedCategory?.products?.length > 0;
 
-    // 3. Stop Loading Effect after a short delay to allow React to render
-    // This creates the smooth "blur-swap-unblur" effect
-    const timer = setTimeout(() => {
+    // 3. Only start loading if there are products to load
+    if (hasProducts) {
+      setIsLoading(true);
+    } else {
+      // If empty, ensure loading is off immediately
       setIsLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, [activeCatId]);
+    }
+  }, [activeCatId, categories]);
+
+  // --- CALLBACK: Called when the active 3D model is fully loaded ---
+  const handleModelLoaded = useCallback(() => {
+    setIsLoading(false);
+  }, []);
 
   // --- LOGIC: SMART PRELOADING ---
   useEffect(() => {
     if (!activeProducts.length) return;
-
-    // Prioritize loading current, next, and previous items
     const priorityList = new Set([
       0,
       1,
@@ -83,7 +84,7 @@ export default function ThreeDLayout({ restaurant, categories }) {
     });
   }, [activeIndex, activeProducts]);
 
-  // --- LOGIC: GYROSCOPE SENSOR (iOS FIX) ---
+  // --- LOGIC: GYROSCOPE ---
   useEffect(() => {
     const handleOrientation = (event) => {
       gyroData.x = (event.beta || 0) / GYRO_INTENSITY;
@@ -97,12 +98,9 @@ export default function ThreeDLayout({ restaurant, categories }) {
       ) {
         try {
           const permission = await DeviceOrientationEvent.requestPermission();
-          if (permission === "granted") {
+          if (permission === "granted")
             window.addEventListener("deviceorientation", handleOrientation);
-          }
-        } catch (error) {
-          // console.warn("Gyro permission denied");
-        }
+        } catch (error) {}
       }
     };
 
@@ -133,11 +131,9 @@ export default function ThreeDLayout({ restaurant, categories }) {
     };
   }, []);
 
-  // --- LOGIC: TOUCH GESTURES (SWIPE PRODUCTS) ---
+  // --- LOGIC: TOUCH GESTURES ---
   const handleTouchStart = useCallback((e) => {
-    // ✅ FIX 1: اگر کاربر داره روی لیست دسته‌بندی تاچ میکنه، اسوایپ محصول رو فعال نکن
     if (e.target.closest(".category-scroll")) return;
-
     const touch = e.touches[0];
     touchStartRef.current = {
       x: touch.clientX,
@@ -149,26 +145,20 @@ export default function ThreeDLayout({ restaurant, categories }) {
   const handleTouchEnd = useCallback(
     (e) => {
       if (!touchStartRef.current || touchStartRef.current.time === 0) return;
-
       const touch = e.changedTouches[0];
       const deltaX = touch.clientX - touchStartRef.current.x;
       const deltaY = touch.clientY - touchStartRef.current.y;
       const deltaTime = Date.now() - touchStartRef.current.time;
-
       const isSwipe =
         Math.abs(deltaX) > 40 &&
         Math.abs(deltaX) > Math.abs(deltaY) * 1.5 &&
         deltaTime < 500;
 
       if (isSwipe) {
-        if (deltaX > 0 && activeIndex > 0) {
-          setActiveIndex((prev) => prev - 1);
-        } else if (deltaX < 0 && activeIndex < activeProducts.length - 1) {
+        if (deltaX > 0 && activeIndex > 0) setActiveIndex((prev) => prev - 1);
+        else if (deltaX < 0 && activeIndex < activeProducts.length - 1)
           setActiveIndex((prev) => prev + 1);
-        }
       }
-
-      // Reset ref
       touchStartRef.current = { x: 0, y: 0, time: 0 };
     },
     [activeIndex, activeProducts.length]
@@ -177,14 +167,10 @@ export default function ThreeDLayout({ restaurant, categories }) {
   useEffect(() => {
     const element = document.querySelector(".three-d-container");
     if (!element) return;
-
     const handleTouchMove = (e) => {
-      if (e.target.closest(".category-scroll")) {
-        return;
-      }
+      if (e.target.closest(".category-scroll")) return;
       e.preventDefault();
     };
-
     element.addEventListener("touchmove", handleTouchMove, { passive: false });
     return () => element.removeEventListener("touchmove", handleTouchMove);
   }, []);
@@ -213,9 +199,9 @@ export default function ThreeDLayout({ restaurant, categories }) {
         activeProducts={activeProducts}
         activeIndex={activeIndex}
         gyroData={gyroData}
+        onModelLoaded={handleModelLoaded}
       />
 
-      {/* --- UI OVERLAY with CART PROPS --- */}
       <UIOverlay
         restaurant={restaurant}
         categories={categories}

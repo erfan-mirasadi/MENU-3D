@@ -2,11 +2,11 @@
 
 import { Canvas } from "@react-three/fiber";
 import { Environment, ContactShadows } from "@react-three/drei";
-import { Suspense, useEffect } from "react"; // Suspense is still needed for Shadows/Environment
+import { Suspense, useEffect } from "react";
 import FoodItem from "./FoodItem";
 import BackgroundParticles from "./BackgroundParticles";
 
-function LinearCarousel({ products, activeIndex, gyroData }) {
+function LinearCarousel({ products, activeIndex, gyroData, onModelLoaded }) {
   return (
     <group>
       {products.map((product, i) => (
@@ -16,13 +16,20 @@ function LinearCarousel({ products, activeIndex, gyroData }) {
           product={product}
           activeIndex={activeIndex}
           gyroData={gyroData}
+          // Pass onLoad ONLY if this is the active item
+          onLoad={i === activeIndex ? onModelLoaded : undefined}
         />
       ))}
     </group>
   );
 }
 
-export default function Scene({ activeProducts, activeIndex, gyroData }) {
+export default function Scene({
+  activeProducts,
+  activeIndex,
+  gyroData,
+  onModelLoaded,
+}) {
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
@@ -57,20 +64,17 @@ export default function Scene({ activeProducts, activeIndex, gyroData }) {
           color="#fff"
         />
 
-        {/* FIX: Removed <Suspense> wrapper from here.
-           We moved logic inside FoodItem to prevent the whole list from flickering
-           when one item loads.
-        */}
         {activeProducts.length > 0 && (
           <LinearCarousel
             products={activeProducts}
             activeIndex={activeIndex}
             gyroData={gyroData}
+            onModelLoaded={onModelLoaded} // Pass down to Carousel
           />
         )}
 
         <BackgroundParticles gyroData={gyroData} />
-        {/* Shadows need their own Suspense so they don't block anything */}
+
         <Suspense fallback={null}>
           <ContactShadows
             position={[0, -4, 0]}

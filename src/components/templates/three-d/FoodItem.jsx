@@ -1,6 +1,13 @@
 "use client";
 
-import { useRef, useMemo, useState, useEffect, Suspense } from "react";
+import {
+  useRef,
+  useMemo,
+  useState,
+  useEffect,
+  Suspense,
+  useLayoutEffect,
+} from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF, PresentationControls, Float } from "@react-three/drei";
 import * as THREE from "three";
@@ -14,24 +21,20 @@ const ITEM_SCALE_ACTIVE = 11;
 const ITEM_SCALE_SIDE = 6;
 
 // --- GLOBAL CACHE TRACKER ---
-// این متغیر بیرون از کامپوننت تعریف میشه تا با رفرش شدن کامپوننت‌ها پاک نشه.
-// هر لینکی که اینجا باشه یعنی قبلاً دانلود شده.
 const loadedUrls = new Set();
 
 // --- COMPONENT: REAL MODEL ---
 function RealModel({ url, productTitle, onLoad }) {
   const { scene } = useGLTF(url);
-
-  // Ref to ensure log runs only once per mount
   const hasLogged = useRef(false);
 
-  useEffect(() => {
+  // Trigger onLoad when the model is mounted (rendered)
+  useLayoutEffect(() => {
+    if (onLoad) onLoad();
+
     if (!hasLogged.current) {
       hasLogged.current = true;
-
-      // CHECK CACHE STATUS REALISTICALLY
       const isCached = loadedUrls.has(url);
-
       if (isCached) {
         console.log(
           `%c ⚡ FROM CACHE: ${productTitle}`,
@@ -42,10 +45,8 @@ function RealModel({ url, productTitle, onLoad }) {
           `%c 📥 DOWNLOADING: ${productTitle}`,
           "color: #ff00ff; font-weight: bold;"
         );
-        loadedUrls.add(url); // Add to cache list
+        loadedUrls.add(url);
       }
-
-      if (onLoad) onLoad();
     }
   }, [url, onLoad, productTitle]);
 
@@ -79,10 +80,22 @@ function PlaceholderMesh() {
 }
 
 // --- MAIN COMPONENT ---
-export default function FoodItem({ product, index, activeIndex, gyroData }) {
+export default function FoodItem({
+  product,
+  index,
+  activeIndex,
+  gyroData,
+  onLoad,
+}) {
   const group = useRef();
   const modelRef = useRef();
-  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Edge Case: If product has no model, trigger onLoad immediately to avoid stuck loader
+  useEffect(() => {
+    if (product && !product.model_url && onLoad) {
+      onLoad();
+    }
+  }, [product, onLoad]);
 
   if (!product) return null;
 
@@ -155,13 +168,12 @@ export default function FoodItem({ product, index, activeIndex, gyroData }) {
         >
           <group ref={modelRef}>
             <Suspense fallback={<PlaceholderMesh />}>
-              {!isLoaded && <PlaceholderMesh />}
-
               {product?.model_url && shouldLoadModel && (
                 <RealModel
                   url={product.model_url}
                   productTitle={product.title?.en || `Item ${index}`}
-                  onLoad={() => setIsLoaded(true)}
+                  // Trigger loading complete ONLY if this is the active item
+                  onLoad={isActive ? onLoad : undefined}
                 />
               )}
             </Suspense>
