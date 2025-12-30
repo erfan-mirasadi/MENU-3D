@@ -17,14 +17,12 @@ export default function ThreeDLayout({ restaurant, categories }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   // REAL LOADER LOGIC:
-  // 'active' is true whenever Three.js is downloading/processing assets.
   const { active } = useProgress();
 
   const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
 
-  // Ref to track permission denial time (for 30s cooldown)
+  // Refs for permission logic
   const lastPermissionDenyTime = useRef(0);
-  // Ref to track if we already have permission (to stop asking)
   const isPermissionGranted = useRef(false);
 
   // Compute active products
@@ -37,19 +35,13 @@ export default function ThreeDLayout({ restaurant, categories }) {
   // --- LOGIC: CATEGORY TRANSITION ---
   useEffect(() => {
     setActiveIndex(0);
-
     // Clear GLTF Cache when category changes to free memory
     useGLTF.clear();
-
-    // We don't need artificial timeouts anymore.
-    // The 'active' state from useProgress will automatically handle the UI.
   }, [activeCatId]);
 
   // --- LOGIC: SMART PRELOADING ---
   useEffect(() => {
     if (!activeProducts.length) return;
-
-    // Prioritize loading current, next, and previous items
     const priorityList = new Set([
       0,
       1,
@@ -68,61 +60,14 @@ export default function ThreeDLayout({ restaurant, categories }) {
     });
   }, [activeIndex, activeProducts]);
 
-  // --- LOGIC: GYROSCOPE SENSOR (FIXED: iOS touchend + 30s Cooldown) ---
+  // --- LOGIC: GYROSCOPE SENSOR (Android/Standard Auto-Start) ---
   useEffect(() => {
     const handleOrientation = (event) => {
       gyroData.x = (event.beta || 0) / GYRO_INTENSITY;
       gyroData.y = (event.gamma || 0) / GYRO_INTENSITY;
     };
 
-    // Main function to request iOS permission
-    const requestAccess = async () => {
-      // 1. If already granted, do nothing.
-      if (isPermissionGranted.current) return;
-
-      // 2. Check if the API exists (iOS check)
-      if (
-        typeof DeviceOrientationEvent === "undefined" ||
-        typeof DeviceOrientationEvent.requestPermission !== "function"
-      ) {
-        return;
-      }
-
-      // 3. Check Cooldown (30 Seconds)
-      // If user denied less than 30 seconds ago, STOP here.
-      // Do not remove listener, just don't ask yet.
-      const now = Date.now();
-      if (now - lastPermissionDenyTime.current < 30000) {
-        return;
-      }
-
-      try {
-        // 4. Request Permission
-        const permission = await DeviceOrientationEvent.requestPermission();
-
-        if (permission === "granted") {
-          // Success!
-          isPermissionGranted.current = true;
-          window.addEventListener("deviceorientation", handleOrientation);
-
-          // Remove triggers immediately so we never ask again
-          window.removeEventListener("touchend", requestAccess);
-          window.removeEventListener("click", requestAccess);
-        } else {
-          // Denied or Dismissed
-          // Record the time. We won't ask again for 30 seconds.
-          lastPermissionDenyTime.current = Date.now();
-        }
-      } catch (error) {
-        console.warn("Gyro permission error", error);
-        // Treat error as denial for cooldown purposes
-        lastPermissionDenyTime.current = Date.now();
-      }
-    };
-
-    // --- SETUP LISTENERS ---
-
-    // A. Android / Standard Browsers (Auto-start, no permission needed)
+    // 1. Android & Non-iOS devices (Auto-start without permission)
     if (
       typeof window !== "undefined" &&
       window.DeviceOrientationEvent &&
@@ -132,27 +77,54 @@ export default function ThreeDLayout({ restaurant, categories }) {
       isPermissionGranted.current = true;
     }
 
-    // B. iOS (Requires User Interaction)
-    if (
-      typeof window !== "undefined" &&
-      typeof DeviceOrientationEvent !== "undefined" &&
-      typeof DeviceOrientationEvent.requestPermission === "function"
-    ) {
-      // We use 'touchend' to capture the moment the user LIFTS their finger.
-      // This covers swipes, scrolls, and taps.
-      window.addEventListener("touchend", requestAccess);
-
-      // Keep 'click' as a backup just in case
-      window.addEventListener("click", requestAccess);
-    }
-
     return () => {
       if (typeof window !== "undefined") {
         window.removeEventListener("deviceorientation", handleOrientation);
-        window.removeEventListener("touchend", requestAccess);
-        window.removeEventListener("click", requestAccess);
       }
     };
+  }, []);
+
+  // --- LOGIC: iOS PERMISSION HANDLER (The "Capture" Trick) ---
+  // We use this function directly on the main div's onClickCapture
+  const handleIOSPermission = useCallback(async () => {
+    // A. Stop if already granted
+    if (isPermissionGranted.current) return;
+
+    // B. Check if this is an iOS device requiring permission
+    if (
+      typeof DeviceOrientationEvent === "undefined" ||
+      typeof DeviceOrientationEvent.requestPermission !== "function"
+    ) {
+      return;
+    }
+
+    // C. Cooldown Logic (30 Seconds)
+    const now = Date.now();
+    if (now - lastPermissionDenyTime.current < 30000) {
+      // Still in cooldown, do not ask, let the click pass through
+      return;
+    }
+
+    try {
+      // D. Request Permission
+      const permission = await DeviceOrientationEvent.requestPermission();
+
+      if (permission === "granted") {
+        isPermissionGranted.current = true;
+        // Attach the listener immediately
+        window.addEventListener("deviceorientation", (event) => {
+          gyroData.x = (event.beta || 0) / GYRO_INTENSITY;
+          gyroData.y = (event.gamma || 0) / GYRO_INTENSITY;
+        });
+      } else {
+        // Denied: Reset timer
+        lastPermissionDenyTime.current = Date.now();
+      }
+    } catch (error) {
+      console.warn("Gyro permission denied or error", error);
+      // Error means denied usually, reset timer
+      lastPermissionDenyTime.current = Date.now();
+    }
   }, []);
 
   // --- LOGIC: TOUCH GESTURES ---
@@ -193,7 +165,6 @@ export default function ThreeDLayout({ restaurant, categories }) {
     const element = document.querySelector(".three-d-container");
     if (!element) return;
     const handleTouchMove = (e) => {
-      // Only prevent default if not scrolling horizontally in category bar
       if (!e.target.closest(".category-scroll")) {
         e.preventDefault();
       }
@@ -207,11 +178,11 @@ export default function ThreeDLayout({ restaurant, categories }) {
       className="three-d-container relative w-full h-[100dvh] bg-black overflow-hidden select-none font-sans"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      // TRICK: onClickCapture triggers BEFORE any child element handles the click.
+      // This ensures we catch the very first interaction anywhere on screen.
+      onClickCapture={handleIOSPermission}
     >
-      {/* --- REAL LOADER UI ---
-         Controlled by 'active' from useProgress().
-         Only visible when actual network requests are happening.
-      */}
+      {/* --- LOADER UI --- */}
       <div
         className={`absolute inset-0 z-10 pointer-events-none transition-all duration-300 flex items-center justify-center
         ${
@@ -237,7 +208,6 @@ export default function ThreeDLayout({ restaurant, categories }) {
         activeCatId={activeCatId}
         setActiveCatId={setActiveCatId}
         focusedProduct={focusedProduct}
-        // UI shows when loading finishes
         categoryMounted={!active}
       />
     </div>
