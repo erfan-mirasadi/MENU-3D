@@ -16,14 +16,15 @@ export default function ThreeDLayout({ restaurant, categories }) {
   const [activeCatId, setActiveCatId] = useState(categories[0]?.id);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // STATE FOR INVISIBLE IOS TRAP
-  const [showIOSTrap, setShowIOSTrap] = useState(false);
-
   // REAL LOADER LOGIC:
   // 'active' is true whenever Three.js is downloading/processing assets.
   const { active } = useProgress();
 
   const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
+
+  // Refs for permission logic
+  const isPermissionGranted = useRef(false);
+  const lastPermissionDenyTime = useRef(0);
 
   // Compute active products
   const activeProducts = useMemo(() => {
@@ -66,30 +67,21 @@ export default function ThreeDLayout({ restaurant, categories }) {
     });
   }, [activeIndex, activeProducts]);
 
-  // --- LOGIC: GYROSCOPE SENSOR (The Invisible Trap Logic) ---
+  // --- LOGIC: GYROSCOPE SENSOR (Android Auto-Start ONLY) ---
   useEffect(() => {
     const handleOrientation = (event) => {
       gyroData.x = (event.beta || 0) / GYRO_INTENSITY;
       gyroData.y = (event.gamma || 0) / GYRO_INTENSITY;
     };
 
-    // 1. Android / Standard Browsers (Auto Start)
+    // Android/Standard (No permission needed)
     if (
       typeof window !== "undefined" &&
       window.DeviceOrientationEvent &&
       typeof window.DeviceOrientationEvent.requestPermission !== "function"
     ) {
       window.addEventListener("deviceorientation", handleOrientation);
-      setShowIOSTrap(false); // No trap needed for Android
-    }
-    // 2. iOS Detection (Activate Trap)
-    else if (
-      typeof window !== "undefined" &&
-      typeof DeviceOrientationEvent !== "undefined" &&
-      typeof DeviceOrientationEvent.requestPermission === "function"
-    ) {
-      // It's an iPhone. Show the invisible layer to trap the first click.
-      setShowIOSTrap(true);
+      isPermissionGranted.current = true;
     }
 
     return () => {
@@ -99,28 +91,44 @@ export default function ThreeDLayout({ restaurant, categories }) {
     };
   }, []);
 
-  // --- FUNCTION: HANDLE THE TRAP CLICK ---
-  const handleIOSTrapClick = async () => {
-    try {
-      // Request permission on the very first interaction
-      const permission = await DeviceOrientationEvent.requestPermission();
+  // --- HELPER: iOS PERMISSION REQUEST ---
+  // This function is manually called ONLY when a user Swipes.
+  const requestIOSAccess = async () => {
+    // 1. If already granted or active, stop.
+    if (isPermissionGranted.current) return;
 
+    // 2. Check if it's actually iOS/Requires Permission
+    if (
+      typeof DeviceOrientationEvent === "undefined" ||
+      typeof DeviceOrientationEvent.requestPermission !== "function"
+    ) {
+      return;
+    }
+
+    // 3. Cooldown Check (Don't spam if they just said No)
+    if (Date.now() - lastPermissionDenyTime.current < 30000) {
+      return;
+    }
+
+    try {
+      // 4. The actual request
+      const permission = await DeviceOrientationEvent.requestPermission();
       if (permission === "granted") {
+        isPermissionGranted.current = true;
         window.addEventListener("deviceorientation", (event) => {
           gyroData.x = (event.beta || 0) / GYRO_INTENSITY;
           gyroData.y = (event.gamma || 0) / GYRO_INTENSITY;
         });
+      } else {
+        lastPermissionDenyTime.current = Date.now();
       }
     } catch (error) {
-      // Even if they deny or error, we MUST remove the trap
-      // so they can actually use the site (click buttons, scroll, etc.)
-    } finally {
-      // Destroy the trap immediately after the first attempt
-      setShowIOSTrap(false);
+      // console.warn("Gyro denied");
+      lastPermissionDenyTime.current = Date.now();
     }
   };
 
-  // --- LOGIC: TOUCH GESTURES ---
+  // --- LOGIC: TOUCH GESTURES (Trigger Permission on Swipe) ---
   const handleTouchStart = useCallback((e) => {
     const touch = e.touches[0];
     touchStartRef.current = {
@@ -144,6 +152,11 @@ export default function ThreeDLayout({ restaurant, categories }) {
         deltaTime < 500;
 
       if (isSwipe) {
+        // 🔥 HERE IS THE MAGIC FIX 🔥
+        // We trigger the permission request EXACTLY when the swipe finishes.
+        // Safari considers 'touchend' a valid user gesture.
+        requestIOSAccess();
+
         if (deltaX > 0 && activeIndex > 0) {
           setActiveIndex((prev) => prev - 1);
         } else if (deltaX < 0 && activeIndex < activeProducts.length - 1) {
@@ -173,19 +186,6 @@ export default function ThreeDLayout({ restaurant, categories }) {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* --- THE INVISIBLE iOS TRAP 🪤 --- 
-          Z-Index 100 ensures it sits on top of EVERYTHING.
-          Opacity 0 ensures user doesn't see it.
-          Only renders if showIOSTrap is true.
-      */}
-      {showIOSTrap && (
-        <div
-          onClick={handleIOSTrapClick}
-          className="absolute inset-0 z-[100] cursor-pointer opacity-0"
-          style={{ touchAction: "manipulation" }} // Helps mobile browsers handle tap better
-        ></div>
-      )}
-
       {/* --- REAL LOADER UI ---
          Controlled by 'active' from useProgress().
          Only visible when actual network requests are happening.
