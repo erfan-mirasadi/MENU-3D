@@ -5,6 +5,7 @@ import { createTable, deleteTable, getTables } from "@/services/tableService";
 import { getRestaurantByOwnerId } from "@/services/restaurantService";
 import TableCard from "@/app/admin/_components/tables/TableCard";
 import AddCard from "@/app/admin/_components/ui/AddCart";
+import QrSettingsPanel from "@/app/admin/_components/tables/QrSettingsPanel";
 import Loader from "@/app/admin/_components/ui/Loader";
 import toast from "react-hot-toast";
 
@@ -13,6 +14,11 @@ export default function TablesPage() {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [restaurantId, setRestaurantId] = useState(null);
+  const [restaurantSlug, setRestaurantSlug] = useState("");
+  
+  // QR Code Settings State
+  const [color1, setColor1] = useState("#4f46e5");
+  const [color2, setColor2] = useState("#ec4899");
 
   useEffect(() => {
     fetchData();
@@ -31,6 +37,7 @@ export default function TablesPage() {
       
       if (restaurant) {
         setRestaurantId(restaurant.id);
+        setRestaurantSlug(restaurant.slug);
         const fetchedTables = await getTables(restaurant.id);
         setTables(fetchedTables);
       }
@@ -108,6 +115,13 @@ export default function TablesPage() {
         <p className="text-text-dim">Manage your restaurant tables and QR codes.</p>
       </div>
 
+      <QrSettingsPanel 
+        color1={color1} 
+        setColor1={setColor1} 
+        color2={color2} 
+        setColor2={setColor2} 
+      />
+
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 gap-y-10">
         {/* Add Card acting as the first item or separate button */}
         <AddCard 
@@ -122,7 +136,9 @@ export default function TablesPage() {
           <TableCard 
             key={table.id} 
             table={table} 
-            onDelete={handleDeleteTable} 
+            onDelete={handleDeleteTable}
+            qrSettings={{ color1, color2 }}
+            slug={restaurantSlug}
           />
         ))}
       </div>
