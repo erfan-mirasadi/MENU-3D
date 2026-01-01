@@ -5,12 +5,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
-import { NAV_LINKS } from "./navLinks";
 import { RiLogoutBoxRLine, RiStore2Line } from "react-icons/ri";
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ links }) {
   const pathname = usePathname();
   const router = useRouter();
+
+  const navItems = links || [];
 
   const handleLogout = async () => {
     try {
@@ -36,7 +37,7 @@ export default function AdminSidebar() {
 
       {/* 2. Navigation Items */}
       <nav className="flex-1 flex flex-col gap-6 w-full px-4 items-center">
-        {NAV_LINKS.map((link) => {
+        {navItems.map((link) => {
           const isActive = pathname === link.path;
           const Icon = link.icon;
 
@@ -48,8 +49,8 @@ export default function AdminSidebar() {
                 group relative flex items-center justify-center w-14 h-14 rounded-xl transition-all duration-300
                 ${
                   isActive
-                    ? "bg-accent text-white shadow-lg shadow-accent/40 translate-x-2" // استایل اکتیو (طبق عکس)
-                    : "text-accent hover:bg-dark-800 hover:text-white" // استایل عادی
+                    ? "bg-accent text-white shadow-lg shadow-accent/40 translate-x-2" // Active Style
+                    : "text-accent hover:bg-dark-800 hover:text-white" // Normal Style
                 }
               `}
             >

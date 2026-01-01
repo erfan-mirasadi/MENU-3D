@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { getRestaurantByOwnerId } from "@/services/restaurantService";
+import { getUserProfile } from "@/services/userService";
 import toast from "react-hot-toast";
 import {
   RiRestaurant2Fill,
@@ -27,7 +28,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // 1. لاگین با ایمیل و پسورد
+      // 1. Authenticate with Email/Password
       const { data: authData, error: authError } =
         await supabase.auth.signInWithPassword({
           email: formData.email,
@@ -36,27 +37,26 @@ export default function LoginPage() {
 
       if (authError) throw authError;
 
-      // 2. چک کردن نقش کاربر از پروفایل
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", authData.user.id)
-        .single();
+      // 2. Fetch User Profile to check Role
+      const profile = await getUserProfile(supabase, authData.user.id);
 
-      if (profileError) throw new Error("Profile access denied.");
+      if (!profile) throw new Error("Profile access denied.");
 
-      // 3. تطبیق نقش (Strict Mode)
-      // اگر کاربر owner هست ولی تب گارسون رو انتخاب کرده، میتونه بره (چون owner ادمینه)
-      // ولی اگر گارسونه و تب owner رو زده، نباید بذاریم.
-      if (profile.role !== "owner" && profile.role !== role) {
-        throw new Error(`Access denied. You are not a ${role}.`);
+      // 3. Role Enforcement
+      if (profile.role === "owner" && role !== "owner") {
+           throw new Error("Please log in using the Manager tab.")
       }
+      
+      if (profile.role === "waiter" && role !== "waiter") {
+           throw new Error("Please log in using the Waiter tab.")
+      } 
+
 
       toast.success(`Welcome back, ${role}!`);
 
-      // 4. ریدارکت هوشمند
+      // 4. Redirect based on Role
       if (role === "owner") {
-        // لاجیک قبلی برای owner (چک کردن رستوران)
+        // Owner Logic: Check if restaurant exists
         const restaurant = await getRestaurantByOwnerId(authData.user.id);
         if (restaurant) {
           router.push("/admin/dashboard");
@@ -64,7 +64,6 @@ export default function LoginPage() {
           router.push("/admin/onboarding");
         }
       } else {
-        // ریدارکت مستقیم برای گارسون
         router.push("/waiter/dashboard");
       }
 
@@ -72,7 +71,7 @@ export default function LoginPage() {
     } catch (error) {
       console.error(error);
       toast.error(error.message || "Login failed");
-      await supabase.auth.signOut(); // Force logout on role mismatch
+      await supabase.auth.signOut(); // Force logout on failure to prevent stuck session
     } finally {
       setLoading(false);
     }
@@ -102,7 +101,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* --- ROLE TABS (NEW) --- */}
+        {/* Role Tabs */}
         <div className="flex bg-dark-800 p-1 rounded-2xl border border-gray-800">
           <button
             onClick={() => setRole("waiter")}
@@ -195,7 +194,7 @@ export default function LoginPage() {
             >
               {loading
                 ? "Verifying..."
-                : `Enter as ${role === "admin" ? "Manager" : "Waiter"}`}
+                : `Enter as ${role === "owner" ? "Manager" : "Waiter"}`}
               <RiArrowRightLine className="group-hover:translate-x-1 transition-transform" />
             </button>
           </form>

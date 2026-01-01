@@ -43,9 +43,9 @@ export async function middleware(request) {
     return NextResponse.redirect(url);
   }
 
-  if (user && pathname.includes("/login")) {
+  if (!user && pathname.startsWith("/waiter") && !pathname.includes("/login")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/admin/dashboard";
+    url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
