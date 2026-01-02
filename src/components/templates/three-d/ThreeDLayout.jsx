@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Scene from "./Scene";
 import UIOverlay from "./UIOverlay";
+import HiddenARLauncher from "@/components/ui/HiddenARLauncher";
 import { useGLTF } from "@react-three/drei";
 import { useParams } from "next/navigation";
 import { useCart } from "@/app/hooks/useCart";
@@ -61,6 +62,15 @@ export default function ThreeDLayout({ restaurant, categories }) {
   // --- CALLBACK: Called when the active 3D model is fully loaded ---
   const handleModelLoaded = useCallback(() => {
     setIsLoading(false);
+  }, []);
+
+  // --- AR LAUNCHER ---
+  const arLauncherRef = useRef();
+  
+  const handleLaunchAR = useCallback(() => {
+    if (arLauncherRef.current) {
+      arLauncherRef.current.launchAR();
+    }
   }, []);
 
   // --- LOGIC: SMART PRELOADING ---
@@ -202,12 +212,18 @@ export default function ThreeDLayout({ restaurant, categories }) {
         onModelLoaded={handleModelLoaded}
       />
 
+      <HiddenARLauncher 
+        ref={arLauncherRef} 
+        activeModelUrl={focusedProduct?.model_url} 
+      />
+
       <UIOverlay
         restaurant={restaurant}
         categories={categories}
         activeCatId={activeCatId}
         setActiveCatId={setActiveCatId}
         focusedProduct={focusedProduct}
+        onLaunchAR={handleLaunchAR}
         categoryMounted={!isLoading}
         // Cart Props
         cartItems={cartItems}

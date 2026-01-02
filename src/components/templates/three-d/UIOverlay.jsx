@@ -5,6 +5,7 @@ import { Loader } from "@react-three/drei";
 import Image from "next/image";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 import { useLanguage } from "@/context/LanguageContext";
+import { MdViewInAr } from "react-icons/md";
 
 import CartControls from "./CartControls";
 import ModernCartDrawer from "../modern/ModernCartDrawer";
@@ -70,6 +71,7 @@ export default function UIOverlay({
   setActiveCatId,
   focusedProduct,
   categoryMounted,
+  onLaunchAR,
   // Cart Props
   cartItems,
   addToCart,
@@ -108,6 +110,7 @@ export default function UIOverlay({
 
       {/* --- HEADER --- */}
       <div className="absolute top-0 left-0 w-full z-10 p-6 pt-10 text-center pointer-events-none">
+        
         <div className="absolute top-3 right-3 pointer-events-auto">
           <LanguageSwitcher />
         </div>
@@ -141,6 +144,24 @@ export default function UIOverlay({
               {content(focusedProduct.description) ||
                 "Premium quality ingredients."}
             </p>
+
+            {/* AR Button: Below Product Info */}
+            <div 
+              className="mt-6 mr-35 animate-text-change" 
+              style={{ animationDelay: "0.3s" }}
+            >
+              {focusedProduct?.model_url && (
+                <button
+                  onClick={() => onLaunchAR()}
+                  className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 transition-all duration-300 hover:bg-[#ea7c69] hover:border-[#ea7c69] active:scale-95 group"
+                >
+                  <MdViewInAr className="text-white text-xl" />
+                  <span className="text-white text-xs font-bold uppercase tracking-widest">
+                    View on Table
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
