@@ -27,7 +27,10 @@ export const useCart = (tableNumberFromUrl) => {
       try {
         let storedGuestId = localStorage.getItem("menu_guest_id");
         if (!storedGuestId) {
-          storedGuestId = crypto.randomUUID();
+          storedGuestId =
+            typeof crypto !== "undefined" && crypto.randomUUID
+              ? crypto.randomUUID()
+              : `guest-${Date.now()}-${Math.random().toString(36).slice(2)}`;
           localStorage.setItem("menu_guest_id", storedGuestId);
         }
         setGuestId(storedGuestId);
