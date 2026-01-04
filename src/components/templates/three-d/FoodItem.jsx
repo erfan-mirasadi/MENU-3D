@@ -3,15 +3,21 @@
 import {
   useRef,
   useMemo,
-  useState,
   useEffect,
+  useState,
   Suspense,
   useLayoutEffect,
 } from "react";
-import { useFrame } from "@react-three/fiber";
-import { useGLTF, PresentationControls, Float } from "@react-three/drei";
+import { useFrame, useThree } from "@react-three/fiber";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { PresentationControls, Float } from "@react-three/drei";
 import * as THREE from "three";
 import { easing } from "maath";
+
+// --- IMPORTS ---
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 
 // --- SETTINGS ---
 const X_SPACING = 4.0;
@@ -19,44 +25,86 @@ const VISIBLE_RANGE = 1;
 const RENDER_WINDOW = 2;
 const ITEM_SCALE_ACTIVE = 11;
 const ITEM_SCALE_SIDE = 6;
+// --- COMPONENT: REAL MODEL ---
+// --- CACHE ---
+const gltfCache = new Map();
 
-// --- GLOBAL CACHE TRACKER ---
-const loadedUrls = new Set();
+// --- SINGLETONS ---
+let ktx2Loader = null;
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
 
 // --- COMPONENT: REAL MODEL ---
 function RealModel({ url, productTitle, onLoad }) {
-  const { scene } = useGLTF(url);
-  const hasLogged = useRef(false);
+  const gl = useThree((state) => state.gl);
+  const [scene, setScene] = useState(null);
+  const [error, setError] = useState(null);
 
-  // Trigger onLoad when the model is mounted (rendered)
-  useLayoutEffect(() => {
-    if (onLoad) onLoad();
+  useEffect(() => {
+    let isMounted = true;
 
-    if (!hasLogged.current) {
-      hasLogged.current = true;
-      const isCached = loadedUrls.has(url);
-      if (isCached) {
-        console.log(
-          `%c ⚡ FROM CACHE: ${productTitle}`,
-          "color: #00ffff; font-weight: bold;"
-        );
-      } else {
-        console.log(
-          `%c 📥 DOWNLOADING: ${productTitle}`,
-          "color: #ff00ff; font-weight: bold;"
-        );
-        loadedUrls.add(url);
-      }
+    // 1. Check Cache
+    if (gltfCache.has(url)) {
+      console.log(`⚡ FROM CACHE: ${productTitle}`);
+      setScene(gltfCache.get(url));
+      return;
     }
-  }, [url, onLoad, productTitle]);
+
+    console.log(`⬇️ DOWNLOADING: ${productTitle}`);
+
+    // 2. Initialize Singletons 
+    if (!ktx2Loader) {
+      ktx2Loader = new KTX2Loader();
+      ktx2Loader.setTranscoderPath('/libs/basis/');
+      ktx2Loader.detectSupport(gl);
+    }
+
+    // 3. Create Loader
+    const loader = new GLTFLoader();
+
+    if (MeshoptDecoder) {
+      loader.setMeshoptDecoder(MeshoptDecoder);
+    }
+    loader.setKTX2Loader(ktx2Loader);
+    loader.setDRACOLoader(dracoLoader);
+
+    // 4. Load
+    loader.load(
+      url,
+      (gltf) => {
+        if (!isMounted) return;
+        gltfCache.set(url, gltf.scene); // Store raw scene
+        setScene(gltf.scene);
+      },
+      undefined,
+      (err) => {
+        if (!isMounted) return;
+        console.error(`❌ Error loading ${productTitle}:`, err);
+        setError(err);
+      }
+    );
+
+    return () => {
+      isMounted = false;
+    };
+  }, [url, gl, productTitle]);
+
+  // Handle Side Effects (Scene Prep)
+  useLayoutEffect(() => {
+    if (scene && onLoad) {
+      onLoad();
+    }
+  }, [scene, onLoad]);
 
   const clone = useMemo(() => {
+    if (!scene) return null;
     const c = scene.clone();
     c.traverse((obj) => {
       if (obj.isMesh) {
         obj.castShadow = false;
         obj.receiveShadow = false;
         if (obj.material) {
+          if (obj.material.map) obj.material.map.needsUpdate = true;
           obj.material.envMapIntensity = 1.0;
           obj.material.roughness = 0.5;
           obj.material.needsUpdate = true;
@@ -66,10 +114,13 @@ function RealModel({ url, productTitle, onLoad }) {
     return c;
   }, [scene]);
 
+  if (error) return <PlaceholderMesh />;
+  if (!clone) return <PlaceholderMesh />;
+
   return <primitive object={clone} />;
 }
 
-// --- COMPONENT: PLACEHOLDER ---
+// ... (PlaceholderMesh and FoodItem same as before) ...
 function PlaceholderMesh() {
   return (
     <mesh>
@@ -79,7 +130,6 @@ function PlaceholderMesh() {
   );
 }
 
-// --- MAIN COMPONENT ---
 export default function FoodItem({
   product,
   index,
@@ -90,9 +140,8 @@ export default function FoodItem({
   const group = useRef();
   const modelRef = useRef();
 
-  // Edge Case: If product has no model, trigger onLoad immediately to avoid stuck loader
   useEffect(() => {
-    if (product && !product.model_url && onLoad) {
+    if (product && !product.model_url && !product.cached_model_url && onLoad) {
       onLoad();
     }
   }, [product, onLoad]);
@@ -107,20 +156,11 @@ export default function FoodItem({
 
   useFrame((state, delta) => {
     if (!group.current) return;
-
-    // A. Position Logic
     const targetX = offset * X_SPACING;
     const targetZ = -Math.abs(offset) * 3;
     const targetY = -1;
+    easing.damp3(group.current.position, [targetX, targetY, targetZ], 0.6, delta);
 
-    easing.damp3(
-      group.current.position,
-      [targetX, targetY, targetZ],
-      0.6,
-      delta
-    );
-
-    // B. Rotation Logic
     const gyroX = gyroData.x;
     const gyroY = gyroData.y;
 
@@ -135,12 +175,7 @@ export default function FoodItem({
       group.current.scale.setScalar(
         THREE.MathUtils.lerp(currentScale, ITEM_SCALE_SIDE, delta * 6)
       );
-      easing.dampE(
-        group.current.rotation,
-        [gyroX, offset * -0.2 + gyroY, 0],
-        0.4,
-        delta
-      );
+      easing.dampE(group.current.rotation, [gyroX, offset * -0.2 + gyroY, 0], 0.4, delta);
       if (modelRef.current) {
         easing.dampE(modelRef.current.rotation, [0, 0, 0], 0.5, delta);
       }
@@ -161,24 +196,18 @@ export default function FoodItem({
         polar={[-Math.PI / 4, Math.PI / 4]}
         azimuth={[-Infinity, Infinity]}
       >
-        <Float
-          speed={isActive ? 1.5 : 0}
-          rotationIntensity={isActive ? 0.2 : 0}
-          floatIntensity={isActive ? 0.5 : 0}
-        >
+        <Float speed={isActive ? 1.5 : 0} rotationIntensity={isActive ? 0.2 : 0} floatIntensity={isActive ? 0.5 : 0}>
           <group ref={modelRef}>
             <Suspense fallback={<PlaceholderMesh />}>
-              {product?.model_url && shouldLoadModel && (
+              {(product?.model_url || product?.cached_model_url) && shouldLoadModel && (
                 <RealModel
-                  url={product.model_url}
+                  url={product.cached_model_url || product.model_url}
                   productTitle={product.title?.en || `Item ${index}`}
-                  // Trigger loading complete ONLY if this is the active item
                   onLoad={isActive ? onLoad : undefined}
                 />
               )}
             </Suspense>
-
-            {!product.model_url && <PlaceholderMesh />}
+            {!product.model_url && !product.cached_model_url && <PlaceholderMesh />}
           </group>
         </Float>
       </PresentationControls>

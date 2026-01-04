@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import Scene from "./Scene";
 import UIOverlay from "./UIOverlay";
 import HiddenARLauncher from "@/components/ui/HiddenARLauncher";
-import { useGLTF } from "@react-three/drei";
 import { useParams } from "next/navigation";
 import { useCart } from "@/app/hooks/useCart";
 
 // --- GLOBAL VARIABLES ---
-// Shared object for gyroscope data to avoid React re-renders
 const gyroData = { x: 0, y: 0 };
 const GYRO_INTENSITY = 40;
 
@@ -24,47 +22,33 @@ export default function ThreeDLayout({ restaurant, categories }) {
     isLoading: isLoadingCart,
   } = useCart(params?.table_id);
 
-  // --- STATE MANAGEMENT ---
   const [activeCatId, setActiveCatId] = useState(categories[0]?.id);
   const [activeIndex, setActiveIndex] = useState(0);
-
-  // Loading state
   const [isLoading, setIsLoading] = useState(false);
 
   const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
 
-  // Compute active products based on selected category
   const activeProducts = useMemo(() => {
     return categories.find((c) => c.id === activeCatId)?.products || [];
   }, [activeCatId, categories]);
 
   const focusedProduct = activeProducts[activeIndex] || activeProducts[0];
 
-  // --- LOGIC: CATEGORY TRANSITION (REAL LOADING) ---
   useEffect(() => {
-    // 1. Reset index
     setActiveIndex(0);
-
-    // 2. Check if the selected category has products
-    // We access 'categories' directly to ensure we have the latest data for this ID
     const selectedCategory = categories.find((c) => c.id === activeCatId);
     const hasProducts = selectedCategory?.products?.length > 0;
-
-    // 3. Only start loading if there are products to load
     if (hasProducts) {
       setIsLoading(true);
     } else {
-      // If empty, ensure loading is off immediately
       setIsLoading(false);
     }
   }, [activeCatId, categories]);
 
-  // --- CALLBACK: Called when the active 3D model is fully loaded ---
   const handleModelLoaded = useCallback(() => {
     setIsLoading(false);
   }, []);
 
-  // --- AR LAUNCHER ---
   const arLauncherRef = useRef();
   
   const handleLaunchAR = useCallback(() => {
@@ -72,27 +56,6 @@ export default function ThreeDLayout({ restaurant, categories }) {
       arLauncherRef.current.launchAR();
     }
   }, []);
-
-  // --- LOGIC: SMART PRELOADING ---
-  useEffect(() => {
-    if (!activeProducts.length) return;
-    const priorityList = new Set([
-      0,
-      1,
-      activeIndex,
-      activeIndex + 1,
-      activeIndex - 1,
-    ]);
-
-    priorityList.forEach((idx) => {
-      if (idx >= 0 && idx < activeProducts.length) {
-        const product = activeProducts[idx];
-        if (product?.model_url) {
-          useGLTF.preload(product.model_url);
-        }
-      }
-    });
-  }, [activeIndex, activeProducts]);
 
   // --- LOGIC: GYROSCOPE ---
   useEffect(() => {
@@ -114,7 +77,6 @@ export default function ThreeDLayout({ restaurant, categories }) {
       }
     };
 
-    // Android/Standard
     if (
       typeof window !== "undefined" &&
       window.DeviceOrientationEvent &&
@@ -225,7 +187,6 @@ export default function ThreeDLayout({ restaurant, categories }) {
         focusedProduct={focusedProduct}
         onLaunchAR={handleLaunchAR}
         categoryMounted={!isLoading}
-        // Cart Props
         cartItems={cartItems}
         addToCart={addToCart}
         decreaseFromCart={decreaseFromCart}

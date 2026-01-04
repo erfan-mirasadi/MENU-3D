@@ -43,7 +43,10 @@ const HiddenARLauncher = forwardRef(({ activeModelUrl }, ref) => {
         ar-placement="floor"
         camera-controls
         auto-rotate
-        loading="eager" // Preload for speed
+        loading="eager" 
+        ktx2-transcoder-path="/libs/basis/"
+        draco-decoder-path="https://www.gstatic.com/draco/v1/decoders/"
+        meshopt-decoder-path="https://unpkg.com/meshoptimizer@0.19.0/meshopt_decoder.js"
       >
       </model-viewer>
     </div>
