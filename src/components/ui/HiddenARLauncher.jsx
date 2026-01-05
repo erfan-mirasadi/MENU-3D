@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
+import { useEffect, useState, useRef } from "react";
 
-const HiddenARLauncher = forwardRef(({ activeModelUrl }, ref) => {
-  const modelViewerRef = useRef(null);
-  const [isARActive, setIsARActive] = useState(false);
+export default function HiddenARLauncher({ activeModelUrl, onRef }) {
+  const [isReady, setIsReady] = useState(false);
+  const internalRef = useRef(null);
 
-  useImperativeHandle(ref, () => ({
-    launchAR: async () => {
-      // 1. Load Library & Configure Decoders
-      // We do this BEFORE setting active state to ensure the <model-viewer>
-      // element is upgraded with the correct configuration immediately upon mounting.
+  // 1. Lazy Load Library & Configure Decoders ONLY when URL is provided
+  useEffect(() => {
+    if (!activeModelUrl) return;
+
+    const prepareModelViewer = async () => {
       try {
         let ModelViewerClass = customElements.get("model-viewer");
-        
+
         if (!ModelViewerClass) {
           const module = await import("@google/model-viewer");
           ModelViewerClass = module.ModelViewerElement;
@@ -21,64 +21,59 @@ const HiddenARLauncher = forwardRef(({ activeModelUrl }, ref) => {
 
         // ✅ Config Global Decoders (Idempotent safe)
         if (ModelViewerClass) {
-          ModelViewerClass.meshoptDecoderLocation = "/libs/meshopt/meshopt_decoder.js";
+          ModelViewerClass.meshoptDecoderLocation =
+            "/libs/meshopt/meshopt_decoder.js";
           ModelViewerClass.ktx2TranscoderLocation = "/libs/basis/";
         }
+
+        setIsReady(true);
       } catch (err) {
-        console.error("Failed to load/configure model-viewer:", err);
-        return;
+        console.error("Failed to preload model-viewer:", err);
       }
-
-      // 2. Activate Component (Render)
-      setIsARActive(true);
-
-      // 3. Wait for DOM update & Custom Element upgrade
-      setTimeout(() => {
-        const viewer = modelViewerRef.current;
-        if (viewer?.activateAR) {
-          viewer.activateAR();
-        } else {
-          console.warn("AR launcher ready but activateAR not available yet.");
-        }
-      }, 100);
-    }
-  }));
-
-  // Log errors only when active
-  useEffect(() => {
-    if (!isARActive) return;
-    
-    const viewer = modelViewerRef.current;
-    if (!viewer) return;
-
-    const handleError = (e) => {
-      console.error("🔴 AR Error:", e.detail);
     };
+    prepareModelViewer();
+  }, [activeModelUrl]);
 
-    viewer.addEventListener("error", handleError);
-    return () => viewer.removeEventListener("error", handleError);
-  }, [isARActive]);
+  // 2. Auto-activate when ready (Triggered by the state change initiated by click)
+  useEffect(() => {
+    if (isReady && activeModelUrl) {
+      // Attempt activation. Note: On strict mobile browsers, this might fail 
+      // if the download took too long and the gesture expired.
+      const viewer = internalRef.current;
+      if (viewer && viewer.activateAR) {
+        viewer.activateAR();
+      }
+    }
+  }, [isReady, activeModelUrl]);
 
-  if (!activeModelUrl || !isARActive) return null;
+  if (!activeModelUrl) return null;
 
   return (
-    <div style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none', zIndex: -1 }}>
+    <div
+      style={{
+        position: "absolute",
+        width: 1,
+        height: 1,
+        overflow: "hidden",
+        opacity: 0,
+        pointerEvents: "none",
+        zIndex: -1,
+      }}
+    >
       <model-viewer
-        ref={modelViewerRef}
-        src={activeModelUrl}
+        ref={(el) => {
+           internalRef.current = el;
+           if (onRef) onRef(el);
+        }}
+        src={isReady ? activeModelUrl : undefined}
         ar
         ar-modes="webxr scene-viewer quick-look"
         camera-controls
         auto-rotate
-        loading="eager" 
+        loading="eager"
         meshopt-decoder-path="/libs/meshopt/meshopt_decoder.module.js"
         ktx2-transcoder-path="/libs/basis/"
-      >
-      </model-viewer>
+      ></model-viewer>
     </div>
   );
-});
-
-HiddenARLauncher.displayName = "HiddenARLauncher";
-
-export default HiddenARLauncher;
+}

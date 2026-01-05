@@ -25,6 +25,7 @@ export default function ThreeDLayout({ restaurant, categories }) {
   const [activeCatId, setActiveCatId] = useState(categories[0]?.id);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [arRefUrl, setArRefUrl] = useState(null);
 
   const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
 
@@ -52,10 +53,11 @@ export default function ThreeDLayout({ restaurant, categories }) {
   const arLauncherRef = useRef();
   
   const handleLaunchAR = useCallback(() => {
-    if (arLauncherRef.current) {
-      arLauncherRef.current.launchAR();
+    // Just set the URL. The component will lazy load lib + activate.
+    if (focusedProduct?.model_url) {
+      setArRefUrl(focusedProduct.model_url);
     }
-  }, []);
+  }, [focusedProduct]);
 
   // --- LOGIC: GYROSCOPE ---
   useEffect(() => {
@@ -175,8 +177,8 @@ export default function ThreeDLayout({ restaurant, categories }) {
       />
 
       <HiddenARLauncher 
-        ref={arLauncherRef} 
-        activeModelUrl={focusedProduct?.model_url} 
+        onRef={(el) => (arLauncherRef.current = el)} 
+        activeModelUrl={arRefUrl} 
       />
 
       <UIOverlay
