@@ -50,39 +50,42 @@ export default function HiddenARLauncher({ activeModelUrl, onRef, onClose }) {
   return (
     <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-6 animate-in fade-in duration-300">
       
-      {/* Functionality: The Model Viewer (Hidden) */}
-      <div style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
-        <model-viewer
-          ref={(el) => {
-             internalRef.current = el;
-             if (onRef) onRef(el);
-          }}
-          src={isReady ? activeModelUrl : undefined}
-          ar
-          ar-modes="webxr scene-viewer quick-look"
-          camera-controls
-          auto-rotate
-          loading="eager"
-          meshopt-decoder-path="/libs/meshopt/meshopt_decoder.module.js"
-          ktx2-transcoder-path="/libs/basis/"
-        ></model-viewer>
-      </div>
-
       {/* UI: Close Button */}
       <button 
         onClick={onClose}
-        className="absolute top-6 right-6 p-4 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95"
+        className="absolute top-6 right-6 p-4 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95 z-20"
       >
         <MdClose size={24} />
       </button>
 
       {/* UI: Content */}
-      <div className="flex flex-col items-center gap-8 text-center max-w-sm">
+      <div className="flex flex-col items-center gap-8 text-center w-full max-w-md">
         
-        {/* Animated Icon */}
-        <div className="w-32 h-32 rounded-3xl bg-[#ea7c69]/20 flex items-center justify-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-tr from-[#ea7c69]/30 to-transparent animate-pulse" />
-          <MdViewInAr className={`text-6xl text-[#ea7c69] transition-all duration-700 ${isReady ? 'scale-100 opacity-100' : 'scale-90 opacity-50'}`} />
+        {/* Model Preview / Loading Icon */}
+        <div className="w-full aspect-square max-w-[300px] rounded-3xl bg-[#ea7c69]/5 border border-white/10 flex items-center justify-center relative overflow-hidden">
+           
+           {isReady ? (
+             <model-viewer
+                ref={(el) => {
+                   internalRef.current = el;
+                   if (onRef) onRef(el);
+                }}
+                src={activeModelUrl}
+                ar
+                ar-modes="webxr scene-viewer quick-look"
+                camera-controls
+                auto-rotate
+                loading="eager"
+                meshopt-decoder-path="/libs/meshopt/meshopt_decoder.js"
+                ktx2-transcoder-path="/libs/basis/"
+                style={{ width: '100%', height: '100%' }}
+             ></model-viewer>
+           ) : (
+             <> 
+               <div className="absolute inset-0 bg-gradient-to-tr from-[#ea7c69]/30 to-transparent animate-pulse" />
+               <MdViewInAr className="text-8xl text-[#ea7c69] opacity-50 relative z-10" />
+             </>
+           )}
         </div>
 
         <div>
@@ -91,7 +94,7 @@ export default function HiddenARLauncher({ activeModelUrl, onRef, onClose }) {
           </h3>
           <p className="text-gray-400 text-sm leading-relaxed px-4">
             {isReady 
-              ? "Tap the button below to place the item on your table." 
+              ? "Preview the model above. Tap 'Start Experience' to view it in your space." 
               : "Downloading 3D assets. Please wait a moment..."}
           </p>
         </div>
