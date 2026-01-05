@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import Scene from "./Scene";
 import UIOverlay from "./UIOverlay";
+import Loader from "@/components/ui/Loader";
 import HiddenARLauncher from "@/components/ui/HiddenARLauncher";
 import { useParams } from "next/navigation";
 import { useCart } from "@/app/hooks/useCart";
@@ -141,36 +142,16 @@ export default function ThreeDLayout({ restaurant, categories }) {
     [activeIndex, activeProducts.length]
   );
 
-  useEffect(() => {
-    const element = document.querySelector(".three-d-container");
-    if (!element) return;
-    const handleTouchMove = (e) => {
-      if (e.target.closest(".category-scroll")) return;
-      e.preventDefault();
-    };
-    element.addEventListener("touchmove", handleTouchMove, { passive: false });
-    return () => element.removeEventListener("touchmove", handleTouchMove);
-  }, []);
+
 
   return (
     <div
-      className="three-d-container relative w-full h-[100dvh] bg-black overflow-hidden select-none font-sans touch-none"
+      className="three-d-container relative w-full h-[100dvh] bg-black overflow-hidden select-none font-sans"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
       {/* --- CUSTOM SMOOTH LOADER --- */}
-      <div
-        className={`absolute inset-0 z-10 pointer-events-none transition-all duration-500 flex items-center justify-center
-        ${
-          isLoading
-            ? "backdrop-blur-md bg-black/40 opacity-100"
-            : "backdrop-blur-0 bg-transparent opacity-0"
-        }`}
-      >
-        {isLoading && (
-          <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-        )}
-      </div>
+      <Loader active={isLoading} />
 
       <Scene
         activeProducts={activeProducts}
@@ -197,6 +178,10 @@ export default function ThreeDLayout({ restaurant, categories }) {
         removeFromCart={removeFromCart}
         submitOrder={submitOrder}
         isLoadingCart={isLoadingCart}
+        /* --- NAVIGATION PROPS --- */
+        activeIndex={activeIndex}
+        setActiveIndex={setActiveIndex}
+        productCount={activeProducts.length}
       />
     </div>
   );

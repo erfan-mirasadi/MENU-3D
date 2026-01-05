@@ -49,6 +49,9 @@ const DICTIONARY = {
     totalOrder: "Total Order",
     open: "Open",
     enterMenu: "Enter Menu",
+    menuCategories: "Menu Categories",
+    swipe: "Swipe",
+    off: "OFF",
   },
   tr: {
     addToCart: "Sepete Ekle",
@@ -88,6 +91,9 @@ const DICTIONARY = {
     totalOrder: "Toplam Sipariş",
     open: "Açık",
     enterMenu: "Menüye Gir",
+    menuCategories: "Menü Kategorileri",
+    swipe: "Kaydır",
+    off: "İNDİRİM",
   },
   ru: {
     addToCart: "В корзину",
@@ -127,6 +133,9 @@ const DICTIONARY = {
     totalOrder: "Общий заказ",
     open: "Открыто",
     enterMenu: "Войти в меню",
+    menuCategories: "Категории",
+    swipe: "Листайте",
+    off: "СКИДКА",
   },
   fa: {
     addToCart: "افزودن به سبد",
@@ -166,6 +175,9 @@ const DICTIONARY = {
     totalOrder: "کل سفارش",
     open: "باز",
     enterMenu: "ورود به منو",
+    menuCategories: "دسته‌بندی‌ها",
+    swipe: "بکشید",
+    off: "تخفیف",
   },
   ar: {
     addToCart: "أضف للسلة",
@@ -205,6 +217,9 @@ const DICTIONARY = {
     totalOrder: "إجمالي الطلب",
     open: "مفتوح",
     enterMenu: "ادخل القائمة",
+    menuCategories: "الفئات",
+    swipe: "اسحب",
+    off: "خصم",
   },
   de: {
     addToCart: "In den Warenkorb",
@@ -244,6 +259,9 @@ const DICTIONARY = {
     totalOrder: "Gesamtbestellung",
     open: "Geöffnet",
     enterMenu: "Menü betreten",
+    menuCategories: "Kategorien",
+    swipe: "Wischen",
+    off: "RABATT",
   },
 };
 

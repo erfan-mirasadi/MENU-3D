@@ -34,7 +34,7 @@ export default function CartControls({
     <>
       {/* --- LEFT ACTIONS (ADD / QUANTITY) --- */}
       {/* پوزیشن رفت بالاتر: bottom-48 */}
-      <div className="absolute bottom-40 left-10 z-40 flex flex-col items-center pointer-events-auto">
+      <div className="absolute bottom-52 left-10 z-40 flex flex-col items-center pointer-events-auto">
         {currentQty > 0 ? (
           // --- ACTIVE STATE: VERTICAL CAPSULE (DARK & GLASS) ---
           <div className="flex flex-col items-center p-1.5 gap-3 bg-black/60 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-[0_10px_30px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-2 fade-in duration-300">
@@ -82,7 +82,7 @@ export default function CartControls({
       {/* --- RIGHT ACTION (CART) --- */}
       {/* فقط اگر آیتمی هست نشون بده - پوزیشن رفت بالاتر: bottom-48 */}
       {totalCartCount > 0 && (
-        <div className="absolute bottom-48 right-6 z-40 pointer-events-auto animate-in zoom-in-50 duration-300">
+        <div className="absolute bottom-56 right-6 z-40 pointer-events-auto animate-in zoom-in-50 duration-300">
           <button
             onClick={onOpenCart}
             className="relative w-14 h-14 bg-black/60 backdrop-blur-xl border border-white/10 rounded-[20px] flex items-center justify-center shadow-2xl active:scale-95 transition-all duration-300 hover:bg-black/80 hover:border-white/20 group"
