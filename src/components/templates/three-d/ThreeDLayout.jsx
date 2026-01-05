@@ -178,7 +178,8 @@ export default function ThreeDLayout({ restaurant, categories }) {
 
       <HiddenARLauncher 
         onRef={(el) => (arLauncherRef.current = el)} 
-        activeModelUrl={arRefUrl} 
+        activeModelUrl={arRefUrl}
+        onClose={() => setArRefUrl(null)}
       />
 
       <UIOverlay
