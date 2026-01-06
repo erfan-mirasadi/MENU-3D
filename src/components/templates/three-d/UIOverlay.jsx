@@ -22,6 +22,26 @@ const styles = `
   .animate-hand-swipe {
     animation: handSwipe 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   }
+      @keyframes blurFadeIn {
+    0% { opacity: 0; filter: blur(10px); transform: translateY(10px); }
+    100% { opacity: 1; filter: blur(0); transform: translateY(0); }
+  }
+  .animate-text-change {
+    animation: blurFadeIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+  @keyframes swipeHint {
+    0% { transform: translateX(20px); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateX(-20px); opacity: 0; }
+  }
+      /* --- انیمیشن جدید با دامنه حرکت بیشتر --- */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-18px); } 
+  }
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
 `;
 
 function SwipeHint() {
@@ -145,132 +165,105 @@ export default function UIOverlay({
       )}
 
       {/* --- HEADER --- */}
-      <div className="absolute top-0 left-0 w-full z-10 p-6 pt-6 text-center pointer-events-none">
+      <div className="absolute top-0 left-0 w-full z-10 p-6 pt-3 text-center pointer-events-none">
         
-        <div className="absolute top-3 right-3 pointer-events-auto">
+        <div className="absolute top-2 right-2 pointer-events-auto">
           <LanguageSwitcher />
         </div>
 
-        <h3 className="text-white/40 text-[10px] font-bold tracking-[0.4em] uppercase mb-3">
-          {content(restaurant.name)}
-        </h3>
+        {/* Fixed Height Flex Container for Header Info */}
+        <div className="flex flex-col items-center justify-start gap-0 w-full max-w-md mx-auto h-[35vh]">
+          {/* Restaurant Name */}
+          <h3 className="text-white/40 text-[10px] font-bold tracking-[0.4em] uppercase mb-0 shrink-0 z-50">
+            {content(restaurant.name)}
+          </h3>
 
-        {focusedProduct && categoryMounted && (
-          <div key={focusedProduct.id} className="flex flex-col items-center">
-            {/* Fixed Height Container for Title */}
-            <div className="h-24 w-full flex items-center justify-center px-4 mb-1">
-              {(() => {
-                const titleText = content(focusedProduct.title);
-                const words = titleText?.split(' ') || [];
-                const isLong = titleText?.length > 22 || words.length >= 3;
+          {focusedProduct && categoryMounted && (
+            <div key={focusedProduct.id} className="contents">
+              {/* Product Title - Fixed Height Container (Balanced) */}
+              <div className="w-full h-22 flex items-center justify-center px-4 shrink-0 animate-text-change">
+                <h1 className="text-white text-4xl font-black uppercase tracking-tighter drop-shadow-2xl leading-none max-w-xs mx-auto text-wrap text-center line-clamp-2">
+                   {content(focusedProduct.title)}
+                </h1>
+              </div>
 
-                if (isLong && words.length >= 2) {
-                  // Split into two lines for better visual balance
-                  const mid = Math.ceil(words.length / 2);
-                  const line1 = words.slice(0, mid).join(' ');
-                  const line2 = words.slice(mid).join(' ');
-
-                  return (
-                    <div className="flex flex-col items-center justify-center leading-none animate-text-change">
-                      <h1 className="text-white text-4xl font-black uppercase tracking-tighter drop-shadow-2xl">
-                        {line1}
-                      </h1>
-                      <h1 className="text-white text-4xl font-black uppercase tracking-tighter drop-shadow-2xl opacity-90 mt-1">
-                        {line2}
-                      </h1>
-                    </div>
-                  );
-                }
-                
-                // Short title (1-2 words, short length)
-                return (
-                  <h1 
-                    className="text-white text-5xl font-black uppercase tracking-tighter drop-shadow-2xl animate-text-change leading-[1.1]"
-                  >
-                    {titleText}
-                  </h1>
-                );
-              })()}
-            </div>
-
-            {/* Price Section */}
-            <div
-              className="flex flex-col items-center mt-2 animate-text-change"
-              style={{ animationDelay: "0.1s" }}
-            >
-              {(() => {
-                const price = Number(focusedProduct.price);
-                const originalPrice = focusedProduct.original_price ? Number(focusedProduct.original_price) : null;
-                const hasDiscount = originalPrice && originalPrice > price;
-                
-                if (hasDiscount) {
-                  const discountPercent = Math.round(((originalPrice - price) / originalPrice) * 100);
+              {/* Price Section - Fixed Height Container (Balanced) */}
+              <div
+                className="h-16 w-full flex flex-col items-center justify-center shrink-0 animate-text-change"
+                style={{ animationDelay: "0.1s" }}
+              >
+                {(() => {
+                  const price = Number(focusedProduct.price);
+                  const originalPrice = focusedProduct.original_price ? Number(focusedProduct.original_price) : null;
+                  const hasDiscount = originalPrice && originalPrice > price;
                   
-                  return (
-                    <>
-                      {/* Discount Header */}
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="text-white/40 text-lg font-bold line-through decoration-white/40 decoration-2">
-                          {originalPrice.toLocaleString()}₺
-                        </span>
-                        <div className="bg-[#ea7c69] text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-[0_0_15px_rgba(234,124,105,0.6)]">
-                          {discountPercent}% {t('off')}
+                  if (hasDiscount) {
+                    const discountPercent = Math.round(((originalPrice - price) / originalPrice) * 100);
+                    
+                    return (
+                      <div className="flex flex-col items-center">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-white/40 text-sm font-bold line-through decoration-white/40">
+                            {originalPrice.toLocaleString()}₺
+                          </span>
+                          <div className="bg-[#ea7c69] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(234,124,105,0.6)]">
+                            {discountPercent}% {t('off')}
+                          </div>
+                        </div>
+
+                        <div className="flex items-baseline gap-1">
+                           <p className="text-white text-4xl font-black font-mono tracking-tighter drop-shadow-[0_0_10px_rgba(234,124,105,0.8)]">
+                            {price.toLocaleString()}
+                          </p>
+                          <span className="text-[#ea7c69] text-xl font-bold">₺</span>
                         </div>
                       </div>
+                    );
+                  }
 
-                      {/* Main Price */}
-                      <div className="flex items-baseline gap-1">
-                         <p className="text-white text-6xl font-black font-mono tracking-tighter drop-shadow-[0_0_10px_rgba(234,124,105,0.8)]">
-                          {price.toLocaleString()}
-                        </p>
-                        <span className="text-[#ea7c69] text-2xl font-bold">₺</span>
-                      </div>
-                    </>
+                  // Standard Price
+                  return (
+                    <div className="flex items-baseline gap-1">
+                       <p className="text-[#ea7c69] text-4xl font-bold font-mono">
+                        {price.toLocaleString()}
+                      </p>
+                      <span className="text-[#ea7c69] text-xl">₺</span>
+                    </div>
                   );
-                }
+                })()}
+              </div>
 
-                // Standard Price
-                return (
-                  <div className="flex items-baseline gap-1">
-                     <p className="text-[#ea7c69] text-5xl font-bold font-mono">
-                      {price.toLocaleString()}
-                    </p>
-                    <span className="text-[#ea7c69] text-lg">₺</span>
-                  </div>
-                );
-              })()}
-            </div>
-
-            <p
-              className="text-white/60 text-xs mt-2 max-w-[280px] leading-relaxed animate-text-change"
-              style={{ animationDelay: "0.2s" }}
-            >
-              {content(focusedProduct.description) ||
-                ""}
-            </p>
-
-            {/* AR Button: Liquid Glass Style */}
-            <div 
-              className="mt-4 animate-text-change" 
-              style={{ animationDelay: "0.38s" }}
-            >
-              {focusedProduct?.model_url && (
-                <button
-                  onClick={() => onLaunchAR()}
-                  className="pointer-events-auto relative flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 backdrop-blur-2xl border border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.2)] transition-all duration-300 active:scale-95 group overflow-hidden"
+              {/* Description - Fixed Height Container (Balanced) */}
+              <div className="h-12 w-full flex items-start justify-center overflow-hidden shrink-0 ">
+                <p
+                  className="text-white/60 text-xs max-w-[280px] leading-relaxed animate-text-change text-center line-clamp-2"
+                  style={{ animationDelay: "0.2s" }}
                 >
-                  {/* Liquid Gloss Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-50 pointer-events-none" />
-                  
-                  <MdViewInAr className="text-white text-lg relative z-10" />
-                  <span className="text-white text-[10px] font-bold uppercase tracking-widest relative z-10">
-                    {t('showOnTable')}
-                  </span>
-                </button>
-              )}
+                  {content(focusedProduct.description) || ""}
+                </p>
+              </div>
+
+              {/* AR Button - Fixed Position via Container Flow */}
+              <div 
+                className="h- w-full flex items-center justify-center animate-text-change shrink-0" 
+                style={{ animationDelay: "0.3s" }}
+              >
+                {focusedProduct?.model_url && (
+                  <button
+                    onClick={() => onLaunchAR()}
+                    className="pointer-events-auto relative flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 backdrop-blur-2xl border border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.2)] transition-all duration-300 active:scale-95 group overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-50 pointer-events-none" />
+                    <MdViewInAr className="text-white text-lg relative z-10" />
+                    <span className="text-white text-[9px] font-bold uppercase tracking-widest relative z-10">
+                      {t('showOnTable')}
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* --- BOTTOM CATEGORY NAV --- */}
@@ -280,8 +273,8 @@ export default function UIOverlay({
         <div className="relative mx-auto max-w-2xl backdrop-blur-sm border-t border-white/10 rounded-t-[35px] shadow-2xl overflow-hidden pointer-events-auto bg-black/20 group/nav">
           
           {/* Header Label - Integrated */}
-          <div className="absolute top-0 left-0 w-full text-center py-1 z-10">
-            <span className="text-white/50 text-[9px] font-semibold tracking-[0.2em] uppercase">
+          <div className="absolute top-0 left-0 w-full text-center z-10">
+            <span className="text-white/50 text-[8px] font-semibold tracking-[0.2em] uppercase">
               {t('menuCategories')}
             </span>
           </div>
@@ -341,43 +334,43 @@ export default function UIOverlay({
                  <div 
                    ref={scrollRef}
                    onScroll={checkScroll}
-                   className="category-scroll w-full overflow-x-auto no-scrollbar px-6 pt-9 pb-1 touch-pan-x scroll-smooth"
+                   className="category-scroll w-full overflow-x-auto no-scrollbar px-5 pt-8 pb-0 touch-pan-x scroll-smooth"
                  >
-                   <div className="flex gap-5 min-w-max items-start justify-center mx-auto">
+                   <div className="flex gap-4 min-w-max items-start justify-center mx-auto">
               {categories.map((cat, index) => {
                 const isActive = activeCatId === cat.id;
                 return (
                   <button
                     key={cat.id}
                     onClick={() => setActiveCatId(cat.id)}
-                    className={`group flex flex-col items-center gap-2.5 transition-all duration-300 ease-out active:scale-95 w-[6.5rem] ${
-                      isActive ? "opacity-100" : "opacity-60 hover:opacity-100"
+                    className={`group flex flex-col items-center gap-2 transition-all duration-300 ease-out active:scale-95 w-[5.5rem] ${
+                      isActive ? "opacity-100" : "opacity-60"
                     }`}
                   >
-                    {/* Liquid Glass Icon - Rectangular (Medium) */}
+                    {/* Liquid Glass Icon - Rectangular  */}
                     <div
-                      className={`relative w-[6rem] h-[4rem] rounded-[20px] overflow-hidden transition-all duration-500 shrink-0 ${
+                      className={`relative w-[5rem] h-[3.3rem] rounded-[18px] overflow-hidden transition-all duration-500 shrink-0 ${
                         isActive
-                          ? "shadow-[0_6px_25px_rgba(234,124,105,0.45)] ring-1 ring-white/50 scale-105"
+                          ? "shadow-[0_5px_20px_rgba(234,124,105,0.45)] ring-1 ring-white/50 scale-105"
                           : "ring-1 ring-white/10 grayscale-[0.3]"
                       }`}
                     >
                       {/* Glossy Overlay (The Liquid Feel) */}
                       <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/5 to-transparent z-20 pointer-events-none mix-blend-overlay" />
-                      <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent z-20 pointer-events-none rounded-t-[22px]" />
+                      <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent z-20 pointer-events-none rounded-t-[18px]" />
 
                       {cat.image_url ? (
                         <Image
                           src={cat.image_url}
                           alt={content(cat.title)}
-                          width={96}
-                          height={64}
+                          width={80}
+                          height={53}
                           className="w-full h-full object-cover"
                           priority={index < 4}
                         />
                       ) : (
                         <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
-                          <span className="text-xl text-white">●</span>
+                          <span className="text-lg text-white">●</span>
                         </div>
                       )}
                       
@@ -385,10 +378,10 @@ export default function UIOverlay({
                        {isActive && <div className="absolute inset-0 bg-[#ea7c69]/20 mix-blend-overlay z-10" />}
                     </div>
 
-                    {/* Label - Fixed Height & Larger */}
-                    <div className="h-10 flex items-start justify-center w-full">
+                    {/* Label - Fixed Height & Medium Text */}
+                    <div className="h-8 flex items-start justify-center w-full">
                       <span
-                        className={`text-[13px] font-medium tracking-tight leading-4 text-center transition-colors duration-300 line-clamp-2 ${
+                        className={`text-[11px] font-medium tracking-tight leading-3.5 text-center transition-colors duration-300 line-clamp-2 ${
                           isActive ? "text-white drop-shadow-md font-semibold" : "text-white/60"
                         }`}
                       >
