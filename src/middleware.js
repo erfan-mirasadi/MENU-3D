@@ -49,6 +49,12 @@ export async function middleware(request) {
     return NextResponse.redirect(url);
   }
 
+  if (!user && pathname.startsWith("/cashier") && !pathname.includes("/login")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
   return response;
 }
 

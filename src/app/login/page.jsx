@@ -14,6 +14,7 @@ import {
   RiEyeOffLine,
   RiUserStarLine,
   RiServiceLine,
+  RiMoneyDollarCircleLine,
 } from "react-icons/ri";
 
 export default function LoginPage() {
@@ -51,6 +52,10 @@ export default function LoginPage() {
            throw new Error("Please log in using the Waiter tab.")
       } 
 
+      if (profile.role === "cashier" && role !== "cashier") {
+           throw new Error("Please log in using the Cashier tab.")
+      } 
+
 
       toast.success(`Welcome back, ${role}!`);
 
@@ -63,6 +68,8 @@ export default function LoginPage() {
         } else {
           router.push("/admin/onboarding");
         }
+      } else if (role === "cashier") {
+        router.push("/cashier/dashboard");
       } else {
         router.push("/waiter/dashboard");
       }
@@ -114,6 +121,16 @@ export default function LoginPage() {
             <RiServiceLine size={18} /> Waiter
           </button>
           <button
+            onClick={() => setRole("cashier")}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+              role === "cashier"
+                ? "bg-primary text-white shadow-lg"
+                : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            <RiMoneyDollarCircleLine size={18} /> Cashier
+          </button>
+          <button
             onClick={() => setRole("owner")}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
               role === "owner"
@@ -143,6 +160,8 @@ export default function LoginPage() {
                   placeholder={
                     role === "owner"
                       ? "admin@example.com"
+                      : role === "cashier"
+                      ? "cashier@example.com"
                       : "waiter@example.com"
                   }
                   value={formData.email}
@@ -194,7 +213,13 @@ export default function LoginPage() {
             >
               {loading
                 ? "Verifying..."
-                : `Enter as ${role === "owner" ? "Manager" : "Waiter"}`}
+                : `Enter as ${
+                    role === "owner"
+                      ? "Manager"
+                      : role === "cashier"
+                      ? "Cashier"
+                      : "Waiter"
+                  }`}
               <RiArrowRightLine className="group-hover:translate-x-1 transition-transform" />
             </button>
           </form>
