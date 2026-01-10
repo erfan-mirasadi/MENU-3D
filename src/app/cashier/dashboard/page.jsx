@@ -8,11 +8,16 @@ import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import { RiEdit2Line, RiSave3Line, RiCloseLine, RiRestartLine, RiDragMove2Line, RiShapeLine, RiAddLine } from 'react-icons/ri'
 import { useRouter } from 'next/navigation'
+import CashierOrderDrawer from '../_components/CashierOrderDrawer'
+
 export default function DashboardPage() {
   const router = useRouter()
   const { tables, sessions, loading, restaurantId, refetch } = useCashierData()
   const [isEditing, setIsEditing] = useState(false)
+  
+  // Selection State
   const [selectedTableId, setSelectedTableId] = useState(null)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   
   // 'translate' | 'scale' - No longer needed
   // const [editMode, setEditMode] = useState('translate')
@@ -261,9 +266,26 @@ export default function DashboardPage() {
                 onSelectTable={setSelectedTableId}
             />
         ) : (
-            <RestaurantMap tables={mergedTables} />
+            <RestaurantMap 
+                tables={mergedTables} 
+                onSelectTable={(id) => {
+                    if(!id) return
+                    setSelectedTableId(id)
+                    setIsDrawerOpen(true)
+                }}
+            />
         )}
       </div>
+
+       {/* ORDER DRAWER */}
+       {selectedTableId && !isEditing && (
+            <CashierOrderDrawer 
+                isOpen={isDrawerOpen}
+                onClose={() => setIsDrawerOpen(false)}
+                table={mergedTables.find(t => t.id === selectedTableId)}
+                session={sessions.find(s => s.table_id === selectedTableId)}
+            />
+       )}
 
       {/* UI Overlay */}
       <div className="absolute inset-0 z-10 pointer-events-none p-6 flex flex-col justify-between">

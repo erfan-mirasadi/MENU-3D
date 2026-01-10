@@ -5,10 +5,6 @@ import { useState, useRef, useEffect } from 'react'
 import { useDrag } from '@use-gesture/react'
 import * as THREE from 'three'
 
-/**
- * Resize Handle Component
- * Purely a visual trigger. Logic moved to SceneContent for stability.
- */
 function ResizeHandle({ position, direction, onResizeStart }) {
     const [hovered, setHovered] = useState(false)
     
@@ -25,11 +21,6 @@ function ResizeHandle({ position, direction, onResizeStart }) {
             onPointerOut={(e) => { e.stopPropagation(); setHovered(false) }}
             onPointerDown={(e) => {
                 e.stopPropagation()
-                // Just trigger start. Parent handles the global drag.
-                // We pass the hit point on the handle as the start reference? 
-                // Or better: Parent calculates start point from the Global Plane to be consistent.
-                // But we need to hit the handle first.
-                // Let's pass the event point.
                 onResizeStart(direction, e.point)
             }}
         >
@@ -39,10 +30,6 @@ function ResizeHandle({ position, direction, onResizeStart }) {
     )
 }
 
-/**
- * Scene Content
- * Handles the 3D scene, drag logic, and rendering.
- */
 function SceneContent({ tables, onUpdate, selectedId, onSelect }) {
     const orbitRef = useRef()
     const [draggingId, setDraggingId] = useState(null)
@@ -132,7 +119,6 @@ function SceneContent({ tables, onUpdate, selectedId, onSelect }) {
 
     const handleResizeHandleDown = (dir, hitPoint, table) => {
         setResizingDirection(dir)
-        // Store initial state
         setInitialResizeData({
             width: table.width || 1.2,
             depth: table.depth || 1.2,

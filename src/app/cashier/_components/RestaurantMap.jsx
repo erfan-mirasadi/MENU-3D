@@ -129,7 +129,7 @@ function TableBox({ id, position, width = 2.2, depth = 2.2, tableNumber, status,
   )
 }
 
-function SceneContent({ tables }) {
+function SceneContent({ tables, isEditing, onSelectTable }) {
     const [localTables, setLocalTables] = useState(tables)
 
     // Update local tables when props change
@@ -148,8 +148,8 @@ function SceneContent({ tables }) {
                     depth={table.depth}
                     tableNumber={table.table_number}
                     status={table.status}
-                    isEditing={false}
-                    onSelect={() => {}}
+                    isEditing={isEditing}
+                    onSelect={onSelectTable}
                     isSelected={false}
                 />
             ))}
@@ -157,7 +157,7 @@ function SceneContent({ tables }) {
     )
 }
 
-export default function RestaurantMap({ tables, isEditing = false, onLayoutChange = () => {} }) {
+export default function RestaurantMap({ tables, isEditing = false, onSelectTable = () => {} }) {
   return (
     <Canvas shadows dpr={[1, 2]}>
       {/* ۱. نورپردازی محیطی */}
@@ -180,7 +180,7 @@ export default function RestaurantMap({ tables, isEditing = false, onLayoutChang
       />
 
       {/* ۳. رندر کردن میزهای واقعی */}
-      <SceneContent tables={tables} isEditing={isEditing} onLayoutChange={onLayoutChange} />
+      <SceneContent tables={tables} isEditing={isEditing} onSelectTable={onSelectTable} />
 
       {/* ۴. کف زمین */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.4, 0]} receiveShadow>

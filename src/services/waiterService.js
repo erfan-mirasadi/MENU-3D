@@ -11,6 +11,23 @@ export async function confirmOrderItems(sessionId) {
 
   if (error) throw error;
   return data;
+  if (error) throw error;
+  return data;
+}
+
+// 1.5. Prepare Orders (Convert Confirmed -> Served/Kitchen) 
+// NOTE: DB Constraint only allows 'pending', 'confirmed', 'served'. 
+// We use 'served' to represent "Active/In Progress" after confirmation.
+export async function startPreparingOrder(sessionId) {
+  const { data, error } = await supabase
+    .from("order_items")
+    .update({ status: "served" })
+    .eq("session_id", sessionId)
+    .eq("status", "confirmed")
+    .select();
+
+  if (error) throw error;
+  return data;
 }
 
 // 2. Close Table & Session (Convert Active -> Closed)
