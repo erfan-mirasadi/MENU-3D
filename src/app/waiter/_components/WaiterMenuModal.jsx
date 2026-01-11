@@ -27,7 +27,7 @@ export default function WaiterMenuModal({
       const fetchData = async () => {
         try {
           // فچ محصولات
-          const productsData = await getMenuProducts();
+          const productsData = await getMenuProducts(restaurantId);
           const validData =
             productsData?.filter((p) => p.title && p.price) || [];
           setProducts(validData);

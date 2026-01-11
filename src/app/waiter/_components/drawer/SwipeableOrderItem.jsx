@@ -8,6 +8,7 @@ export default function SwipeableOrderItem({
   isPending,
   onUpdateQty,
   onDelete,
+  readOnly = false
 }) {
   const [translateX, setTranslateX] = useState(0);
   const startX = useRef(0);
@@ -87,21 +88,27 @@ export default function SwipeableOrderItem({
 
         {/* Controls */}
         <div className="flex items-center gap-1 pl-2">
-          <button
-            onClick={() => onUpdateQty(item.id, item.quantity - 1)}
-            className="w-10 h-10 bg-[#1F1D2B] border border-white/10 rounded-lg flex items-center justify-center text-gray-400 active:scale-90 transition-all"
-          >
-            <FaMinus />
-          </button>
+          {!readOnly && (
+              <button
+                onClick={() => onUpdateQty(item.id, item.quantity - 1)}
+                className="w-10 h-10 bg-[#1F1D2B] border border-white/10 rounded-lg flex items-center justify-center text-gray-400 active:scale-90 transition-all"
+              >
+                <FaMinus />
+              </button>
+          )}
+          
           <div className="w-10 text-center font-black text-xl text-white">
             {item.quantity}
           </div>
-          <button
-            onClick={() => onUpdateQty(item.id, item.quantity + 1)}
-            className="w-10 h-10 bg-[#1F1D2B] border border-white/10 rounded-lg flex items-center justify-center text-gray-400 active:scale-90 transition-all"
-          >
-            <FaPlus />
-          </button>
+
+          {!readOnly && (
+              <button
+                onClick={() => onUpdateQty(item.id, item.quantity + 1)}
+                className="w-10 h-10 bg-[#1F1D2B] border border-white/10 rounded-lg flex items-center justify-center text-gray-400 active:scale-90 transition-all"
+              >
+                <FaPlus />
+              </button>
+          )}
         </div>
       </div>
     </div>

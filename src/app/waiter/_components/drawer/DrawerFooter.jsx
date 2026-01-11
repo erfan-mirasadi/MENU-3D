@@ -17,7 +17,7 @@ export default function DrawerFooter({ totalAmount, onCloseTable, loading }) {
         disabled={loading}
         className="w-full py-4 bg-[#252836] border-2 border-red-500/50 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95"
       >
-        <FaMoneyBillWave /> FINISH & CLOSE TABLE
+        <FaMoneyBillWave /> FINISH & CHECKOUT
       </button>
     </div>
   );

@@ -89,7 +89,11 @@ export async function addOrderItem(item) {
   return data;
 }
 
-export async function getMenuProducts() {
+export async function getMenuProducts(restaurantId) {
+      if (!restaurantId) {
+            console.error("getMenuProducts called without restaurantId");
+            return [];
+      }
   const { data, error } = await supabase
     .from("products")
     .select(
@@ -98,6 +102,8 @@ export async function getMenuProducts() {
       category:categories(id, title, sort_order)
     `
     )
+    .eq("restaurant_id", restaurantId)
+    .eq("is_deleted", false)
     .order("category_id", { ascending: true });
 
   if (error) throw error;

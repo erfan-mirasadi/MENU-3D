@@ -1,16 +1,19 @@
 import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
 
-export async function getTableByNumber(tableNumber, restaurantId = null) {
+export async function getTableByNumber(tableNumber, restaurantId) {
+  if (!restaurantId) {
+      console.error("getTableByNumber called without restaurantId");
+      return null;
+  }
+  
   let query = supabase
     .from("tables")
     .select("id, table_number, restaurant_id")
-    .eq("table_number", tableNumber);
-
-  if (restaurantId) {
-    query = query.eq("restaurant_id", restaurantId);
-  }
-
+    .eq("table_number", tableNumber)
+    .eq("restaurant_id", restaurantId);
+  // Removed "if (restaurantId)" block since it's now required
+    
   const { data, error } = await query.single();
 
   if (error) {

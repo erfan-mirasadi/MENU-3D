@@ -114,5 +114,24 @@ export const useCashierData = () => {
     };
   }, [fetchData]);
 
-  return { tables, sessions, loading, restaurantId: tables[0]?.restaurant_id, refetch: fetchData };
+  // 3. Checkout Logic
+  const handleCheckout = async (sessionId, paymentMethod, amount) => {
+      try {
+           const { cashierService } = await import("@/services/cashierService");
+           const result = await cashierService.processPayment(sessionId, paymentMethod, amount);
+           
+           if (result.success) {
+               // Optimistic update or just let realtime handle it?
+               // Realtime will catch the 'closed' session status and remove it from list.
+               // We can manually refetch to be sure instant feedback.
+               fetchData();
+               return { success: true };
+           }
+      } catch (error) {
+          console.error("Checkout validation failed:", error);
+          return { success: false, error };
+      }
+  };
+
+  return { tables, sessions, loading, restaurantId: tables[0]?.restaurant_id, refetch: fetchData, handleCheckout };
 };

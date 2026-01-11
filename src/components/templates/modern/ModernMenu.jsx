@@ -9,8 +9,13 @@ import ModernCartDrawer from "./ModernCartDrawer";
 import { useCart } from "@/app/hooks/useCart";
 
 export default function ModernMenu({ restaurant, categories, tableId }) {
-  const { cartItems, addToCart, removeFromCart, submitOrder, isLoading } =
-    useCart(tableId);
+  const {
+    cartItems,
+    addToCart,
+    removeFromCart,
+    submitOrder,
+    isLoading: isLoadingCart,
+  } = useCart(tableId, restaurant.id);
 
   const [activeCategory, setActiveCategory] = useState(categories?.[0]?.id);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -66,7 +71,7 @@ export default function ModernMenu({ restaurant, categories, tableId }) {
       <ModernCart
         totalAmount={totalAmount}
         totalCount={totalCount}
-        isLoading={isLoading}
+        isLoading={isLoadingCart}
         onClick={() => setIsCartOpen(true)} // <--- 3. Open Modal
       />
 

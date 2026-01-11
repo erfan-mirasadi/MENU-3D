@@ -21,7 +21,7 @@ export default function ThreeDLayout({ restaurant, categories }) {
     decreaseFromCart,
     submitOrder,
     isLoading: isLoadingCart,
-  } = useCart(params?.table_id);
+  } = useCart(params?.table_id, restaurant.id);
 
   // --- STATE ---
   const [activeCatId, setActiveCatId] = useState(categories[0]?.id);

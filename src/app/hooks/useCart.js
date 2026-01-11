@@ -10,7 +10,7 @@ import {
   submitDraftOrders,
 } from "@/services/orderService";
 
-export const useCart = (tableNumberFromUrl) => {
+export const useCart = (tableNumberFromUrl, restaurantId) => {
   const [cartItems, setCartItems] = useState([]);
   const [sessionId, setSessionId] = useState(null);
   const [guestId, setGuestId] = useState(null);
@@ -21,7 +21,7 @@ export const useCart = (tableNumberFromUrl) => {
 
   // 1. Setup Session & Guest
   useEffect(() => {
-    if (!tableNumberFromUrl) return;
+    if (!tableNumberFromUrl || !restaurantId) return;
 
     const initializeSession = async () => {
       try {
@@ -36,7 +36,7 @@ export const useCart = (tableNumberFromUrl) => {
         setGuestId(storedGuestId);
 
         console.log("🔍 Checking Table:", tableNumberFromUrl);
-        const tableData = await getTableByNumber(tableNumberFromUrl);
+        const tableData = await getTableByNumber(tableNumberFromUrl, restaurantId);
 
         if (!tableData) {
           console.error("❌ Table not found");
@@ -62,7 +62,7 @@ export const useCart = (tableNumberFromUrl) => {
     };
 
     initializeSession();
-  }, [tableNumberFromUrl]);
+  }, [tableNumberFromUrl, restaurantId]);
 
   // تابع فچ کردن با لاگ دقیق
   const fetchCartItems = useCallback(async (triggeredBy = "Manual") => {

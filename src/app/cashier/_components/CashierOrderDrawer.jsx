@@ -10,6 +10,7 @@ import {
   addOrderItem,
   startPreparingOrder
 } from "@/services/waiterService";
+import { voidOrderItem, updateOrderItemSecurely } from "@/services/orderService";
 import toast from "react-hot-toast";
 
 // Reuse Waiter Components (User Request)
@@ -19,11 +20,21 @@ import SwipeableOrderItem from "@/app/waiter/_components/drawer/SwipeableOrderIt
 import DrawerEmptyState from "@/app/waiter/_components/drawer/DrawerEmptyState";
 import OrderSection from "@/app/waiter/_components/drawer/OrderSection";
 import WaiterMenuModal from "@/app/waiter/_components/WaiterMenuModal";
+import PaymentModal from "./PaymentModal";
+import VoidReasonModal from "./VoidReasonModal";
 
-export default function CashierOrderDrawer({ table, session, isOpen, onClose }) {
+
+
+export default function CashierOrderDrawer({ table, session, isOpen, onClose, onCheckout }) {
   const [loading, setLoading] = useState(false);
   const [localItems, setLocalItems] = useState([]); 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isVoidModalOpen, setIsVoidModalOpen] = useState(false);
+
+  const [itemToVoid, setItemToVoid] = useState(null); // Used for single item void OR batch void context
+  const [isBatchEditing, setIsBatchEditing] = useState(false);
+  const [batchItems, setBatchItems] = useState([]); // Buffer for edits
 
   // Scroll Lock
   useEffect(() => {
@@ -74,14 +85,8 @@ export default function CashierOrderDrawer({ table, session, isOpen, onClose }) 
   };
 
   const handleCloseTable = async () => {
-    if (!confirm(`Close Table ${table.table_number}?`)) return;
-    setLoading(true);
-    try {
-      await closeTableSession(session.id);
-      toast.success("Table Closed");
-      onClose();
-    } catch (error) { toast.error("Failed"); } 
-    finally { setLoading(false); }
+    // Instead of direct close, open Payment Modal
+    setIsPaymentModalOpen(true);
   };
 
   // ACTION: Move Confirmed -> Preparing (Triggers Green Table)
@@ -169,8 +174,146 @@ export default function CashierOrderDrawer({ table, session, isOpen, onClose }) 
   }
 
   const onDeleteItem = async (itemId) => {
-      setLocalItems(prev => prev.filter(i => i.id !== itemId))
-      try { await deleteOrderItem(itemId) } catch(e){}
+      const item = localItems.find(i => i.id === itemId);
+      if (!item) return;
+
+      // If Pending -> Just Delete (Waiter logic)
+      if (item.status === 'pending') {
+          setLocalItems(prev => prev.filter(i => i.id !== itemId))
+          try { await deleteOrderItem(itemId) } catch(e){}
+          return;
+      }
+
+      // If Confirmed/Served -> Secure Void
+      if (['confirmed', 'served'].includes(item.status)) {
+          setItemToVoid(item);
+          setIsVoidModalOpen(true);
+      }
+  }
+
+  const handleConfirmVoid = async (reason) => {
+      if (!itemToVoid) return;
+      
+      if (itemToVoid.actionType === 'BATCH_SAVE') {
+          await executeBatchUpdate(reason);
+          return;
+      }
+
+      // Fallback for single item void (if still used elsewhere, though mostly replaced by batch)
+      // ... (Legacy or single delete if supported outside batch)
+      try {
+           await voidOrderItem(itemToVoid.id, reason);
+           toast.success("Item Voided");
+           setLocalItems(prev => prev.filter(i => i.id !== itemToVoid.id));
+      } catch(e) { toast.error(e.message) }
+      
+      setIsVoidModalOpen(false);
+      setItemToVoid(null);
+  }
+
+  // --- BATCH EDIT LOGIC ---
+  const handleStartBatchEdit = () => {
+      // Clone active items to buffer
+      // We only care about activeItems for this mode
+      const active = localItems.filter(i => ["preparing", "served"].includes(i.status));
+      setBatchItems(JSON.parse(JSON.stringify(active)));
+      setIsBatchEditing(true);
+  }
+
+  const handleCancelBatchEdit = () => {
+      setIsBatchEditing(false);
+      setBatchItems([]);
+  }
+
+  const handleBatchQtyChange = (itemId, newQty) => {
+      if (newQty < 1) return; // or handle delete if 0? Swipe usually handles delete.
+      setBatchItems(prev => prev.map(i => i.id === itemId ? { ...i, quantity: newQty } : i));
+  }
+
+  const handleBatchDelete = (itemId) => {
+      setBatchItems(prev => prev.filter(i => i.id !== itemId));
+  }
+
+  const handleSaveBatchClick = () => {
+      // 1. Calculate Diffs
+      // We compare 'batchItems' (New) vs 'activeItems' (Old, from localItems)
+      const originalActive = localItems.filter(i => ["preparing", "served"].includes(i.status));
+      
+      let needsVoid = false;
+
+      // Check for removed items
+      const originalIds = originalActive.map(i => i.id);
+      const newIds = batchItems.map(i => i.id);
+      const removedIds = originalIds.filter(id => !newIds.includes(id));
+
+      if (removedIds.length > 0) needsVoid = true;
+
+      // Check for reduced quantity
+      if (!needsVoid) {
+          for (const newItem of batchItems) {
+              const original = originalActive.find(o => o.id === newItem.id);
+              if (original && newItem.quantity < original.quantity) {
+                  needsVoid = true;
+                  break;
+              }
+          }
+      }
+
+      if (needsVoid) {
+          // Trigger Modal, pass "BATCH" context
+          setItemToVoid({ actionType: 'BATCH_SAVE' });
+          setIsVoidModalOpen(true);
+      } else {
+          // No voids, just updates (Increases or No Change)
+          executeBatchUpdate(null);
+      }
+  }
+
+  const executeBatchUpdate = async (voidReason) => {
+      setLoading(true);
+      try {
+          const originalActive = localItems.filter(i => ["preparing", "served"].includes(i.status));
+          
+          const updates = [];
+          const logs = [];
+
+          // 1. Handle Updates & Reductions
+          for (const newItem of batchItems) {
+              const original = originalActive.find(o => o.id === newItem.id);
+              if (!original) continue; // Should not happen
+
+              if (newItem.quantity !== original.quantity) {
+                  updates.push(
+                      updateOrderItemSecurely(newItem.id, newItem.quantity, original.quantity, voidReason || "Batch Update")
+                  );
+              }
+          }
+
+          // 2. Handle Deletions
+          const newIds = batchItems.map(i => i.id);
+          const removedItems = originalActive.filter(i => !newIds.includes(i.id));
+
+          for (const removed of removedItems) {
+              updates.push(voidOrderItem(removed.id, voidReason || "Batch Removed"));
+          }
+
+          await Promise.all(updates);
+          toast.success("Order Updated Successfully");
+
+          // Sync Local State (Or rely on Realtime? Realtime might be safer but slow)
+          // For immediate feedback let's allow Realtime to catch up, or refetch.
+          // Since we rely on 'session' prop which is realtime, we might just wait.
+          // But to be responsive, we close edit mode.
+          
+      } catch (e) {
+          console.error(e);
+          toast.error("Update Failed: " + e.message);
+      } finally {
+          setLoading(false);
+          setIsBatchEditing(false);
+          setIsVoidModalOpen(false);
+          setItemToVoid(null);
+      }
   }
 
 
@@ -275,17 +418,58 @@ export default function CashierOrderDrawer({ table, session, isOpen, onClose }) 
                         count={activeItems.length}
                         accentColor="green"
                         icon={<FaCheck />}
+                        action={
+                            !isBatchEditing && (
+                                <button 
+                                    onClick={handleStartBatchEdit}
+                                    className="text-sm font-bold text-green-500 hover:text-green-400 underline"
+                                >
+                                    Edit Order
+                                </button>
+                            )
+                        }
                    >
-                       <div className="space-y-3 opacity-60">
-                            {activeItems.map(item => (
-                                <SwipeableOrderItem
-                                    key={item.id}
-                                    item={item}
-                                    isPending={false}
-                                    readOnly={true} // Can't edit easily once cooking
-                                />
-                            ))}
-                       </div>
+                       {isBatchEditing ? (
+                           <div className="space-y-4">
+                               <div className="space-y-3">
+                                   {batchItems.map(item => (
+                                       <SwipeableOrderItem
+                                           key={item.id}
+                                           item={item}
+                                           isPending={false} // UI Style: Looks like confirmed but editable
+                                           onUpdateQty={handleBatchQtyChange}
+                                           onDelete={handleBatchDelete}
+                                           // No readOnly here, we want provided controls
+                                       />
+                                   ))}
+                               </div>
+                               <div className="flex gap-3">
+                                   <button 
+                                        onClick={handleCancelBatchEdit}
+                                        className="flex-1 py-3 bg-gray-700 text-gray-300 font-bold rounded-xl"
+                                   >
+                                       Cancel
+                                   </button>
+                                   <button 
+                                        onClick={handleSaveBatchClick}
+                                        className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl shadow-lg shadow-green-900/40"
+                                   >
+                                       Save Changes
+                                   </button>
+                               </div>
+                           </div>
+                       ) : (
+                           <div className="space-y-3 opacity-90">
+                                {activeItems.map(item => (
+                                    <SwipeableOrderItem
+                                        key={item.id}
+                                        item={item}
+                                        isPending={false}
+                                        readOnly={true} // Locked view
+                                    />
+                                ))}
+                           </div>
+                       )}
                    </OrderSection>
                )}
             </>
@@ -308,6 +492,28 @@ export default function CashierOrderDrawer({ table, session, isOpen, onClose }) 
         onAdd={handleMenuAdd}
         onRemove={handleMenuRemove}
         restaurantId={session?.restaurant_id}
+      />
+
+      <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          session={session ? {...session, table } : null} // Pass table details if needed inside
+          onCheckout={async (sessionId, method, amount) => {
+              const res = await onCheckout(sessionId, method, amount);
+              if (res.success) {
+                  setIsPaymentModalOpen(false);
+                  onClose(); // Close drawer
+                  toast.success("Table Closed & Paid successfully!");
+              } else {
+                  toast.error("Checkout Failed: " + (res.error?.message || "Unknown error"));
+              }
+          }}
+      />
+      <VoidReasonModal
+        isOpen={isVoidModalOpen}
+        onClose={() => setIsVoidModalOpen(false)}
+        onConfirm={handleConfirmVoid}
+        item={itemToVoid}
       />
     </>
   );

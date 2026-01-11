@@ -47,11 +47,11 @@ const ReportsPage = () => {
   }, [filter]);
 
   return (
-    <div className="bg-[#1F1D2B] min-h-screen text-white p-6 overflow-x-hidden">
+    <div className="bg-[#1F1D2B] min-h-screen text-white p-2 overflow-x-hidden">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-1">Dashboard</h1>
+          <h1 className="text-3xl font-bold mb-1">Reports</h1>
           <p className="text-[#ABBBC2] text-sm">{new Date().toDateString()}</p>
         </div>
       </div>

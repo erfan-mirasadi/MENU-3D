@@ -9,7 +9,7 @@ import { useCart } from "@/app/hooks/useCart";
 
 export default function MinimalMenu({ restaurant, categories, tableId }) {
   const { cartItems, addToCart, removeFromCart, submitOrder, isLoading } =
-    useCart(tableId);
+    useCart(tableId, restaurant.id);
   const [activeCategory, setActiveCategory] = useState(categories?.[0]?.id);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);

@@ -12,7 +12,7 @@ import CashierOrderDrawer from '../_components/CashierOrderDrawer'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { tables, sessions, loading, restaurantId, refetch } = useCashierData()
+  const { tables, sessions, loading, restaurantId, refetch, handleCheckout } = useCashierData()
   const [isEditing, setIsEditing] = useState(false)
   
   // Selection State
@@ -284,6 +284,7 @@ export default function DashboardPage() {
                 onClose={() => setIsDrawerOpen(false)}
                 table={mergedTables.find(t => t.id === selectedTableId)}
                 session={sessions.find(s => s.table_id === selectedTableId)}
+                onCheckout={handleCheckout}
             />
        )}
 
