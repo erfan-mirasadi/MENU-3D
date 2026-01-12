@@ -8,7 +8,8 @@ export default function SwipeableOrderItem({
   isPending,
   onUpdateQty,
   onDelete,
-  readOnly = false
+  readOnly = false,
+  allowIncrease = true
 }) {
   const [translateX, setTranslateX] = useState(0);
   const startX = useRef(0);
@@ -23,6 +24,7 @@ export default function SwipeableOrderItem({
 
   // --- Touch Logic ---
   const handleTouchStart = (e) => {
+    if (readOnly) return;
     startX.current = e.touches[0].clientX;
     isDragging.current = true;
     if (rowRef.current) rowRef.current.style.transition = "none";
@@ -90,10 +92,20 @@ export default function SwipeableOrderItem({
         <div className="flex items-center gap-1 pl-2">
           {!readOnly && (
               <button
-                onClick={() => onUpdateQty(item.id, item.quantity - 1)}
-                className="w-10 h-10 bg-[#1F1D2B] border border-white/10 rounded-lg flex items-center justify-center text-gray-400 active:scale-90 transition-all"
+                onClick={() => {
+                    if (item.quantity === 1) {
+                        onDelete(item.id);
+                    } else {
+                        onUpdateQty(item.id, item.quantity - 1);
+                    }
+                }}
+                className={`w-10 h-10 border border-white/10 rounded-lg flex items-center justify-center active:scale-90 transition-all ${
+                    item.quantity === 1 
+                        ? "bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20" 
+                        : "bg-[#1F1D2B] text-gray-400"
+                }`}
               >
-                <FaMinus />
+                {item.quantity === 1 ? <FaTrash size={14} /> : <FaMinus />}
               </button>
           )}
           
@@ -101,7 +113,8 @@ export default function SwipeableOrderItem({
             {item.quantity}
           </div>
 
-          {!readOnly && (
+
+          {!readOnly && allowIncrease && (
               <button
                 onClick={() => onUpdateQty(item.id, item.quantity + 1)}
                 className="w-10 h-10 bg-[#1F1D2B] border border-white/10 rounded-lg flex items-center justify-center text-gray-400 active:scale-90 transition-all"
