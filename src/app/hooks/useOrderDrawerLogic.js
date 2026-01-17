@@ -451,11 +451,11 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
       }
   };
   
-  const handleCheckoutWrapper = async (sessionId, method, amount) => {
+  const handleCheckoutWrapper = async (sessionId, type, data) => {
         setLoading(true);
         try {
             if (onCheckout) {
-                const res = await onCheckout(sessionId, method, amount);
+                const res = await onCheckout(sessionId, type, data);
                 if (res?.success) {
                     setIsPaymentModalOpen(false);
                     return true; 

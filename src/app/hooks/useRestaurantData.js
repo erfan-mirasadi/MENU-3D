@@ -54,6 +54,7 @@ export const useRestaurantData = () => {
         .select(
           `
           *,
+          bills (*),
           order_items (
             id,
             status,
@@ -116,6 +117,11 @@ export const useRestaurantData = () => {
         { event: "*", schema: "public", table: "service_requests" },
         handleRealtimeUpdate
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bills" },
+        handleRealtimeUpdate
+      )
       .subscribe();
 
     return () => {
@@ -125,11 +131,11 @@ export const useRestaurantData = () => {
   }, [fetchData]);
 
   // 3. Checkout Logic (Shared)
-  const handleCheckout = async (sessionId, paymentMethod, amount) => {
+  const handleCheckout = async (sessionId, type, data) => {
       try {
            // Dynamic import to avoid cycles or heavy loads if unnecessary
            const { cashierService } = await import("@/services/cashierService");
-           const result = await cashierService.processPayment(sessionId, paymentMethod, amount);
+           const result = await cashierService.processPayment(sessionId, type, data);
            
            if (result.success) {
                // Optimistic or Refetch

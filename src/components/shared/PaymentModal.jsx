@@ -1,46 +1,197 @@
-  import React, { useState, useMemo } from "react";
-import { RiCloseLine, RiBankCardLine, RiMoneyDollarBoxLine, RiCheckLine, RiLoader4Line } from "react-icons/ri";
+import React, { useState, useMemo, useEffect } from "react";
+import { 
+    RiCloseLine, 
+    RiBankCardLine, 
+    RiMoneyDollarBoxLine, 
+    RiCheckLine, 
+    RiLoader4Line,
+    RiPieChartLine,
+    RiWallet3Line,
+    RiCalculatorLine,
+    RiUser3Line,
+    RiFileList3Line,
+    RiCheckboxCircleFill,
+    RiCheckboxBlankCircleLine,
+    RiAddLine,
+    RiSubtractLine
+} from "react-icons/ri";
+import toast from "react-hot-toast";
 
 const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
-  const [paymentMethod, setPaymentMethod] = useState("CASH"); // 'CASH' | 'POS'
-  const [cashReceived, setCashReceived] = useState("");
+  const [activeTab, setActiveTab] = useState("FULL"); // 'FULL' | 'SPLIT'
   const [processing, setProcessing] = useState(false);
 
-  // Derive Order Details
+  // Partial / Split State
+  const [splitMode, setSplitMode] = useState("PEOPLE"); // 'PEOPLE' | 'ITEMS' | 'CUSTOM'
+  const [splitCount, setSplitCount] = useState(1);
+  const [selectedItemIds, setSelectedItemIds] = useState(new Set());
+  const [customAmount, setCustomAmount] = useState("");
+  
+  // Method State (How we are paying the current amount)
+  const [paymentMethod, setPaymentMethod] = useState("CASH"); // 'CASH' | 'POS' | 'MIXED' | 'SPLIT' (backend uses SPLIT for mixed)
+  const [mixedCash, setMixedCash] = useState("");
+  const [mixedCard, setMixedCard] = useState("");
+
+  // Data
   const orderItems = useMemo(() => {
     return session?.order_items?.filter(item => item.status !== 'cancelled') || [];
   }, [session]);
 
-  const totalAmount = useMemo(() => {
-    return orderItems.reduce((acc, item) => acc + (item.quantity * parseFloat(item.unit_price_at_order)), 0);
+  const totalOrderAmount = useMemo(() => {
+    return orderItems.reduce((acc, item) => acc + (item.quantity * Number(item.unit_price_at_order)), 0);
   }, [orderItems]);
 
-  const formattedTotal = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(totalAmount);
+  // Use bill data if available, otherwise assume full amount
+  // NOTE: In a real scenario, we might need to fetch the fresh bill status. 
+  // For now, we rely on what's passed or defaults.
+  // UPDATE: useRestaurantData now fetches 'bills' as array.
+  const bill = Array.isArray(session?.bills) ? session.bills[0] : session?.bill;
+  
+  // If bill exists, use remaining_amount. If not, use total.
+  // We need to handle the case where bill is null (first payment).
+  const remainingTotal = bill ? parseFloat(bill.remaining_amount) : totalOrderAmount;
+  // If remaining is super small (float error), treat as paid
+  const isFullyPaid = bill && parseFloat(bill.remaining_amount) <= 0.5;
 
-  // Change Calculation
-  const changeAmount = useMemo(() => {
-      if (paymentMethod !== 'CASH' || !cashReceived) return 0;
-      const received = parseFloat(cashReceived);
-      if (isNaN(received)) return 0;
-      return Math.max(0, received - totalAmount);
-  }, [paymentMethod, cashReceived, totalAmount]);
+  const paidAmount = Math.max(0, totalOrderAmount - remainingTotal);
+
+  // Derive Item Status (Heuristic: Paid items are "first" in the list effectively)
+  const itemsWithStatus = useMemo(() => {
+      let runningPaid = paidAmount;
+      return orderItems.map(item => {
+          const itemTotal = item.quantity * Number(item.unit_price_at_order);
+          // Allow for small float tolerance
+          if (runningPaid >= itemTotal - 0.01) {
+              runningPaid -= itemTotal;
+              return { ...item, isPaid: true };
+          }
+          // Partial payment for an item logic could be complex, for now we treat as unpaid if not fully covered
+          // Or we could track "partially paid" item? Too complex for this UI probably.
+          // Let's stick to "Whole items paid" heuristic.
+          return { ...item, isPaid: false };
+      });
+  }, [orderItems, paidAmount]);
+
+  // Initialize split count
+  useEffect(() => {
+      if (isOpen) {
+          setSplitCount(1);
+          setSelectedItemIds(new Set());
+          setCustomAmount("");
+          setPaymentMethod("CASH");
+          setActiveTab("FULL");
+      }
+  }, [isOpen]);
+
+  // Calculate "Amount To Pay" based on Split Mode
+  const amountToPay = useMemo(() => {
+      // If Fully Paid, 0
+      if (isFullyPaid) return 0;
+
+      if (activeTab === "FULL") return remainingTotal;
+
+      if (splitMode === "PEOPLE") {
+          if (splitCount <= 1) return remainingTotal;
+          // Simple division
+          return remainingTotal / splitCount;
+      }
+      
+      if (splitMode === "ITEMS") {
+          let sum = 0;
+          itemsWithStatus.forEach(item => {
+              if (selectedItemIds.has(item.id) && !item.isPaid) {
+                  sum += (item.quantity * Number(item.unit_price_at_order));
+              }
+          });
+          // Check if selecting all items matches roughly remaining
+          if (sum > remainingTotal + 0.1) return remainingTotal; // Cap at remaining
+          return sum;
+      }
+
+      if (splitMode === "CUSTOM") {
+          const val = parseFloat(customAmount);
+          if (isNaN(val)) return 0;
+          return Math.min(val, remainingTotal);
+      }
+      return remainingTotal;
+  }, [activeTab, splitMode, splitCount, selectedItemIds, customAmount, remainingTotal, itemsWithStatus, isFullyPaid]);
+
+  // Auto-switch to ITEMS mode if items are selected
+  useEffect(() => {
+      if (selectedItemIds.size > 0 && activeTab === 'FULL') {
+          setActiveTab("SPLIT");
+          setSplitMode("ITEMS");
+      } else if (selectedItemIds.size > 0 && splitMode !== 'ITEMS') {
+          setSplitMode("ITEMS");
+      }
+  }, [selectedItemIds, activeTab, splitMode]);
+
+  const toggleItemSelection = (id) => {
+      const item = itemsWithStatus.find(i => i.id === id);
+      if (item && item.isPaid) return; // Cannot toggle paid items
+
+      const next = new Set(selectedItemIds);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      setSelectedItemIds(next);
+  };
+
+  // Mixed Payment Logic
+  const fillMixedCard = () => {
+      const c = parseFloat(mixedCash) || 0;
+      setMixedCard(Math.max(0, amountToPay - c).toFixed(2));
+  };
+  
+  // Validation
+  const canSubmit = amountToPay > 0.01 && amountToPay <= remainingTotal + 0.1;
+  const isOverPaying = amountToPay > remainingTotal + 0.5;
 
   const handleConfirm = async () => {
+      if (!canSubmit) {
+          toast.error(isOverPaying ? "Amount exceeds remaining due" : "Invalid Payment Amount");
+          return;
+      }
       setProcessing(true);
       try {
-          // Amount for service is implied total, but we can pass received if needed. 
-          // For POS assume exact match.
-          // Check if cash is sufficient
-          if (paymentMethod === 'CASH' && (parseFloat(cashReceived) || 0) < totalAmount) {
-              alert("Insufficient Amount Received"); // Simple alert for now, toast in parent is better
-              setProcessing(false);
-              return;
+          if (paymentMethod === "MIXED") {
+               // Validate Mixed
+               const c = parseFloat(mixedCash) || 0;
+               const p = parseFloat(mixedCard) || 0;
+               if (Math.abs((c + p) - amountToPay) > 0.1) {
+                   toast.error("Mixed amounts must equal Amount to Pay");
+                   setProcessing(false);
+                   return;
+               }
+               const payments = [];
+               if (c > 0) payments.push({ method: 'CASH', amount: c });
+               if (p > 0) payments.push({ method: 'POS', amount: p });
+
+               // We use 'SPLIT' type in backend for mixed/multi-method payments
+               await onCheckout(session.id, "SPLIT", { payments });
+          } else {
+               // Single Method
+               await onCheckout(session.id, "SINGLE", { method: paymentMethod, amount: amountToPay });
+          }
+          
+          // Success
+          toast.success("Payment Recorded");
+          // Optionally close modal or reset state if session not closed
+          if (amountToPay >= remainingTotal - 0.1) {
+              // Full payment done
+              onClose();
+          } else {
+              // Partial payment done, maybe reset to allow next payment
+              setCustomAmount("");
+              setMixedCash("");
+              setMixedCard("");
+              setSelectedItemIds(new Set());
+              setActiveTab("FULL"); 
+              // We rely on parent to update 'session' prop to reflect new remaining amount
           }
 
-          await onCheckout(session.id, paymentMethod, totalAmount);
-          // Don't close here, parent handles success flow or we close after promise
       } catch (err) {
-          console.error("Payment failed", err);
+          console.error(err);
+          toast.error(err.message || "Payment Failed");
       } finally {
           setProcessing(false);
       }
@@ -49,139 +200,222 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-[#1F1D2B] w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[500px] border border-[#252836]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-[#1F1D2B] w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[650px] border border-[#252836]">
         
-        {/* LEFT SIDE: Order Summary */}
-        <div className="flex-1 p-6 flex flex-col border-r border-[#252836]">
-          <div className="flex justify-between items-center mb-6">
-             <div>
-                <h2 className="text-xl font-bold text-white">Order Summary</h2>
-                <p className="text-[#ABBBC2] text-sm mt-1">Table #{session?.table?.table_number || "?"}</p>
-             </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-             {orderItems.length === 0 ? (
-                 <p className="text-[#ABBBC2] text-center italic mt-10">No items in this order.</p>
-             ) : (
-                <div className="flex flex-col gap-4">
-                    {orderItems.map((item) => (
-                        <div key={item.id} className="flex justify-between items-center bg-[#252836] p-3 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-gray-700 overflow-hidden">
-                                     {item.product?.image_url && (
-                                         <img src={item.product.image_url} alt="" className="w-full h-full object-cover" />
-                                     )}
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-white text-sm font-medium line-clamp-1">{item.product?.title?.en || "Unknown"}</span>
-                                    <span className="text-[#ABBBC2] text-xs">x{item.quantity}</span>
-                                </div>
-                            </div>
-                            <span className="text-white font-semibold">
-                                {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(item.quantity * parseFloat(item.unit_price_at_order))}
-                            </span>
-                        </div>
-                    ))}
+        {/* LEFT: ORDER SUMMARY / ITEM SELECTOR */}
+        <div className="w-full md:w-[450px] flex flex-col border-r border-[#252836] bg-[#1F1D2B]">
+            <div className="p-6 border-b border-[#252836] bg-[#252836]/50">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <RiFileList3Line className="text-orange-500"/> Order Details
+                </h2>
+                <div className="flex justify-between text-sm text-gray-400 mt-2">
+                    <span>Table #{session?.table?.table_number}</span>
+                    <span>{orderItems.length} Items</span>
                 </div>
-             )}
-          </div>
+            </div>
 
-          <div className="mt-6 pt-6 border-t border-[#252836] flex flex-col gap-2">
-             <div className="flex justify-between text-[#ABBBC2] text-sm">
-                 <span>Subtotal</span>
-                 <span>{formattedTotal}</span>
-             </div>
-             <div className="flex justify-between text-[#ABBBC2] text-sm">
-                 <span>Tax</span>
-                 <span>₺0.00</span>
-             </div>
-             <div className="flex justify-between text-white text-xl font-bold mt-2">
-                 <span>Total</span>
-                 <span>{formattedTotal}</span>
-             </div>
-          </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+                 {itemsWithStatus.map(item => {
+                     const isSelected = selectedItemIds.has(item.id);
+                     const isPaid = item.isPaid;
+                     const price = item.quantity * Number(item.unit_price_at_order);
+                     return (
+                         <div 
+                            key={item.id} 
+                            onClick={() => toggleItemSelection(item.id)}
+                            className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group ${
+                                isPaid 
+                                ? "bg-[#252836]/50 border-transparent opacity-50 cursor-not-allowed" 
+                                : isSelected 
+                                    ? "bg-orange-500/10 border-orange-500" 
+                                    : "bg-[#252836] border-transparent hover:border-gray-600"
+                            }`}
+                         >
+                             {/* Checkbox / Selection Indicator */}
+                             <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                 isPaid 
+                                 ? "border-green-500 bg-green-500/20 text-green-500" 
+                                 : isSelected 
+                                     ? "border-orange-500 bg-orange-500 text-white" 
+                                     : "border-gray-500 group-hover:border-gray-400"
+                             }`}>
+                                 {isPaid ? <RiCheckLine size={16} /> : (isSelected && <RiCheckLine size={16} />)}
+                             </div>
+                             
+                             {/* Image */}
+                             <div className="w-14 h-14 rounded-lg bg-gray-700 overflow-hidden flex-shrink-0 border border-white/5">
+                                 {item.product?.image_url ? (
+                                     <img src={item.product.image_url} alt="" className="w-full h-full object-cover" />
+                                 ) : (
+                                     <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">IMG</div>
+                                 )}
+                             </div>
+
+                             <div className="flex-1 min-w-0">
+                                 <p className={`font-medium text-sm truncate ${isPaid ? "text-gray-500 line-through" : "text-white"}`}>{item.product?.title?.en || "Unknown"}</p>
+                                 <p className="text-gray-400 text-xs">{item.quantity}x</p>
+                             </div>
+
+                             <div className="text-right">
+                                <span className={`font-bold text-sm ${isPaid ? "text-gray-500" : "text-white"}`}>
+                                    {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(price)}
+                                </span>
+                                {isPaid && <span className="block text-[10px] text-green-500 font-bold uppercase">Paid</span>}
+                             </div>
+                         </div>
+                     )
+                 })}
+            </div>
+
+            <div className="p-6 bg-[#252836] border-t border-[#1F1D2B]">
+                <div className="flex justify-between text-gray-400 text-sm mb-1">
+                    <span>Paid</span>
+                    <span className="text-green-500">{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(paidAmount)}</span>
+                </div>
+                <div className="flex justify-between text-white font-bold text-lg">
+                    <span>Remaining Due</span>
+                    <span className="text-orange-500">{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(remainingTotal)}</span>
+                </div>
+            </div>
         </div>
 
-        {/* RIGHT SIDE: Payment Actions */}
-        <div className="w-full md:w-[400px] bg-[#252836] p-6 flex flex-col justify-between relative">
-            <button 
-                onClick={onClose} 
-                className="absolute top-4 right-4 text-[#ABBBC2] hover:text-white transition-colors p-2"
-            >
-                <RiCloseLine size={24} />
+        {/* RIGHT: PAYMENT CONTROLS */}
+        <div className="flex-1 flex flex-col bg-[#1F1D2B] relative">
+            <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-white p-2 z-10 rounded-full hover:bg-white/10 transition-colors">
+                <RiCloseLine size={28} />
             </button>
+            
+            {/* TABS */}
+            <div className="flex gap-8 px-8 pt-8 border-b border-[#252836]">
+                <button 
+                    onClick={() => { setActiveTab("FULL"); setSplitMode("PEOPLE"); setSplitCount(1); setSelectedItemIds(new Set()); setPaymentMethod('CASH'); }}
+                    className={`pb-4 font-bold text-sm tracking-wide transition-all border-b-2 flex items-center gap-2 ${activeTab === "FULL" ? "border-orange-500 text-orange-500" : "border-transparent text-gray-500 hover:text-gray-300"}`}
+                >
+                    <RiWallet3Line size={18} /> FULL PAYMENT
+                </button>
+                <button 
+                    onClick={() => { setActiveTab("SPLIT"); }}
+                    className={`pb-4 font-bold text-sm tracking-wide transition-all border-b-2 flex items-center gap-2 ${activeTab === "SPLIT" ? "border-orange-500 text-orange-500" : "border-transparent text-gray-500 hover:text-gray-300"}`}
+                >
+                    <RiPieChartLine size={18} /> SPLIT / PARTIAL
+                </button>
+            </div>
 
-            <div>
-                <h2 className="text-xl font-bold text-white mb-8">Payment</h2>
+            <div className="flex-1 p-8 flex flex-col">
                 
-                <h3 className="text-white font-medium mb-4">Payment Method</h3>
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                    <button
-                        onClick={() => setPaymentMethod("CASH")}
-                        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                            paymentMethod === "CASH" 
-                            ? "border-[#EA7C69] bg-[#EA7C69]/10 text-white" 
-                            : "border-[#393C49] text-[#ABBBC2] hover:border-gray-500"
-                        }`}
-                    >
-                        <RiMoneyDollarBoxLine size={32} />
-                        <span className="font-medium">Cash</span>
-                        {paymentMethod === "CASH" && <div className="absolute top-2 right-2 text-[#EA7C69]"><RiCheckLine /></div>}
+                {activeTab === "SPLIT" && (
+                    <div className="mb-6 animate-in fade-in slide-in-from-top-4">
+                        <label className="text-gray-400 text-xs font-bold uppercase mb-3 block">Split Mode</label>
+                        <div className="flex gap-3 mb-6">
+                             <button onClick={() => setSplitMode("PEOPLE")} className={`flex-1 py-3 px-2 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${splitMode === "PEOPLE" ? "bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
+                                 <RiUser3Line /> By People
+                             </button>
+                             <button onClick={() => setSplitMode("ITEMS")} className={`flex-1 py-3 px-2 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${splitMode === "ITEMS" ? "bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
+                                 <RiFileList3Line /> By Items
+                             </button>
+                             <button onClick={() => setSplitMode("CUSTOM")} className={`flex-1 py-3 px-2 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${splitMode === "CUSTOM" ? "bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
+                                 <RiCalculatorLine /> Custom
+                             </button>
+                        </div>
+
+                        {splitMode === "PEOPLE" && (
+                            <div className="bg-[#252836] p-4 rounded-xl flex items-center justify-between border border-[#393C49]">
+                                <span className="text-gray-300 font-medium">Split Count</span>
+                                <div className="flex items-center gap-4 bg-[#1F1D2B] rounded-lg p-1 border border-[#393C49]">
+                                    <button onClick={() => setSplitCount(Math.max(1, splitCount - 1))} className="w-10 h-10 flex items-center justify-center text-white hover:bg-gray-700 rounded-md transition-colors shadow-sm"><RiSubtractLine /></button>
+                                    <span className="text-white font-bold w-6 text-center text-lg">{splitCount}</span>
+                                    <button onClick={() => setSplitCount(splitCount + 1)} className="w-10 h-10 flex items-center justify-center text-white hover:bg-gray-700 rounded-md transition-colors shadow-sm"><RiAddLine /></button>
+                                </div>
+                            </div>
+                        )}
+
+                        {splitMode === "ITEMS" && (
+                            <div className="text-center bg-[#252836] p-4 rounded-xl border border-[#393C49]">
+                                <p className="text-gray-300 text-sm font-medium">Select items from the list on the left to calculate total.</p>
+                                <p className="text-orange-500 text-xs mt-1 font-bold">{selectedItemIds.size} items selected</p>
+                            </div>
+                        )}
+
+                        {splitMode === "CUSTOM" && (
+                            <div className="relative group">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white font-bold text-lg group-focus-within:text-orange-500 transition-colors">₺</span>
+                                <input 
+                                    type="number" 
+                                    value={customAmount}
+                                    onChange={(e) => setCustomAmount(e.target.value)}
+                                    className="w-full bg-[#252836] text-white border-2 border-[#393C49] rounded-xl py-4 pl-10 pr-4 font-bold outline-none focus:border-orange-500 transition-all text-lg placeholder-gray-600"
+                                    placeholder="Enter amount to pay..."
+                                    autoFocus
+                                />
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* AMOUNT DISPLAY */}
+                <div className="flex flex-col items-center justify-center mb-8 p-6 bg-[#252836] rounded-2xl border border-[#2D303E] shadow-inner relative overflow-hidden group">
+                    <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500 to-transparent opacity-50"></div>
+                    <span className="text-gray-400 text-xs font-bold uppercase mb-2 tracking-widest">Amount to Pay Now</span>
+                    <span className="text-5xl font-bold text-white tracking-tight flex items-baseline gap-1">
+                        <span className="text-2xl text-gray-500">₺</span>
+                        {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amountToPay)}
+                    </span>
+                    {activeTab === "SPLIT" && splitMode === "PEOPLE" && splitCount > 1 && (
+                        <span className="text-orange-400 text-xs font-bold mt-2 bg-orange-500/10 px-3 py-1 rounded-full border border-orange-500/20">
+                            {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(remainingTotal)} ÷ {splitCount} people
+                        </span>
+                    )}
+                </div>
+
+                {/* PAYMENT METHOD SELECTION */}
+                <label className="text-gray-400 text-xs font-bold uppercase mb-3 block px-1">Select Payment Method</label>
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                    <button onClick={() => setPaymentMethod("CASH")} className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${paymentMethod === "CASH" ? "border-green-500 bg-green-500/10 text-white shadow-[0_0_15px_rgba(34,197,94,0.2)]" : "border-[#393C49] text-gray-400 hover:border-gray-500 hover:bg-[#2D303E]"}`}>
+                        <RiMoneyDollarBoxLine size={28} className={paymentMethod === "CASH" ? "text-green-400" : ""} /> 
+                        <span className="text-xs font-bold tracking-wide">CASH</span>
                     </button>
-                    <button
-                        onClick={() => setPaymentMethod("POS")}
-                        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                            paymentMethod === "POS" 
-                            ? "border-[#EA7C69] bg-[#EA7C69]/10 text-white" 
-                            : "border-[#393C49] text-[#ABBBC2] hover:border-gray-500"
-                        }`}
-                    >
-                        <RiBankCardLine size={32} />
-                        <span className="font-medium">Card</span>
-                        {paymentMethod === "POS" && <div className="absolute top-2 right-2 text-[#EA7C69]"><RiCheckLine /></div>}
+                    <button onClick={() => setPaymentMethod("POS")} className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${paymentMethod === "POS" ? "border-blue-500 bg-blue-500/10 text-white shadow-[0_0_15px_rgba(59,130,246,0.2)]" : "border-[#393C49] text-gray-400 hover:border-gray-500 hover:bg-[#2D303E]"}`}>
+                        <RiBankCardLine size={28} className={paymentMethod === "POS" ? "text-blue-400" : ""} /> 
+                        <span className="text-xs font-bold tracking-wide">CARD</span>
+                    </button>
+                    <button onClick={() => setPaymentMethod("MIXED")} className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${paymentMethod === "MIXED" ? "border-orange-500 bg-orange-500/10 text-white shadow-[0_0_15px_rgba(249,115,22,0.2)]" : "border-[#393C49] text-gray-400 hover:border-gray-500 hover:bg-[#2D303E]"}`}>
+                        <RiPieChartLine size={28} className={paymentMethod === "MIXED" ? "text-orange-400" : ""} /> 
+                        <span className="text-xs font-bold tracking-wide">MIXED</span>
                     </button>
                 </div>
 
-                {paymentMethod === "CASH" && (
-                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                        <label className="text-[#ABBBC2] text-sm mb-2 block">Amount Received</label>
-                        <div className="relative mb-4">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white font-bold">₺</span>
-                            <input 
-                                type="number" 
-                                value={cashReceived}
-                                onChange={(e) => setCashReceived(e.target.value)}
-                                className="w-full bg-[#1F1D2B] text-white border border-[#393C49] rounded-lg py-3 pl-8 pr-4 focus:outline-none focus:border-[#EA7C69]transition-colors font-bold text-lg placeholder-gray-600"
-                                placeholder="0.00"
-                            />
+                {/* MIXED INPUTS */}
+                {paymentMethod === "MIXED" && (
+                    <div className="grid grid-cols-2 gap-4 mb-6 animate-in fade-in slide-in-from-top-2 p-4 bg-[#252836] rounded-xl border border-[#393C49]">
+                        <div className="relative">
+                            <label className="text-[10px] uppercase font-bold text-gray-400 mb-1 block">Cash Portion</label>
+                            <input type="number" value={mixedCash} onChange={e => setMixedCash(e.target.value)} className="w-full bg-[#1F1D2B] rounded-lg p-3 text-white font-bold border border-[#393C49] focus:border-green-500 outline-none transition-colors" placeholder="0.00" />
                         </div>
-                        
-                        <div className="flex justify-between items-center bg-[#1F1D2B] p-4 rounded-lg">
-                            <span className="text-[#ABBBC2]">Change</span>
-                            <span className="text-[#EA7C69] font-bold text-xl">
-                                {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(changeAmount)}
-                            </span>
+                        <div className="relative">
+                            <label className="text-[10px] uppercase font-bold text-gray-400 mb-1 flex justify-between items-center"><span>Card Portion</span> <span onClick={fillMixedCard} className="text-blue-500 cursor-pointer hover:text-blue-400 text-xs">Autofill Remainder</span></label>
+                            <input type="number" value={mixedCard} onChange={e => setMixedCard(e.target.value)} className="w-full bg-[#1F1D2B] rounded-lg p-3 text-white font-bold border border-[#393C49] focus:border-blue-500 outline-none transition-colors" placeholder="0.00" />
                         </div>
                     </div>
                 )}
-            </div>
 
-            <button
-                onClick={handleConfirm}
-                disabled={processing}
-                className="w-full bg-[#EA7C69] text-white font-bold py-4 rounded-xl hover:bg-[#d96a56] transition-all transform active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-8 shadow-lg shadow-[#EA7C69]/20"
-            >
-                {processing ? (
-                    <>
-                        <RiLoader4Line className="animate-spin" size={24} />
-                        Processing...
-                    </>
-                ) : (
-                    "Confirm Payment"
-                )}
-            </button>
+                <button
+                    onClick={handleConfirm}
+                    disabled={processing || amountToPay <= 0.01 || isFullyPaid}
+                    className="w-full mt-auto bg-[#EA7C69] hover:bg-[#d96a56] text-white font-bold py-4 rounded-xl shadow-lg shadow-[#EA7C69]/20 transition-all flex items-center justify-center gap-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
+                >
+                    {processing ? (
+                        <>
+                            <RiLoader4Line className="animate-spin" size={24} /> Processing...
+                        </>
+                    ) : (
+                        <>
+                            <RiCheckLine size={24} /> Confirm Payment
+                        </>
+                    )}
+                </button>
+
+            </div>
         </div>
       </div>
     </div>

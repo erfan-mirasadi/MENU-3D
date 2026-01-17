@@ -4,14 +4,13 @@ export const cashierService = {
   /**
    * Process payment for a session
    * @param {string} sessionId
-   * @param {string} paymentMethod - 'CASH' or 'POS'
-   * @param {number} amountReceived - Mainly for record keeping or change calc, technically strictly equal to total for POS
+   * @param {string} type - 'SINGLE' or 'SPLIT'
+   * @param {Object} data - Payment details
    */
-  async processPayment(sessionId, paymentMethod, amountReceived) {
+  async processPayment(sessionId, type, data) {
     if (!sessionId) throw new Error("Session ID is required");
 
     // 1. Calculate Total Amount from Order Items
-    // We should re-calculate server-side or at least re-fetch to be safe and accurate
     const { data: orderItems, error: itemsError } = await supabase
       .from("order_items")
       .select("quantity, unit_price_at_order, status")
@@ -28,50 +27,113 @@ export const cashierService = {
         throw new Error("Cannot process payment for zero amount.");
     }
 
-    // 2. Create Bill Record
-    const { data: bill, error: billError } = await supabase
+    // 2. Get or Create Bill
+    let { data: bill, error: billError } = await supabase
       .from("bills")
-      .insert({
-        session_id: sessionId,
-        total_amount: totalAmount,
-        paid_amount: totalAmount, // Full payment assumed for "Close Table"
-        status: "PAID",
-      })
-      .select()
-      .single();
+      .select("*")
+      .eq("session_id", sessionId)
+      .maybeSingle();
 
     if (billError) throw billError;
 
-    // 3. Record Transaction
-    // Assuming user is authenticated, we might want to record who did this. 
-    // Supabase client should handle auth context if configured, defaulting user_id usage if we had it. 
-    // The schema has `recorded_by` FK to users. Ideally we get the current user ID.
+    if (!bill) {
+        // Create new bill
+        // REMOVED 'remaining_amount' from insert as it is GENERATED
+        const { data: newBill, error: createError } = await supabase
+          .from("bills")
+          .insert({
+            session_id: sessionId,
+            total_amount: totalAmount,
+            paid_amount: 0,
+            status: "UNPAID",
+          })
+          .select()
+          .single();
+        
+        if (createError) throw createError;
+        bill = newBill;
+    }
+
+    // 3. Prepare Transactions
+    let transactionsToRecord = [];
+    let paymentTotal = 0;
+
+    // Calc pseudo-remaining for validation logic only
+    // If bill just created, remaining is effectively totalAmount.
+    // If fetched, bill.remaining_amount *should* be there if generated column returns it.
+    // If not returned by insert/select immediately, fallback to calc.
+    const currentRemaining = bill.remaining_amount !== undefined 
+         ? parseFloat(bill.remaining_amount) 
+         : (parseFloat(bill.total_amount) - parseFloat(bill.paid_amount));
+
+    if (type === 'SINGLE') {
+        const { method, amount } = data;
+        const amt = parseFloat(amount);
+        // Validation: Cannot pay more than remaining (with tolerance)
+        if (amt > currentRemaining + 0.5) { 
+             throw new Error(`Payment amount (${amt}) exceeds remaining due (${currentRemaining})`);
+        }
+        transactionsToRecord.push({ method, amount: amt });
+        paymentTotal = amt;
+    } 
+    else if (type === 'SPLIT') {
+        const { payments } = data; 
+        paymentTotal = payments.reduce((acc, p) => acc + parseFloat(p.amount), 0);
+        
+        if (paymentTotal > currentRemaining + 0.5) {
+             throw new Error(`Total split payment (${paymentTotal}) exceeds remaining due (${currentRemaining})`);
+        }
+        transactionsToRecord = payments.map(p => ({ method: p.method, amount: parseFloat(p.amount) }));
+    }
+
+    // 4. Record Transactions
     const { data: { user } } = await supabase.auth.getUser();
+    
+    const dbTransactions = transactionsToRecord.map(t => ({
+        bill_id: bill.id,
+        amount: t.amount,
+        method: t.method, // 'CASH' or 'POS' or 'MIXED'(mapped)
+        recorded_by: user?.id
+    }));
 
     const { error: trxError } = await supabase
       .from("transactions")
-      .insert({
-        bill_id: bill.id,
-        amount: totalAmount,
-        method: paymentMethod, // 'CASH' or 'POS' (Enum or user-defined?) Schema says USER-DEFINED.
-        recorded_by: user?.id
-      });
+      .insert(dbTransactions);
 
     if (trxError) throw trxError;
 
-    // 4. Close Session
-    const { error: sessionError } = await supabase
-      .from("sessions")
-      .update({ status: "closed" })
-      .eq("id", sessionId);
+    // 5. Update Bill Status
+    // We only update paid_amount. remaining_amount is generated.
+    const newPaidAmount = (parseFloat(bill.paid_amount) || 0) + paymentTotal;
+    // We calc local newRemaining just for checking isFullyPaid status
+    const newRemainingLocal = totalAmount - newPaidAmount; 
+    const isFullyPaid = newRemainingLocal <= 0.5; // tolerance
 
-    if (sessionError) throw sessionError;
+    const { error: updateError } = await supabase
+        .from("bills")
+        .update({
+            paid_amount: newPaidAmount,
+            status: isFullyPaid ? 'PAID' : 'UNPAID'
+        })
+        .eq("id", bill.id);
 
-    // 5. Free Table (Optional - Schema doesn't have status on tables table, maybe unrelated or computed from session?)
-    // The schema provided for 'tables' has 'layout_data' and standard fields, no explicit status column.
-    // Usually 'active session' determines table status. 
-    // So closing the session implies table is free. No extra update needed on 'tables' unless logic dictates otherwise.
+    if (updateError) throw updateError;
 
-    return { success: true, billId: bill.id };
+    // 6. Close Session if Fully Paid
+    if (isFullyPaid) {
+        const { error: sessionError } = await supabase
+          .from("sessions")
+          .update({ status: "closed" })
+          .eq("id", sessionId);
+
+        if (sessionError) throw sessionError;
+    }
+
+    return { 
+        success: true, 
+        billId: bill.id, 
+        remaining: Math.max(0, newRemainingLocal), 
+        fullyPaid: isFullyPaid 
+    };
   }
 };
