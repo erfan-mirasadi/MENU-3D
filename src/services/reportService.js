@@ -24,7 +24,21 @@ const getDateRanges = (range) => {
       currentStart = new Date(today);
       currentStart.setMonth(today.getMonth() - 1);
       previousStart = new Date(currentStart);
-      previousStart.setMonth(currentStart.getMonth() - 1); // Previous month
+      previousStart.setMonth(currentStart.getMonth() - 1);
+      previousEnd = currentStart;
+      break;
+    case "3 Months":
+      currentStart = new Date(today);
+      currentStart.setMonth(today.getMonth() - 3);
+      previousStart = new Date(currentStart);
+      previousStart.setMonth(currentStart.getMonth() - 3);
+      previousEnd = currentStart;
+      break;
+    case "Year":
+      currentStart = new Date(today);
+      currentStart.setFullYear(today.getFullYear() - 1);
+      previousStart = new Date(currentStart);
+      previousStart.setFullYear(currentStart.getFullYear() - 1);
       previousEnd = currentStart;
       break;
     default: // Default to Month
@@ -43,7 +57,7 @@ const getDateRanges = (range) => {
 
 // Helper to calculate percentage change
 const calculateTrend = (current, previous) => {
-    if (previous === 0) return current > 0 ? 100 : 0;
+    if (previous === 0) return null; // Distinguish "no previous data" from "100% growth"
     return ((current - previous) / previous) * 100;
 };
 
@@ -64,13 +78,13 @@ export const reportService = {
       .gte("created_at", currentStart);
 
     // 2. Fetch Previous Data
-    const { data: previousItems } = await supabase
+    const { data: previousItems, error: previousError } = await supabase
       .from("order_items")
       .select("quantity, unit_price_at_order")
       .neq("status", "cancelled")
       .gte("created_at", previousStart)
       .lt("created_at", previousEnd);
-
+    
     const { count: previousCustomers } = await supabase
       .from("sessions")
       .select("*", { count: "exact", head: true })
@@ -203,10 +217,7 @@ export const reportService = {
   async getOrderTypes(range) {
       const { currentStart } = getDateRanges(range);
       
-      // User said: "sessions table lacks type column, assume ALL are Dine In"
-      // Return structure for Radial Chart: { 'Dine In': X, 'To Go': 0, 'Delivery': 0 }
-      
-      const { count, error } = await supabase
+      const { count } = await supabase
         .from("sessions")
         .select("*", { count: "exact", head: true })
         .gte("created_at", currentStart);
@@ -216,5 +227,182 @@ export const reportService = {
           "To Go": 0,
           "Delivery": 0
       };
+  },
+
+  // --- Financial Reporting ---
+
+  async getFinancialStats(range) {
+    const { currentStart, previousStart, previousEnd } = getDateRanges(range);
+    
+    // Helper to fetch data for a given period
+    const fetchPeriodData = async (start, end) => {
+        // Bills (Gross Sales)
+        // Fetch ALL bills in range, filter 'paid'/'PAID' in JS to avoid Enum 400 errors
+        const { data: bills } = await supabase
+            .from("bills")
+            .select("total_amount, status")
+            .gte("created_at", start)
+            .lt("created_at", end || new Date().toISOString());
+
+        const sales = bills
+            ?.filter(b => b.status?.toUpperCase() === 'PAID')
+            .reduce((sum, b) => sum + (parseFloat(b.total_amount) || 0), 0) || 0;
+
+        // Transactions (Net Cash/Card)
+        const { data: transactions } = await supabase
+            .from("transactions")
+            .select("amount, method")
+            .gte("created_at", start)
+            .lt("created_at", end || new Date().toISOString());
+
+        const cash = transactions
+            ?.filter(t => t.method?.toLowerCase().includes("cash"))
+            .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0) || 0;
+            
+        const card = transactions
+            ?.filter(t => t.method?.toLowerCase().includes("pos") || t.method?.toLowerCase().includes("card"))
+            .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0) || 0;
+
+        // Voids
+        const { data: voids } = await supabase
+            .from("activity_logs")
+            .select("details")
+            .eq("action", "VOID_ITEM")
+            .gte("created_at", start)
+            .lt("created_at", end || new Date().toISOString());
+
+        const voidVal = voids?.reduce((sum, v) => {
+            const price = parseFloat(v.details?.snapshot?.price) || 0;
+            const qty = parseFloat(v.details?.snapshot?.quantity) || 0;
+            const voidedQty = parseFloat(v.details?.voided_quantity) || 0;
+            const quantityToUse = voidedQty > 0 ? voidedQty : qty;
+            return sum + (price * quantityToUse);
+        }, 0) || 0;
+
+        return { sales, cash, card, voidVal };
+    };
+
+    const current = await fetchPeriodData(currentStart);
+    const previous = await fetchPeriodData(previousStart, previousEnd);
+
+    return {
+        grossSales: {
+            value: current.sales,
+            trend: calculateTrend(current.sales, previous.sales)
+        },
+        netCash: {
+            value: current.cash,
+            trend: calculateTrend(current.cash, previous.cash)
+        },
+        netCard: {
+            value: current.card,
+            trend: calculateTrend(current.card, previous.card)
+        },
+        voidedValue: {
+            value: current.voidVal,
+            trend: calculateTrend(current.voidVal, previous.voidVal)
+        }
+    };
+  },
+
+  async getTransactions(range) {
+     const { currentStart } = getDateRanges(range);
+
+     const { data, error } = await supabase
+        .from("transactions")
+        .select(`
+            id,
+            created_at,
+            amount,
+            method,
+            bills (
+                id,
+                session:sessions (
+                     tables (table_number)
+                )
+            )
+        `)
+        .gte("created_at", currentStart)
+        .order("created_at", { ascending: false });
+
+     if (error) {
+         console.error("Error fetching transactions", error);
+         return [];
+     }
+
+     return data.map(t => ({
+         id: t.id,
+         time: new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+         billId: t.bills?.id || "N/A",
+         tableNo: t.bills?.session?.tables?.table_number || "-",
+         amount: t.amount,
+         method: t.method,
+         staff: "Admin/Cashier" 
+     }));
+  },
+
+  async getProductMix(range) {
+      const { currentStart } = getDateRanges(range);
+      
+      const { data, error } = await supabase
+        .from("order_items")
+        .select(`
+            quantity,
+            unit_price_at_order,
+            products (
+                id,
+                title
+            )
+        `)
+        .neq("status", "cancelled")
+        .gte("created_at", currentStart);
+
+      if (error) return [];
+
+      const mix = {};
+      data.forEach(item => {
+          const pid = item.products?.id;
+          if (!pid) return;
+          
+          if (!mix[pid]) {
+              mix[pid] = {
+                  name: item.products?.title?.en || "Unknown",
+                  quantity: 0,
+                  revenue: 0
+              };
+          }
+          mix[pid].quantity += item.quantity;
+          mix[pid].revenue += (item.quantity * (parseFloat(item.unit_price_at_order) || 0));
+      });
+
+      return Object.values(mix).sort((a,b) => b.revenue - a.revenue);
+  },
+
+  async getSecurityLog(range) {
+      const { currentStart } = getDateRanges(range);
+
+      // Removed profiles join to prevent 400 error if relation missing
+      const { data, error } = await supabase
+        .from("activity_logs")
+        .select(`
+            created_at,
+            details,
+            action,
+            user_id
+        `)
+        .in("action", ["VOID_ITEM", "CANCEL_ORDER", "PARTIAL_VOID"])
+        .gte("created_at", currentStart)
+        .order("created_at", { ascending: false });
+
+      if (error) return [];
+
+      return data.map(log => ({
+          time: new Date(log.created_at).toLocaleString(),
+          staff: "Staff " + (log.user_id?.slice(0,4) || ""), // Placeholder
+          item: log.details?.snapshot?.product || log.details?.snapshot?.product_title || "Unknown Item",
+          reason: log.details?.reason || "No Reason",
+          action: log.action,
+          value: (parseFloat(log.details?.snapshot?.price) || 0) * (log.details?.voided_quantity || log.details?.snapshot?.quantity || 1)
+      }));
   }
 };

@@ -6,9 +6,7 @@ const MostOrderedList = ({ items, loading, filter }) => {
     <div className="bg-[#252836] p-6 rounded-lg h-full">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-white text-lg font-bold">Most Ordered</h2>
-        <button className="flex items-center gap-2 text-white border border-[#393C49] px-3 py-1.5 rounded-lg text-sm bg-[#1F1D2B]">
-           {filter} <RiArrowDownSLine size={14} />
-        </button>
+
       </div>
 
       <div className="flex flex-col gap-6">

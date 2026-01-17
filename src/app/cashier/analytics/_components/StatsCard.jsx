@@ -21,14 +21,18 @@ const StatsCard = ({ title, value, percentage, isPositive, icon: Icon, loading }
           <Icon size={24} />
         </div>
         <div className="flex items-center gap-2 text-sm font-medium">
-          <span
-            className={`${
-              isPositive ? "text-green-500" : "text-red-500"
-            } flex items-center gap-1`}
-          >
-             {percentage}%
-            {isPositive ? <RiArrowUpLine size={14} /> : <RiArrowDownLine size={14} />}
-          </span>
+          {percentage ? (
+             <span
+                className={`${
+                isPositive ? "text-green-500" : "text-red-500"
+                } flex items-center gap-1`}
+            >
+                {percentage}%
+                {isPositive ? <RiArrowUpLine size={14} /> : <RiArrowDownLine size={14} />}
+            </span>
+          ) : (
+             <span className="text-[#ABBBC2] text-xs">New</span>
+          )}
         </div>
       </div>
       <div>

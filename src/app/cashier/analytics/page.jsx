@@ -30,10 +30,10 @@ const ReportsPage = () => {
       try {
         const [statsData, ordersData, topItemsData, categorySalesData, hourlyTrafficData] = await Promise.all([
           reportService.getStats(filter),
-          analyticsService.getLatestOrders(10),
+          analyticsService.getOrders(filter),
           reportService.getTopSellingItems(filter),
           analyticsService.getCategorySales(filter),
-          analyticsService.getHourlyTraffic()
+          analyticsService.getHourlyTraffic(filter)
         ]);
         
         setStats(statsData);
@@ -56,8 +56,19 @@ const ReportsPage = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-1">Reports</h1>
+          <h1 className="text-3xl font-bold mb-1">Analytics</h1>
           <p className="text-[#ABBBC2] text-sm">{new Date().toDateString()}</p>
+        </div>
+        <div className="flex bg-[#1F1D2B] border border-[#393C49] rounded-lg p-1">
+             {["Today", "Week", "Month", "3 Months", "Year"].map(opt => (
+                 <button
+                    key={opt}
+                    onClick={() => setFilter(opt)}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === opt ? 'bg-[#EA7C69] text-white' : 'text-[#ABBBC2] hover:text-white'}`}
+                 >
+                     {opt}
+                 </button>
+             ))}
         </div>
       </div>
 
@@ -66,24 +77,24 @@ const ReportsPage = () => {
         <StatsCard
           title="Total Revenue"
           value={`₺${stats.revenue.value.toLocaleString()}`}
-          percentage={stats.revenue.trend.toFixed(2)}
-          isPositive={stats.revenue.trend >= 0}
+          percentage={stats.revenue.trend != null ? stats.revenue.trend.toFixed(2) : null}
+          isPositive={stats.revenue.trend != null && stats.revenue.trend >= 0}
           icon={RiMoneyDollarCircleLine}
           loading={loading}
         />
         <StatsCard
           title="Total Dish Ordered"
           value={stats.dishes.value.toLocaleString()}
-          percentage={stats.dishes.trend.toFixed(2)}
-          isPositive={stats.dishes.trend >= 0}
+          percentage={stats.dishes.trend != null ? stats.dishes.trend.toFixed(2) : null}
+          isPositive={stats.dishes.trend != null && stats.dishes.trend >= 0}
           icon={RiBookmarkLine}
           loading={loading}
         />
         <StatsCard
           title="Total Customer"
           value={stats.customers.value.toLocaleString()}
-          percentage={stats.customers.trend.toFixed(2)}
-          isPositive={stats.customers.trend >= 0}
+          percentage={stats.customers.trend != null ? stats.customers.trend.toFixed(2) : null}
+          isPositive={stats.customers.trend != null && stats.customers.trend >= 0}
           icon={RiGroupLine}
           loading={loading}
         />

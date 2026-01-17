@@ -1,8 +1,10 @@
 import { supabase } from "@/lib/supabase";
 
 export const analyticsService = {
-  // Task 1: Get Latest Orders with Table Info
-  async getLatestOrders(limit = 10) {
+  // Task 1: Get Orders by Range
+  async getOrders(range = "Today") {
+    const startDate = this.getStartDate(range);
+
     const { data, error } = await supabase
       .from("order_items")
       .select(`
@@ -16,28 +18,41 @@ export const analyticsService = {
         ),
         session:sessions (
             id,
+            status,
             tables (
                 table_number
             )
         )
       `)
-      .order("created_at", { ascending: false })
-      .limit(limit);
+      .gte("created_at", startDate)
+      .order("created_at", { ascending: false });
+      // Removed .limit(10) to let user see all data for the selected period
 
     if (error) {
-      console.error("Error fetching latest orders:", error);
+      console.error("Error fetching orders:", error);
       return [];
     }
     
     // Map to UI friendly format
-    return data.map(item => ({
-        id: item.id,
-        tableNo: item.session?.tables?.table_number || "N/A",
-        menu: item.products?.title?.en || "Unknown Item", // Assuming 'en' for now, or just title if simple string
-        quantity: item.quantity,
-        total: (item.quantity * (parseFloat(item.unit_price_at_order) || 0)),
-        status: item.status
-    }));
+    return data.map(item => {
+        // If session is closed, consider the order completed/paid
+        const isSessionClosed = item.session?.status === 'closed';
+        // Use 'Completed' if session is closed, otherwise use item status
+        // Exception: if item was cancelled, keep it cancelled
+        let displayStatus = item.status;
+        if (isSessionClosed && item.status !== 'cancelled') {
+            displayStatus = 'Completed';
+        }
+
+        return {
+            id: item.id,
+            tableNo: item.session?.tables?.table_number || "N/A",
+            menu: item.products?.title?.en || "Unknown Item", 
+            quantity: item.quantity,
+            total: (item.quantity * (parseFloat(item.unit_price_at_order) || 0)),
+            status: displayStatus
+        };
+    });
   },
 
   // Task 2: Sales by Category
@@ -109,11 +124,8 @@ export const analyticsService = {
   },
 
   // Task 3: Hourly Peak Data
-  async getHourlyTraffic() {
-    // defaults to Today for "Hourly" view typically
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const startDate = today.toISOString();
+  async getHourlyTraffic(range = "Today") {
+    const startDate = this.getStartDate(range);
 
     const { data, error } = await supabase
         .from("order_items")
@@ -156,6 +168,14 @@ export const analyticsService = {
             const monthAgo = new Date(today);
             monthAgo.setMonth(today.getMonth() - 1);
             return monthAgo.toISOString();
+        case "3 Months":
+            const threeMonthsAgo = new Date(today);
+            threeMonthsAgo.setMonth(today.getMonth() - 3);
+            return threeMonthsAgo.toISOString();
+        case "Year":
+            const yearAgo = new Date(today);
+            yearAgo.setFullYear(today.getFullYear() - 1);
+            return yearAgo.toISOString();
         default: // All Time or Default to Month
              const defaultDate = new Date(today);
              defaultDate.setMonth(today.getMonth() - 1);

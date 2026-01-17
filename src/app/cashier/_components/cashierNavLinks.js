@@ -10,18 +10,13 @@ export const CASHIER_LINKS = [
     icon: RiLayoutGridLine,
   },
   {
+      name: "Analytics",
+      path: "/cashier/analytics",
+      icon: RiLayoutGridLine, // Reusing icon or better one if imported
+  },
+  {
     name: "Reports",
     path: "/cashier/reports",
     icon: RiFileListLine,
   },
-  // {
-  //   name: "History",
-  //   path: "/cashier/history", // (اگه بعدا خواستی اضافه کنی)
-  //   icon: RiHistoryLine,
-  // },
-  // {
-  //   name: "Profile",
-  //   path: "/cashier/profile", // (برای تغییر پسورد و...)
-  //   icon: RiUserSettingsLine,
-  // },
 ];

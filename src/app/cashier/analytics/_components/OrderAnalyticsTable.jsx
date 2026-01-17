@@ -1,6 +1,15 @@
 import React from "react";
 
 const OrderReportTable = ({ orders, loading, filter }) => {
+    // Add internal state for status filtering
+    const [statusFilter, setStatusFilter] = React.useState("All");
+    const [showFilterMenu, setShowFilterMenu] = React.useState(false);
+
+    // Filter displayed orders
+    const displayedOrders = statusFilter === "All" 
+        ? orders 
+        : orders.filter(o => o.status?.toLowerCase() === statusFilter.toLowerCase());
+
     // Helper to format currency
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
@@ -22,12 +31,35 @@ const OrderReportTable = ({ orders, loading, filter }) => {
   
     return (
       <div className="bg-[#1F1D2B] rounded-lg p-6 w-full">
-        <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-white">Order Report</h2>
-             <button className="flex items-center gap-2 text-white border border-[#393C49] px-4 py-2 rounded-lg text-sm bg-[#1F1D2B] hover:bg-[#252836]">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
-                Filter Order
-             </button>
+        <div className="flex justify-between items-center mb-6 relative">
+            <h2 className="text-xl font-bold text-white">Analytics</h2>
+             
+             <div className="relative">
+                <button 
+                    onClick={() => setShowFilterMenu(!showFilterMenu)}
+                    className="flex items-center gap-2 text-white border border-[#393C49] px-4 py-2 rounded-lg text-sm bg-[#1F1D2B] hover:bg-[#252836]"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+                    {statusFilter === "All" ? "Filter Order" : statusFilter}
+                </button>
+
+                {showFilterMenu && (
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-[#252836] border border-[#393C49] rounded-lg shadow-lg z-10 py-1">
+                        {["All", "Pending", "Preparing", "Served", "Completed", "Cancelled"].map((status) => (
+                            <button
+                                key={status}
+                                onClick={() => {
+                                    setStatusFilter(status);
+                                    setShowFilterMenu(false);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-[#1F1D2B] hover:text-white"
+                            >
+                                {status}
+                            </button>
+                        ))}
+                    </div>
+                )}
+             </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -51,12 +83,14 @@ const OrderReportTable = ({ orders, loading, filter }) => {
                         <td className="py-4"><div className="h-6 bg-gray-700 rounded w-20"></div></td>
                     </tr>
                 ))
-              ) : orders.length === 0 ? (
+              ) : displayedOrders.length === 0 ? (
                   <tr>
-                      <td colSpan="4" className="py-8 text-center text-[#ABBBC2]">No orders found for this period.</td>
+                      <td colSpan="4" className="py-8 text-center text-[#ABBBC2]">
+                          {orders.length === 0 ? "No orders found for this period." : "No orders match the filter."}
+                      </td>
                   </tr>
               ) : (
-                  orders.map((order) => (
+                  displayedOrders.map((order) => (
                     <tr key={order.id} className="border-b border-[#393C49] hover:bg-[#252836]/50 transition-colors">
                       <td className="py-4 pl-4 text-[#E0E6E9] font-bold">
                         {order.tableNo}

@@ -6,7 +6,7 @@ import { RiTimeLine } from "react-icons/ri";
 // Dynamically import Chart to avoid SSR issues
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-const HourlyTrafficChart = ({ data, loading }) => {
+const HourlyTrafficChart = ({ data, loading, filter }) => {
     // Data expected: Array of 24 integers (count per hour)
     
     const series = [{
@@ -80,7 +80,9 @@ const HourlyTrafficChart = ({ data, loading }) => {
             <RiTimeLine className="text-[#EA7C69]" />
             Hourly Traffic
         </h2>
-        <span className="text-xs text-[#ABBBC2]">Today</span>
+        <span className="text-xs text-[#ABBBC2]">
+            {filter === "Today" ? "Today" : `Peak Hours (${filter})`}
+        </span>
       </div>
 
       <div className="w-full h-[250px]">
