@@ -1,8 +1,10 @@
 <div align="center">
 
-# 🍽️ Next.js 3D Digital Menu
+  <img src="public/logo-web.png" alt="Menu 3D Logo" width="150" />
 
-**A high-performance, multi-template digital menu for restaurants featuring AR/3D visualization and real-time ordering.**
+  # MENU 3D
+
+  **A high-scale B2B SaaS Restaurant Management Platform with 3D visualization.**
 
   <p>
     <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js" />
@@ -12,65 +14,82 @@
     <img src="https://img.shields.io/badge/3D-ModelViewer-orange?style=for-the-badge&logo=google" />
   </p>
 
-[View Demo](#) • [Report Bug](#) • [Request Feature](#)
+  [See Live Demo](/liman-coast/T-01) • [Admin Panel](/admin/dashboard)
 
 </div>
 
 ---
 
-## ✨ Key Features
+## 📚 Project Overview
 
-This project redefines the dining experience with a focus on visual fidelity, performance, and ease of use.
+**Menu 3D** is a high-scale **B2B SaaS Restaurant Management Platform** designed to support hundreds of restaurants simultaneously. It uses a strict **multi-tenant architecture** where all data is isolated by `restaurant_id`.
 
-- 🎨 **Multi-Template Architecture:** Seamlessly switch between **Modern** (Dark/Neon) and **Classic** (Luxury/Paper) themes via database config.
-- 📦 **Advanced AR & 3D Integration:** High-performance 3D product visualization with smooth transitions and fixed-scale AR using `@google/model-viewer`.
-- ⚡ **Real-time Cart & Ordering:** Instant order syncing using Supabase Realtime channels (Draft/Pending states).
-- 📷 **Dynamic QR Code System:** Integrated QR code generator with custom styles (round, classy), logo support, and live preview for each table.
-- 🎥 **Smart Media Engine:** Intelligent video handling that serves `.mov` (HEVC) to iOS and `.webm` to Android/Web for optimal performance.
-- 📱 **Responsive & Native-Like:** Smooth animations and gesture-based interactions tailored for mobile users.
-- 🚀 **Modern Tech Stack:** Built on Next.js 16, React 19, and Three.js for cutting-edge performance.
+### Core Applications
+The codebase is a monorepo containing 4 distinct applications:
 
-## 🏗️ Project Structure
+1.  **Client User App (`/[slug]`)**: End customers scan QR codes to view interactive **3D menus** and place group orders via synchronous carts.
+2.  **Waiter App (`/waiter`)**: Staff receive real-time notifications, manage table status, and confirm orders for the kitchen.
+3.  **Cashier App (`/cashier`)**: Cashiers validate orders, handle complex split-check payments, and finalize table sessions.
+4.  **Admin Portal (`/admin`)**: Owners manage menus, generate QR codes, and view business analytics.
 
-Designed for scalability. Templates are isolated, logic is shared.
+---
 
+## 🏗️ Architecture & Data Flow
+
+The project follows a strict **Service-Repository Pattern** to ensure separation of concerns.
+
+### A. Service Layer (`src/services/*.js`)
+All interactions with **Supabase** (PostgreSQL, Auth) occur exclusively here.
+- **Constraints**: Every function MUST require `restaurant_id` to enforce multi-tenancy.
+- **Key Services**: `orderService`, `cashierService`, `waiterService`, `sessionService`.
+
+### B. Real-time Logic (`src/hooks/*.js`)
+We leverage **Supabase Realtime Channels** to keep all users in sync.
+- **Cart Sync**: When multiple users scan the same table QR, they join the same session. Any `order_items` change broadcasts instantly to all connected devices.
+- **Table Locking**: Critical actions (like Checkout) check session status to prevent race conditions.
+
+### C. Folder Structure
 ```bash
 src/
 ├── app/
-│   └── [slug]/[table_id]/    # Dynamic Routing Entry
+│   ├── [slug]/[table_id]/    # 🛒 Client App (Dynamic)
+│   ├── admin/                # 📊 Admin Dashboard
+│   ├── cashier/              # 💳 Cashier POS
+│   ├── waiter/               # 🛎️ Waiter Dashboard
+│   ├── login/                # 🔐 Unified Login
+│   └── layout.js             # 🌍 Root Layout
 ├── components/
-│   ├── ui/                   # Global Shared Components (SmartMedia, ARViewer)
-│   └── templates/
-│       ├── modern/           # 🌑 Modern Theme (Grid Layout, Dark Mode)
-│       └── classic/          # 📜 Classic Theme (Row Layout, Serif Fonts)
-├── hooks/                    # Custom Hooks (useCart, Realtime logic)
-└── lib/                      # Supabase Client & Utils
+│   ├── ui/                   # 🧩 Shared UI (GlassLoader, Modals)
+│   ├── 3d/                   # 🧊 Three.js & Model Viewer Components
+│   └── ...
+├── services/                 # ⚙️ Business Logic & API Calls
+├── hooks/                    # 🎣 React Hooks (useRealtimeOrders)
+└── lib/                      # 🗄️ Supabase Client & Utils
 ```
 
-## 📸 Screenshots
+---
 
-<div align="center">
+## 💾 Database Schema
 
-### Modern Template (Dark)
-
-<img src="https://via.placeholder.com/300x600?text=Modern+UI" alt="Modern UI" width="250"/>
-
-### Classic Template (Light)
-
-<img src="https://via.placeholder.com/300x600?text=Classic+UI" alt="Classic UI" width="250"/>
-
-</div>
+| Table | Description |
+| :--- | :--- |
+| **`restaurants`** | Root tenant record (Multi-tenancy root). |
+| **`tables`** | Contains `qr_token` and layout data. |
+| **`sessions`** | Tracks dining session (`ordering`, `waiting_payment`, `closed`). |
+| **`order_items`** | Individual items with statuses (`draft`, `pending`, `confirmed`, `served`). |
+| **`bills`** | Financial records for sessions. |
+| **`transactions`** | Payment logs linked to bills. |
 
 ---
 
-## 🤝 Contributing
+## 🔐 Security
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+1.  **Strict Isolation**: All queries are filtered by `restaurant_id`.
+2.  **Row Level Security (RLS)**: Supabase policies act as the final guardrail.
+3.  **Audit Logs**: Sensitive actions are recorded in `activity_logs`.
 
 ---
 
 <div align="center">
-  
-Built with ❤️ by <b>Erfan</b>
-
+  Built with ❤️ by <b>Erfan</b>
 </div>
