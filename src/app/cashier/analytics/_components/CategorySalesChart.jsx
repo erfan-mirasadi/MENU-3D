@@ -1,17 +1,24 @@
 "use client";
-import React from "react";
 import dynamic from "next/dynamic";
-import { RiArrowDownSLine } from "react-icons/ri";
 
 // Dynamically import Chart to avoid SSR issues
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-const CategorySalesChart = ({ data, loading, filter }) => {
+const CategorySalesChart = ({ data, loading }) => {
     // Data expected: Array of { name: "Foods", value: 1250.00 }
     
-    // Extract series and labels
-    const series = data.map(d => d.value);
-    const labels = data.map(d => d.name);
+    // Sort by value descending
+    const processedData = [...data]
+        .sort((a, b) => b.value - a.value);
+
+    // Calculate total from ALL data to get correct percentages
+    // Multiply by 1.25 to add a visual "breathing room" so rings are NEVER full circles (max ~80%)
+    const totalSales = data.reduce((acc, curr) => acc + curr.value, 0) * 1.25;
+
+    // Extract series (percentages) and labels
+    // Guard against divide by zero
+    const series = processedData.map(d => totalSales > 0 ? (d.value / totalSales) * 100 : 0);
+    const labels = processedData.map(d => d.name);
     
     // Palette
     const colors = ["#65B0F6", "#FFB572", "#FF7CA3", "#50D1AA", "#9290FE"];
@@ -53,20 +60,20 @@ const CategorySalesChart = ({ data, loading, filter }) => {
         enabled: true,
         theme: "dark",
         y: {
-            formatter: function (val) {
-                return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
+            formatter: function (val, { seriesIndex, w }) {
+                 // Use the original value from processedData
+                 // seriesIndex corresponds to the index in processedData
+                 const originalValue = processedData[seriesIndex] ? processedData[seriesIndex].value : 0;
+                return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(originalValue);
             }
         }
     }
   };
 
   return (
-    <div className="bg-[#1F1D2B] p-6 rounded-lg h-full flex flex-col">
+    <div className="bg-[#1F1D2B] p-6 rounded-lg flex flex-col">
        <div className="flex justify-between items-center mb-6">
-        <h2 className="text-white text-lg font-bold">Sales by Category</h2>
-        <button className="flex items-center gap-2 text-white border border-[#393C49] px-3 py-1.5 rounded-lg text-sm bg-[#1F1D2B]">
-           {filter} <RiArrowDownSLine size={14} />
-        </button>
+         <h2 className="text-white text-lg font-bold">Sales by Category</h2>
       </div>
 
       <div className="flex items-center justify-center gap-8 flex-1">
@@ -83,7 +90,7 @@ const CategorySalesChart = ({ data, loading, filter }) => {
 
          {/* Legend */}
          <div className="flex flex-col gap-4">
-            {data.map((item, index) => (
+            {processedData.map((item, index) => (
                 <div key={index} className="flex items-start gap-3">
                     <div 
                         className="w-3 h-3 rounded-full mt-1" 

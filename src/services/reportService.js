@@ -2,50 +2,59 @@ import { supabase } from "@/lib/supabase";
 
 const getDateRanges = (range) => {
   const now = new Date();
+  // Normalize "now" to start of today 00:00:00 for accurate day diffs
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   let currentStart, previousStart, previousEnd;
 
   switch (range) {
     case "Today":
-      currentStart = today;
+      currentStart = today; // 00:00 Today
       previousStart = new Date(today);
-      previousStart.setDate(today.getDate() - 1); // Yesterday
-      previousEnd = today;
+      previousStart.setDate(today.getDate() - 1); // 00:00 Yesterday
+      previousEnd = today; // Ends at 00:00 Today (so fetches full Yesterday)
       break;
     case "Week":
+      // Valid assumption: Week starts on Monday
+      const day = today.getDay(); // 0 is Sunday
+      const diffToMon = today.getDate() - day + (day === 0 ? -6 : 1);
+      
       currentStart = new Date(today);
-      currentStart.setDate(today.getDate() - 7);
+      currentStart.setDate(diffToMon); // This Monday
+      currentStart.setHours(0,0,0,0);
+
       previousStart = new Date(currentStart);
-      previousStart.setDate(currentStart.getDate() - 7); // Previous 7 days
-      previousEnd = currentStart;
+      previousStart.setDate(currentStart.getDate() - 7); // Last Monday
+      
+      previousEnd = currentStart; // Last Week ends when This Week starts
       break;
     case "Month":
-      currentStart = new Date(today);
-      currentStart.setMonth(today.getMonth() - 1);
-      previousStart = new Date(currentStart);
-      previousStart.setMonth(currentStart.getMonth() - 1);
+      // 1st of Current Month
+      currentStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      
+      // 1st of Last Month
+      previousStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      
       previousEnd = currentStart;
       break;
     case "3 Months":
-      currentStart = new Date(today);
-      currentStart.setMonth(today.getMonth() - 3);
-      previousStart = new Date(currentStart);
-      previousStart.setMonth(currentStart.getMonth() - 3);
+      // 1st of Month, 3 months ago
+      currentStart = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+      previousStart = new Date(today.getFullYear(), today.getMonth() - 6, 1);
       previousEnd = currentStart;
       break;
     case "Year":
-      currentStart = new Date(today);
-      currentStart.setFullYear(today.getFullYear() - 1);
-      previousStart = new Date(currentStart);
-      previousStart.setFullYear(currentStart.getFullYear() - 1);
+      // Jan 1st of This Year
+      currentStart = new Date(today.getFullYear(), 0, 1);
+      
+      // Jan 1st of Last Year
+      previousStart = new Date(today.getFullYear() - 1, 0, 1);
+      
       previousEnd = currentStart;
       break;
-    default: // Default to Month
-      currentStart = new Date(today);
-      currentStart.setMonth(today.getMonth() - 1);
-      previousStart = new Date(currentStart);
-      previousStart.setMonth(currentStart.getMonth() - 1);
+    default: // Month
+      currentStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      previousStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
       previousEnd = currentStart;
   }
   return { 
@@ -211,7 +220,7 @@ export const reportService = {
      // Convert to array and sort
      return Object.values(aggregation)
         .sort((a, b) => b.count - a.count)
-        .slice(0, 3);
+        .slice(0, 20);
   },
 
   async getOrderTypes(range) {

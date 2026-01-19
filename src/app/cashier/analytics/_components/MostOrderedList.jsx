@@ -1,9 +1,10 @@
-import React from "react";
-import { RiArrowDownSLine } from "react-icons/ri";
+import { useState } from "react";
 
 const MostOrderedList = ({ items, loading, filter }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
-    <div className="bg-[#252836] p-6 rounded-lg h-full">
+    <div className="bg-[#252836] p-6 rounded-lg">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-white text-lg font-bold">Most Ordered</h2>
 
@@ -23,7 +24,7 @@ const MostOrderedList = ({ items, loading, filter }) => {
         ) : items.length === 0 ? (
              <p className="text-[#ABBBC2] text-sm text-center py-4">No top items yet.</p>
         ) : (
-            items.map((item, index) => (
+            items.slice(0, isExpanded ? 15 : 3).map((item, index) => (
             <div key={index} className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
                 {item.image ? (
@@ -42,8 +43,11 @@ const MostOrderedList = ({ items, loading, filter }) => {
             ))
         )}
       </div>
-       <button className="w-full mt-8 py-3 rounded-lg border border-[#EA7C69] text-[#EA7C69] text-sm font-bold hover:bg-[#EA7C69]/10 transition-colors">
-        View All
+       <button 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full mt-8 py-3 rounded-lg border border-[#EA7C69] text-[#EA7C69] text-sm font-bold hover:bg-[#EA7C69]/10 transition-colors cursor-pointer"
+       >
+        {isExpanded ? "View Less" : "View All"}
       </button>
     </div>
   );
