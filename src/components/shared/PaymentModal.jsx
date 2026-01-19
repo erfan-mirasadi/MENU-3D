@@ -207,7 +207,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
         <div className="w-full md:w-[450px] flex flex-col border-r border-[#252836] bg-[#1F1D2B]">
             <div className="p-6 border-b border-[#252836] bg-[#252836]/50">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <RiFileList3Line className="text-orange-500"/> Order Details
+                    <RiFileList3Line className="text-[#ea7c69]"/> Order Details
                 </h2>
                 <div className="flex justify-between text-sm text-gray-400 mt-2">
                     <span>Table #{session?.table?.table_number}</span>
@@ -228,7 +228,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
                                 isPaid 
                                 ? "bg-[#252836]/50 border-transparent opacity-50 cursor-not-allowed" 
                                 : isSelected 
-                                    ? "bg-orange-500/10 border-orange-500" 
+                                    ? "bg-[#ea7c69]/10 border-[#ea7c69]" 
                                     : "bg-[#252836] border-transparent hover:border-gray-600"
                             }`}
                          >
@@ -237,7 +237,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
                                  isPaid 
                                  ? "border-green-500 bg-green-500/20 text-green-500" 
                                  : isSelected 
-                                     ? "border-orange-500 bg-orange-500 text-white" 
+                                     ? "border-[#ea7c69] bg-[#ea7c69] text-white" 
                                      : "border-gray-500 group-hover:border-gray-400"
                              }`}>
                                  {isPaid ? <RiCheckLine size={16} /> : (isSelected && <RiCheckLine size={16} />)}
@@ -275,7 +275,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
                 </div>
                 <div className="flex justify-between text-white font-bold text-lg">
                     <span>Remaining Due</span>
-                    <span className="text-orange-500">{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(remainingTotal)}</span>
+                    <span className="text-[#ea7c69]">{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(remainingTotal)}</span>
                 </div>
             </div>
         </div>
@@ -290,13 +290,13 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
             <div className="flex gap-8 px-8 pt-8 border-b border-[#252836]">
                 <button 
                     onClick={() => { setActiveTab("FULL"); setSplitMode("PEOPLE"); setSplitCount(1); setSelectedItemIds(new Set()); setPaymentMethod('CASH'); }}
-                    className={`pb-4 font-bold text-sm tracking-wide transition-all border-b-2 flex items-center gap-2 ${activeTab === "FULL" ? "border-orange-500 text-orange-500" : "border-transparent text-gray-500 hover:text-gray-300"}`}
+                    className={`pb-4 font-bold text-sm tracking-wide transition-all border-b-2 flex items-center gap-2 ${activeTab === "FULL" ? "border-[#ea7c69] text-[#ea7c69]" : "border-transparent text-gray-500 hover:text-gray-300"}`}
                 >
                     <RiWallet3Line size={18} /> FULL PAYMENT
                 </button>
                 <button 
                     onClick={() => { setActiveTab("SPLIT"); }}
-                    className={`pb-4 font-bold text-sm tracking-wide transition-all border-b-2 flex items-center gap-2 ${activeTab === "SPLIT" ? "border-orange-500 text-orange-500" : "border-transparent text-gray-500 hover:text-gray-300"}`}
+                    className={`pb-4 font-bold text-sm tracking-wide transition-all border-b-2 flex items-center gap-2 ${activeTab === "SPLIT" ? "border-[#ea7c69] text-[#ea7c69]" : "border-transparent text-gray-500 hover:text-gray-300"}`}
                 >
                     <RiPieChartLine size={18} /> SPLIT / PARTIAL
                 </button>
@@ -308,13 +308,13 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
                     <div className="mb-6 animate-in fade-in slide-in-from-top-4">
                         <label className="text-gray-400 text-xs font-bold uppercase mb-3 block">Split Mode</label>
                         <div className="flex gap-3 mb-6">
-                             <button onClick={() => setSplitMode("PEOPLE")} className={`flex-1 py-3 px-2 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${splitMode === "PEOPLE" ? "bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
+                             <button onClick={() => setSplitMode("PEOPLE")} className={`flex-1 py-3 px-2 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${splitMode === "PEOPLE" ? "bg-[#ea7c69] text-white border-[#ea7c69] shadow-lg shadow-[#ea7c69]/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
                                  <RiUser3Line /> By People
                              </button>
-                             <button onClick={() => setSplitMode("ITEMS")} className={`flex-1 py-3 px-2 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${splitMode === "ITEMS" ? "bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
+                             <button onClick={() => setSplitMode("ITEMS")} className={`flex-1 py-3 px-2 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${splitMode === "ITEMS" ? "bg-[#ea7c69] text-white border-[#ea7c69] shadow-lg shadow-[#ea7c69]/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
                                  <RiFileList3Line /> By Items
                              </button>
-                             <button onClick={() => setSplitMode("CUSTOM")} className={`flex-1 py-3 px-2 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${splitMode === "CUSTOM" ? "bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
+                             <button onClick={() => setSplitMode("CUSTOM")} className={`flex-1 py-3 px-2 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${splitMode === "CUSTOM" ? "bg-[#ea7c69] text-white border-[#ea7c69] shadow-lg shadow-[#ea7c69]/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
                                  <RiCalculatorLine /> Custom
                              </button>
                         </div>
@@ -333,18 +333,18 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
                         {splitMode === "ITEMS" && (
                             <div className="text-center bg-[#252836] p-4 rounded-xl border border-[#393C49]">
                                 <p className="text-gray-300 text-sm font-medium">Select items from the list on the left to calculate total.</p>
-                                <p className="text-orange-500 text-xs mt-1 font-bold">{selectedItemIds.size} items selected</p>
+                                <p className="text-[#ea7c69] text-xs mt-1 font-bold">{selectedItemIds.size} items selected</p>
                             </div>
                         )}
 
                         {splitMode === "CUSTOM" && (
                             <div className="relative group">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white font-bold text-lg group-focus-within:text-orange-500 transition-colors">₺</span>
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white font-bold text-lg group-focus-within:text-[#ea7c69] transition-colors">₺</span>
                                 <input 
                                     type="number" 
                                     value={customAmount}
                                     onChange={(e) => setCustomAmount(e.target.value)}
-                                    className="w-full bg-[#252836] text-white border-2 border-[#393C49] rounded-xl py-4 pl-10 pr-4 font-bold outline-none focus:border-orange-500 transition-all text-lg placeholder-gray-600"
+                                    className="w-full bg-[#252836] text-white border-2 border-[#393C49] rounded-xl py-4 pl-10 pr-4 font-bold outline-none focus:border-[#ea7c69] transition-all text-lg placeholder-gray-600"
                                     placeholder="Enter amount to pay..."
                                     autoFocus
                                 />
@@ -355,14 +355,14 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
 
                 {/* AMOUNT DISPLAY */}
                 <div className="flex flex-col items-center justify-center mb-8 p-6 bg-[#252836] rounded-2xl border border-[#2D303E] shadow-inner relative overflow-hidden group">
-                    <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500 to-transparent opacity-50"></div>
+                    <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-[#ea7c69] to-transparent opacity-50"></div>
                     <span className="text-gray-400 text-xs font-bold uppercase mb-2 tracking-widest">Amount to Pay Now</span>
                     <span className="text-5xl font-bold text-white tracking-tight flex items-baseline gap-1">
                         <span className="text-2xl text-gray-500">₺</span>
                         {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amountToPay)}
                     </span>
                     {activeTab === "SPLIT" && splitMode === "PEOPLE" && splitCount > 1 && (
-                        <span className="text-orange-400 text-xs font-bold mt-2 bg-orange-500/10 px-3 py-1 rounded-full border border-orange-500/20">
+                        <span className="text-[#ea7c69] text-xs font-bold mt-2 bg-[#ea7c69]/10 px-3 py-1 rounded-full border border-[#ea7c69]/20">
                             {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(remainingTotal)} ÷ {splitCount} people
                         </span>
                     )}
@@ -379,8 +379,8 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
                         <RiBankCardLine size={28} className={paymentMethod === "POS" ? "text-blue-400" : ""} /> 
                         <span className="text-xs font-bold tracking-wide">CARD</span>
                     </button>
-                    <button onClick={() => setPaymentMethod("MIXED")} className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${paymentMethod === "MIXED" ? "border-orange-500 bg-orange-500/10 text-white shadow-[0_0_15px_rgba(249,115,22,0.2)]" : "border-[#393C49] text-gray-400 hover:border-gray-500 hover:bg-[#2D303E]"}`}>
-                        <RiPieChartLine size={28} className={paymentMethod === "MIXED" ? "text-orange-400" : ""} /> 
+                    <button onClick={() => setPaymentMethod("MIXED")} className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${paymentMethod === "MIXED" ? "border-[#ea7c69] bg-[#ea7c69]/10 text-white shadow-[0_0_15px_rgba(234,124,105,0.2)]" : "border-[#393C49] text-gray-400 hover:border-gray-500 hover:bg-[#2D303E]"}`}>
+                        <RiPieChartLine size={28} className={paymentMethod === "MIXED" ? "text-[#ea7c69]" : ""} /> 
                         <span className="text-xs font-bold tracking-wide">MIXED</span>
                     </button>
                 </div>
@@ -402,7 +402,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
                 <button
                     onClick={handleConfirm}
                     disabled={processing || amountToPay <= 0.01 || isFullyPaid}
-                    className="w-full mt-auto bg-[#EA7C69] hover:bg-[#d96a56] text-white font-bold py-4 rounded-xl shadow-lg shadow-[#EA7C69]/20 transition-all flex items-center justify-center gap-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
+                    className="w-full mt-auto bg-[#EA7C69] hover:bg-[#d96a56] text-white font-bold py-4 rounded-xl shadow-lg shadow-[#EA7C69]/20 transition-all flex items-center justify-center gap-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98] cursor-pointer"
                 >
                     {processing ? (
                         <>

@@ -1,4 +1,5 @@
 import { FaMoneyBillWave } from "react-icons/fa";
+import Loader from "@/components/ui/Loader";
 
 export default function DrawerFooter({ totalAmount, onCloseTable, loading }) {
   return (
@@ -15,9 +16,14 @@ export default function DrawerFooter({ totalAmount, onCloseTable, loading }) {
       <button
         onClick={onCloseTable}
         disabled={loading}
-        className="w-full py-4 bg-[#252836] border-2 border-red-500/50 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95"
+        className="w-full py-4 bg-[#252836] border-2 border-red-500/50 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100 cursor-pointer"
       >
-        <FaMoneyBillWave /> FINISH & CHECKOUT
+        {loading ? (
+           <Loader variant="inline" className="w-5 h-5 text-current" />
+        ) : (
+           <FaMoneyBillWave />
+        )}
+        {loading ? "PROCESSING..." : "FINISH & CHECKOUT"}
       </button>
     </div>
   );

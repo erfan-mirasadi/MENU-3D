@@ -15,11 +15,19 @@ export default function DashboardPage() {
   // unified hook
   const { tables, sessions, loading, restaurantId, restaurant, refetch, handleCheckout, isConnected } = useRestaurantData()
   const [isEditing, setIsEditing] = useState(false)
+  const [loadingTransfer, setLoadingTransfer] = useState(false)
   
   // Selection State
   const [selectedTableId, setSelectedTableId] = useState(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   
+  // Transfer State
+  const [isTransferMode, setIsTransferMode] = useState(false)
+  const [sourceTableIdForTransfer, setSourceTableIdForTransfer] = useState(null)
+
+  // Dynamically import service (to avoid top-level circular deps if any)
+  // const { moveSession, mergeSessions } = require("@/services/waiterService");
+
   // Local state for layout changes
   const [localTables, setLocalTables] = useState([])
 
@@ -30,12 +38,25 @@ export default function DashboardPage() {
        
        let computedStatus = 'free'
        
-       if (activeSession) {
+       // Priority 0: Transfer Mode Visuals
+       if (isTransferMode) {
+           if (table.id === sourceTableIdForTransfer) {
+               computedStatus = 'source'
+           }
+           else if (activeSession) {
+               computedStatus = 'merge_target' // Occupied -> Merge
+           }
+           else {
+               computedStatus = 'move_target' // Empty -> Move
+           }
+       }
+       // Priority 1: Normal Visuals
+       else if (activeSession) {
            const items = activeSession.order_items || []
            const requests = activeSession.service_requests || []
            
            // 1. Bill/Service Request (Red)
-           const hasPaymentRequest = requests.some(r => r.status === 'pending') // Assuming any request is urgent for now
+           const hasPaymentRequest = requests.some(r => r.status === 'pending') 
            
            // 2. Counts
            const pendingCount = items.filter(i => i.status === 'pending').length
@@ -74,7 +95,86 @@ export default function DashboardPage() {
        };
     });
     return calculateDefaultLayout(merged);
-  }, [tables, sessions])
+  }, [tables, sessions, isTransferMode, sourceTableIdForTransfer])
+
+
+  const handleEnterTransferMode = () => {
+     if (!selectedTableId) return;
+     // Close drawer
+     setIsDrawerOpen(false);
+     // Enable mode
+     setIsTransferMode(true);
+     setSourceTableIdForTransfer(selectedTableId);
+     // Clear selection
+     setSelectedTableId(null);
+     toast("Select a target table to transfer/merge", { icon: "🔄" });
+  };
+
+  const handleCancelTransfer = () => {
+     setIsTransferMode(false);
+     setSourceTableIdForTransfer(null);
+     toast("Transfer cancelled");
+  };
+
+  const handleTableSelection = async (targetId) => {
+     if (!sourceTableIdForTransfer || loadingTransfer) return;
+     
+     if (targetId === sourceTableIdForTransfer) {
+         toast.error("Cannot transfer to self!");
+         return;
+     }
+
+     // Import dynamically
+     const { moveSession, mergeSessions } = require("@/services/waiterService");
+
+     // 1. Get Source Session
+     const sourceSession = sessions.find(s => s.table_id === sourceTableIdForTransfer);
+     if (!sourceSession) {
+         toast.error("Source table has no active session!");
+         handleCancelTransfer();
+         return;
+     }
+
+     const sourceTable = tables.find(t => t.id === sourceTableIdForTransfer);
+     const targetTable = tables.find(t => t.id === targetId);
+     
+     if (!sourceTable || !targetTable) return;
+
+     // 2. Determine Action (Move vs Merge)
+     const targetSession = sessions.find(s => s.table_id === targetId);
+     const isMerge = !!targetSession;
+
+     if (isMerge) {
+         if(!confirm(`Merge Table ${sourceTable.table_number} into Table ${targetTable.table_number}?`)) return;
+         
+         try {
+             setLoadingTransfer(true);
+             await mergeSessions(sourceSession.id, targetSession.id);
+             toast.success("Tables merged successfully!");
+             // Refresh Data
+             refetch();
+         } catch(err) {
+             console.error(err);
+             toast.error("Merge failed");
+         }
+     } else {
+         if(!confirm(`Move Table ${sourceTable.table_number} to Table ${targetTable.table_number}?`)) return;
+
+         try {
+             setLoadingTransfer(true);
+             await moveSession(sourceSession.id, targetId);
+             toast.success("Table moved successfully!");
+             // Refresh Data
+             refetch();
+         } catch(err) {
+             console.error(err);
+             toast.error("Move failed");
+         }
+     }
+
+     setLoadingTransfer(false);
+     handleCancelTransfer();
+  };
 
   const handleStartEdit = () => {
       setLocalTables(mergedTables) // Initialize editor with current state
@@ -244,9 +344,15 @@ export default function DashboardPage() {
             <RestaurantMap 
                 tables={mergedTables} 
                 onSelectTable={(id) => {
-                    if(!id) return
-                    setSelectedTableId(id)
-                    setIsDrawerOpen(true)
+                    if(!id) return;
+                    
+                    if (isTransferMode) {
+                        handleTableSelection(id);
+                        return;
+                    }
+
+                    setSelectedTableId(id);
+                    setIsDrawerOpen(true);
                 }}
             />
         )}
@@ -263,8 +369,25 @@ export default function DashboardPage() {
                 onCheckout={handleCheckout}
                 role="cashier"
                 restaurant={restaurant}
+                onTransfer={handleEnterTransferMode}
             />
        )}
+
+      {/* TRANSFER MODE BANNER */}
+      {isTransferMode && (
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 bg-[#ea7c69] text-white px-8 py-4 rounded-full shadow-2xl animate-in slide-in-from-bottom flex gap-6 items-center">
+              <div>
+                  <p className="font-bold text-lg whitespace-nowrap">Select Target Table</p>
+                  <p className="text-white/80 text-xs">Click any table to Move or Merge</p>
+              </div>
+              <button 
+                onClick={handleCancelTransfer}
+                className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-full font-bold transition-colors text-sm"
+              >
+                Cancel
+              </button>
+          </div>
+      )}
 
       {/* UI Overlay */}
       <div className="absolute inset-0 z-10 pointer-events-none p-6 flex flex-col justify-between">

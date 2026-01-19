@@ -121,3 +121,36 @@ export async function startTableSession(tableId, restaurantId) {
   if (error) throw error;
   return data;
 }
+
+// 6. Move Session (Transfer)
+export const moveSession = async (sessionId, newTableId) => {
+  // Update the session's table_id reference
+  const { data, error } = await supabase
+    .from('sessions')
+    .update({ table_id: newTableId })
+    .eq('id', sessionId)
+    .select();
+  if (error) throw error;
+  return data;
+};
+
+// 7. Merge Sessions (Combine)
+export const mergeSessions = async (sourceSessionId, targetSessionId) => {
+  // 1. Move all order_items from Source to Target
+  const { error: itemError } = await supabase
+    .from('order_items')
+    .update({ session_id: targetSessionId })
+    .eq('session_id', sourceSessionId);
+  if (itemError) throw itemError;
+
+  // 2. Close the Source Session (mark as merged)
+  const { error: sessionError } = await supabase
+    .from('sessions')
+    .update({ 
+        status: 'closed', 
+    })
+    .eq('id', sourceSessionId);
+    
+  if (sessionError) throw sessionError;
+  return true;
+};

@@ -20,6 +20,10 @@ function TableBox({ id, position, width = 2.2, depth = 2.2, tableNumber, status,
       if (s === 'ordered') return '#f97316' // Orange
       if (s === 'active' || s === 'confirmed') return '#22c55e' // Green
       if (s === 'payment_requested' || s === 'waiting_payment') return '#ef4444' // Red
+      // Transfer Mode Colors
+      if (s === 'source') return '#6b7280' // Gray
+      if (s === 'merge_target') return '#ea580c' // Dark Orange
+      if (s === 'move_target') return '#16a34a' // Green
       return '#ffffff' // free
   }
   
@@ -67,9 +71,31 @@ function TableBox({ id, position, width = 2.2, depth = 2.2, tableNumber, status,
            materialRef.current.emissiveIntensity = 0.2
            materialRef.current.color.set('#93c5fd')
       }
+      // --- TRANSFER MODES ---
+      else if (status === 'source') {
+           materialRef.current.emissive.set('#000000')
+           materialRef.current.emissiveIntensity = 0
+           materialRef.current.color.set('#374151') // Gray 700
+           materialRef.current.transparent = true
+           materialRef.current.opacity = 0.5
+      }
+      else if (status === 'merge_target') {
+           const intensity = 0.5 + Math.sin(time * 10) * 0.5 
+           materialRef.current.emissive.set('#ea580c')
+           materialRef.current.emissiveIntensity = intensity
+           materialRef.current.color.set('#ea580c')
+      }
+      else if (status === 'move_target') {
+           const intensity = 0.5 + Math.sin(time * 5) * 0.5 
+           materialRef.current.emissive.set('#16a34a')
+           materialRef.current.emissiveIntensity = intensity
+           materialRef.current.color.set('#16a34a')
+      }
       else {
           // Free / Default
            materialRef.current.emissiveIntensity = 0
+           materialRef.current.transparent = false
+           materialRef.current.opacity = 1
            const targetColor = (isEditing && isSelected) ? '#3b82f6' : 
                                (hovered ? '#e5e7eb' : '#ffffff')
            materialRef.current.color.set(targetColor)

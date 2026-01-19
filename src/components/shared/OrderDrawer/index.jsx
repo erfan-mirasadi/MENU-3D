@@ -24,7 +24,8 @@ export default function OrderDrawer({
     isOpen, 
     onClose, 
     role = "waiter", 
-    onCheckout 
+    onCheckout,
+    onTransfer
 }) {
     // Pass onClose as the 5th argument to handle auto-close on table close
     const { state, setters, actions } = useOrderDrawerLogic(session, table, onCheckout, role, onClose);
@@ -53,6 +54,7 @@ export default function OrderDrawer({
                     onClose={onClose}
                     onOpenMenu={() => setters.setIsMenuOpen(true)}
                     onCloseTable={actions.handleForceCloseTable}
+                    onTransfer={onTransfer}
                     loading={loading}
                     loadingOp={loadingOp}
                 />

@@ -8,11 +8,20 @@ import TableCard from "../_components/TableCard";
 
 export default function WaiterDashboard() {
   const { tables, sessions, loading, handleCheckout, isConnected } = useRestaurantData();
+  const [loadingTransfer, setLoadingTransfer] = useState(false);
 
   // State
   const [selectedTable, setSelectedTable] = useState(null);
   const [selectedSession, setSelectedSession] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Transfer State
+  const [isTransferMode, setIsTransferMode] = useState(false);
+  const [sourceTableForTransfer, setSourceTableForTransfer] = useState(null);
+
+  // Import Service Actions (Dynamically to avoid cycles if any)
+  const { moveSession, mergeSessions } = require("@/services/waiterService");
+  const toast = require("react-hot-toast").default;
 
   // Stats Counters
   const pendingCount = sessions.filter((s) =>
@@ -23,8 +32,83 @@ export default function WaiterDashboard() {
   ).length;
   const activeCount = sessions.length;
 
+  // --- Handlers ---
+  
+  const handleEnterTransferMode = () => {
+     if (!selectedTable) return;
+     // Close drawer first
+     setIsDrawerOpen(false);
+     // Enable mode
+     setIsTransferMode(true);
+     setSourceTableForTransfer(selectedTable);
+     // Clear selection temporarily
+     setSelectedTable(null);
+     setSelectedSession(null);
+     toast("Select a target table to transfer/merge", { icon: "🔄" });
+  };
+
+  const handleCancelTransfer = () => {
+     setIsTransferMode(false);
+     setSourceTableForTransfer(null);
+     toast("Transfer cancelled");
+  };
+
+  const handleTransferAction = async (targetTable) => {
+     if (!sourceTableForTransfer || loadingTransfer) return;
+     
+     // 1. Get Source Session
+     const sourceSession = sessions.find(s => s.table_id === sourceTableForTransfer.id);
+     if (!sourceSession) {
+         toast.error("Source table has no active session!");
+         handleCancelTransfer();
+         return;
+     }
+
+     // 2. Determine Action (Move vs Merge)
+     const targetSession = sessions.find(s => s.table_id === targetTable.id);
+     const isMerge = !!targetSession;
+
+     if (isMerge) {
+         if(!confirm(`Merge Table ${sourceTableForTransfer.table_number} into Table ${targetTable.table_number}?`)) return;
+         
+         try {
+             setLoadingTransfer(true);
+             await mergeSessions(sourceSession.id, targetSession.id);
+             toast.success("Tables merged successfully!");
+         } catch(err) {
+             console.error(err);
+             toast.error("Merge failed");
+         }
+     } else {
+         if(!confirm(`Move Table ${sourceTableForTransfer.table_number} to Table ${targetTable.table_number}?`)) return;
+
+         try {
+             setLoadingTransfer(true);
+             await moveSession(sourceSession.id, targetTable.id);
+             toast.success("Table moved successfully!");
+         } catch(err) {
+             console.error(err);
+             toast.error("Move failed");
+         }
+     }
+
+     setLoadingTransfer(false);
+     handleCancelTransfer();
+  };
+
+
   const handleTableClick = (table, session) => {
-    // Open drawer
+    // INTERCEPT IF IN TRANSFER MODE
+    if (isTransferMode) {
+        if (table.id === sourceTableForTransfer?.id) {
+             toast.error("Cannot transfer to self!");
+             return;
+        }
+        handleTransferAction(table);
+        return;
+    }
+
+    // Normal Open Drawer
     setSelectedTable(table);
     setSelectedSession(session);
     setIsDrawerOpen(true);
@@ -56,7 +140,23 @@ export default function WaiterDashboard() {
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-20 relative">
+      {/* TRANSFER MODE BANNER */}
+      {isTransferMode && (
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#ea7c69] text-white p-4 shadow-2xl animate-in slide-in-from-bottom flex justify-between items-center">
+              <div>
+                  <p className="font-bold text-lg">Transferring {sourceTableForTransfer?.table_number}</p>
+                  <p className="text-white/80 text-sm">Select a target table to move or merge.</p>
+              </div>
+              <button 
+                onClick={handleCancelTransfer}
+                className="bg-white/20 hover:bg-white/30 px-6 py-2 rounded-lg font-bold transition-colors"
+              >
+                Cancel
+              </button>
+          </div>
+      )}
+
       {/* --- MODERN HEADER --- */}
       <div className="sticky top-0 z-20 bg-[#1F1D2B]/95 backdrop-blur-xl border-b border-white/5 shadow-2xl">
         <div className="px-4 py-4">
@@ -113,7 +213,7 @@ export default function WaiterDashboard() {
       </div>
 
       {/* --- TABLE GRID --- */}
-      <div className="p-4">
+      <div className={`p-4 transition-opacity ${loadingTransfer ? 'opacity-50 pointer-events-none' : ''}`}>
         {tables.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 opacity-50">
             <FaLayerGroup className="text-4xl mb-4 text-gray-600" />
@@ -131,6 +231,8 @@ export default function WaiterDashboard() {
                   table={table}
                   session={activeSession}
                   onClick={handleTableClick}
+                  isTransferMode={isTransferMode}
+                  isSource={sourceTableForTransfer?.id === table.id}
                 />
               );
             })}
@@ -147,6 +249,7 @@ export default function WaiterDashboard() {
         session={activeDrawerSession}
         role="waiter"
         onCheckout={handleCheckout}
+        onTransfer={handleEnterTransferMode}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import { FaTimes, FaPlus, FaPowerOff } from "react-icons/fa";
+import { LuArrowRightLeft } from "react-icons/lu";
 import Loader from "@/components/ui/Loader";
 
 export default function DrawerHeader({
@@ -7,6 +8,7 @@ export default function DrawerHeader({
   onClose,
   onOpenMenu,
   onCloseTable,
+  onTransfer,
   loading,
   loadingOp
 }) {
@@ -37,6 +39,16 @@ export default function DrawerHeader({
               className="h-10 px-4 bg-[#ea7c69] text-white rounded-lg flex items-center gap-2 font-bold text-sm shadow-lg shadow-orange-900/20 active:scale-95 transition-transform cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
             >
               <FaPlus /> ADD
+            </button>
+
+            {/* TRANSFER BUTTON */}
+            <button
+               onClick={onTransfer}
+               disabled={loading}
+               className="w-10 h-10 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-lg flex items-center justify-center hover:bg-blue-500 hover:text-white cursor-pointer active:scale-90 transition-all disabled:opacity-50 disabled:pointer-events-none"
+               title="Transfer/Merge Table"
+            >
+               <LuArrowRightLeft />
             </button>
 
             {/* CLOSE TABLE BUTTON (Specific Loader) */}

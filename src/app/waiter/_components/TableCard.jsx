@@ -9,8 +9,49 @@ import {
   FaMugHot, // آیکون جدید برای حالت Dining
 } from "react-icons/fa";
 
-export default function TableCard({ table, session, onClick }) {
+export default function TableCard({ table, session, onClick, isTransferMode, isSource }) {
   const cardStyle = useMemo(() => {
+    // ---------------------------------------------------------
+    // 0. TRANSFER MODE
+    // ---------------------------------------------------------
+    if (isTransferMode) {
+        if (isSource) {
+            return {
+                type: 'source',
+                baseClasses: "bg-black/60 border-2 border-gray-600 grayscale opacity-50 cursor-not-allowed",
+                numberColor: "text-gray-500",
+                labelColor: "text-gray-500",
+                labelText: "Source",
+                icon: null,
+                glow: ""
+            };
+        }
+        // Target Logic
+        if (session) {
+             // Merge Target (Occupied)
+             return {
+                type: 'merge-target',
+                baseClasses: "bg-orange-900/40 border-4 border-dashed border-orange-500 animate-pulse cursor-pointer hover:bg-orange-900/60",
+                numberColor: "text-orange-200",
+                labelColor: "text-orange-400 font-black uppercase tracking-widest",
+                labelText: "MERGE HERE",
+                icon: <FaUtensils className="text-orange-500 text-3xl" />,
+                glow: "shadow-[0_0_30px_rgba(249,115,22,0.3)]"
+             };
+        } else {
+             // Move Target (Empty)
+             return {
+                type: 'move-target',
+                baseClasses: "bg-green-900/40 border-4 border-dashed border-green-500 animate-pulse cursor-pointer hover:bg-green-900/60",
+                numberColor: "text-green-200",
+                labelColor: "text-green-400 font-black uppercase tracking-widest",
+                labelText: "MOVE HERE",
+                icon: <FaCheckCircle className="text-green-500 text-3xl" />,
+                glow: "shadow-[0_0_30px_rgba(34,197,94,0.3)]"
+             };
+        }
+    }
+
     // ---------------------------------------------------------
     // 1. EMPTY (خالی)
     // ---------------------------------------------------------
