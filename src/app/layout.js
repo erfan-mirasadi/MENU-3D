@@ -15,8 +15,24 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Menu 3D",
   description: "Pro Digital 3D Menu ",
+  manifest: "/manifest.json",
   icons: {
     icon: "/logo-web.png",
+    apple: "/logo-web.png",
+  },
+  openGraph: {
+    title: "Menu 3D",
+    description: "Pro Digital 3D Menu",
+    images: [
+      {
+        url: "/logo-web.png",
+        width: 800,
+        height: 600,
+        alt: "Menu 3D Logo",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
   },
 };
 
