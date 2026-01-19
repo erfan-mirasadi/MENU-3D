@@ -13,8 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Menu App",
-  description: "Digital Menu for Restaurants",
+  title: "Menu 3D",
+  description: "Pro Digital 3D Menu ",
+  icons: {
+    icon: "/logo-web.png",
+  },
 };
 
 export default function RootLayout({ children }) {
