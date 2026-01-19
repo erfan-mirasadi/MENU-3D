@@ -5,7 +5,7 @@ import OrderReportTable from "./_components/OrderAnalyticsTable";
 import MostOrderedList from "./_components/MostOrderedList";
 import CategorySalesChart from "./_components/CategorySalesChart";
 import HourlyTrafficChart from "./_components/HourlyTrafficChart";
-import { RiMoneyDollarCircleLine, RiBookmarkLine, RiGroupLine } from "react-icons/ri";
+import { RiMoneyDollarCircleLine, RiRestaurantLine, RiGroupLine } from "react-icons/ri";
 import { reportService } from "@/services/reportService";
 import { analyticsService } from "@/services/analyticsService";
 import SegmentedControl from "../_components/SegmentedControl";
@@ -88,7 +88,7 @@ const ReportsPage = () => {
                 value={stats.dishes.value.toLocaleString()}
                 percentage={stats.dishes.trend != null ? stats.dishes.trend.toFixed(2) : null}
                 isPositive={stats.dishes.trend != null && stats.dishes.trend >= 0}
-                icon={RiBookmarkLine}
+                icon={RiRestaurantLine}
                 loading={loading}
                 />
                 <StatsCard

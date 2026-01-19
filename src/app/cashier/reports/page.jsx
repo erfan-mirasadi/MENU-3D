@@ -4,7 +4,7 @@ import StatsCard from "../analytics/_components/StatsCard"; // reused
 import SegmentedControl from "../_components/SegmentedControl";
 import { FinancialTable, ProductMixTable, SecurityLogTable } from "./_components/ReportTables";
 import { reportService } from "@/services/reportService";
-import { RiMoneyDollarCircleLine, RiBankCardLine, RiShieldKeyholeLine, RiBillLine } from "react-icons/ri";
+import { RiMoneyDollarCircleLine, RiBankCard2Line, RiDeleteBin5Line, RiWallet3Line } from "react-icons/ri";
 
 const ReportsPage = () => {
   const [filter, setFilter] = useState("Today");
@@ -77,7 +77,7 @@ const ReportsPage = () => {
           value={`₺${stats.netCash.value.toLocaleString()}`}
           percentage={stats.netCash.trend != null ? stats.netCash.trend.toFixed(1) : null}
           isPositive={stats.netCash.trend != null && stats.netCash.trend >= 0}
-          icon={RiBillLine}
+          icon={RiWallet3Line}
           loading={loading}
         />
         <StatsCard
@@ -85,7 +85,7 @@ const ReportsPage = () => {
           value={`₺${stats.netCard.value.toLocaleString()}`}
           percentage={stats.netCard.trend != null ? stats.netCard.trend.toFixed(1) : null}
           isPositive={stats.netCard.trend != null && stats.netCard.trend >= 0}
-          icon={RiBankCardLine}
+          icon={RiBankCard2Line}
           loading={loading}
         />
         <StatsCard
@@ -93,7 +93,7 @@ const ReportsPage = () => {
           value={`₺${stats.voidedValue.value.toLocaleString()}`}
           percentage={stats.voidedValue.trend != null ? stats.voidedValue.trend.toFixed(1) : null}
           isPositive={stats.voidedValue.trend != null && stats.voidedValue.trend <= 0} // Less void is positive
-          icon={RiShieldKeyholeLine}
+          icon={RiDeleteBin5Line}
           loading={loading}
         />
       </div>

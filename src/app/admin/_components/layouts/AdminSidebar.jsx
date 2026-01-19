@@ -35,9 +35,12 @@ export default function AdminSidebar({ links }) {
           <Image 
             src="/logo-web.png" 
             alt="logo" 
-            width={60} 
-            height={60} 
+            width={0} 
+            height={0} 
+            sizes="100vw"
             className="object-contain drop-shadow-[0_0_8px_rgba(234,124,105,0.7)]" 
+            style={{ width: '60px', height: 'auto' }}
+            priority
           />
         </div>
       </div>

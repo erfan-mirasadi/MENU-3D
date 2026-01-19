@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { FaPrint } from "react-icons/fa";
 // Hooks
 import { useOrderDrawerLogic } from "@/app/hooks/useOrderDrawerLogic";
+// Animation Hook
+import { useMountTransition } from "@/app/hooks/useMountTransition";
 // Sub-Components
 import DrawerHeader from "./DrawerHeader";
 import DrawerFooter from "./DrawerFooter";
@@ -34,19 +36,32 @@ export default function OrderDrawer({
         isMenuOpen, isPaymentModalOpen, isVoidModalOpen, itemToVoid, isBatchEditing, batchItems
     } = state;
 
+    // Animation Hook
+    const isTransitioning = useMountTransition(isOpen, 300);
+
     // Scroll Lock
     useEffect(() => {
         document.body.style.overflow = isOpen ? "hidden" : "";
         return () => { document.body.style.overflow = ""; };
     }, [isOpen]);
 
-    if (!isOpen || !table) return null;
+    if (!isTransitioning && !isOpen) return null;
+
+    // Safe guard if table is missing but allow anim out to prevent abrupt disappearance
+    if (!table && !isTransitioning) return null; 
+
+    const show = isOpen && isTransitioning;
 
     return (
         <>
-            <div onClick={onClose} className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 transition-opacity animate-in fade-in" />
+            <div 
+                onClick={onClose} 
+                className={`fixed inset-0 bg-black/60 backdrop-blur-md z-40 transition-opacity duration-300 ${show ? 'opacity-100' : 'opacity-0'}`} 
+            />
 
-            <div className="fixed inset-y-0 right-0 w-full max-w-md bg-[#1F1D2B] z-50 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            <div 
+                className={`fixed inset-y-0 right-0 w-full max-w-md bg-[#1F1D2B] z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-out transform ${show ? 'translate-x-0' : 'translate-x-full'}`}
+            >
                 
                 <DrawerHeader
                     table={table}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { 
     RiCloseLine, 
     RiBankCardLine, 
@@ -13,26 +13,33 @@ import {
     RiCheckboxCircleFill,
     RiCheckboxBlankCircleLine,
     RiAddLine,
-    RiSubtractLine
+    RiSubtractLine,
+    RiArrowDownLine
 } from "react-icons/ri";
 import toast from "react-hot-toast";
+import { useMountTransition } from "@/app/hooks/useMountTransition";
 
 const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
-  const [activeTab, setActiveTab] = useState("FULL"); // 'FULL' | 'SPLIT'
+  /* ... (existing state) */
+  const [activeTab, setActiveTab] = useState("FULL"); 
   const [processing, setProcessing] = useState(false);
-
-  // Partial / Split State
-  const [splitMode, setSplitMode] = useState("PEOPLE"); // 'PEOPLE' | 'ITEMS' | 'CUSTOM'
+  const [splitMode, setSplitMode] = useState("PEOPLE");
   const [splitCount, setSplitCount] = useState(1);
   const [selectedItemIds, setSelectedItemIds] = useState(new Set());
   const [customAmount, setCustomAmount] = useState("");
-  
-  // Method State (How we are paying the current amount)
-  const [paymentMethod, setPaymentMethod] = useState("CASH"); // 'CASH' | 'POS' | 'MIXED' | 'SPLIT' (backend uses SPLIT for mixed)
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [mixedCash, setMixedCash] = useState("");
   const [mixedCard, setMixedCard] = useState("");
 
-  // Data
+  // Scroll Indicator State
+  const listRef = useRef(null);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+
+  // Animation Hook
+  const isTransitioning = useMountTransition(isOpen, 300);
+
+  /* ... (data logic remains same) */
+  // ... (orderItems, totalOrderAmount definition) ...
   const orderItems = useMemo(() => {
     return session?.order_items?.filter(item => item.status !== 'cancelled') || [];
   }, [session]);
@@ -72,7 +79,25 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
       });
   }, [orderItems, paidAmount]);
 
-  // Initialize split count
+  // Scroll Check Function
+  const checkScroll = () => {
+      const el = listRef.current;
+      if (!el) return;
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      // Show if content is taller than view AND we haven't scrolled to bottom (with buffer)
+      const canScroll = scrollHeight > clientHeight;
+      const isAtBottom = Math.ceil(scrollTop + clientHeight) >= scrollHeight - 10;
+      setShowScrollIndicator(canScroll && !isAtBottom);
+  };
+
+  useEffect(() => {
+      if (isOpen) {
+          // Reset and check after render
+          setTimeout(checkScroll, 100);
+      }
+  }, [isOpen, itemsWithStatus]); // Check when items change or modal opens
+
+  /* ... (init effect remains same) */
   useEffect(() => {
       if (isOpen) {
           setSplitCount(1);
@@ -169,8 +194,13 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
                // We use 'SPLIT' type in backend for mixed/multi-method payments
                await onCheckout(session.id, "SPLIT", { payments });
           } else {
-               // Single Method
-               await onCheckout(session.id, "SINGLE", { method: paymentMethod, amount: amountToPay });
+               const extraData = splitMode === 'ITEMS' ? { items: Array.from(selectedItemIds) } : {};
+               
+               await onCheckout(session.id, "SINGLE", { 
+                   method: paymentMethod, 
+                   amount: amountToPay,
+                   ...extraData
+               });
           }
           
           // Success
@@ -197,14 +227,34 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
       }
   };
 
-  if (!isOpen) return null;
+  // Scroll Lock
+  useEffect(() => {
+      if (isOpen) {
+          document.body.style.overflow = "hidden";
+      } else {
+          document.body.style.overflow = "";
+      }
+      return () => {
+          document.body.style.overflow = "";
+      };
+  }, [isOpen]);
+
+  if (!isTransitioning && !isOpen) return null;
+
+  const show = isOpen && isTransitioning;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-[#1F1D2B] w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[650px] border border-[#252836]">
+    <div 
+        onClick={onClose}
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 transition-all duration-300 ${show ? 'opacity-100' : 'opacity-0'}`}
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className={`bg-[#1F1D2B] w-full max-w-6xl max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[500px] border border-[#252836] transition-all duration-300 transform ${show ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-8'}`}
+      >
         
         {/* LEFT: ORDER SUMMARY / ITEM SELECTOR */}
-        <div className="w-full md:w-[450px] flex flex-col border-r border-[#252836] bg-[#1F1D2B]">
+        <div className="w-full md:w-[450px] flex flex-col border-r border-[#252836] bg-[#1F1D2B] relative">
             <div className="p-6 border-b border-[#252836] bg-[#252836]/50">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                     <RiFileList3Line className="text-[#ea7c69]"/> Order Details
@@ -215,7 +265,11 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+            <div 
+                ref={listRef}
+                onScroll={checkScroll}
+                className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 scroll-smooth"
+            >
                  {itemsWithStatus.map(item => {
                      const isSelected = selectedItemIds.has(item.id);
                      const isPaid = item.isPaid;
@@ -267,6 +321,18 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
                      )
                  })}
             </div>
+            
+            {/* Scroll Indicator */}
+            {showScrollIndicator && (
+                <div className="absolute bottom-24 left-0 right-0 flex justify-center pointer-events-none z-10 animate-bounce opacity-70">
+                    <button 
+                         onClick={() => listRef.current?.scrollBy({ top: 100, behavior: 'smooth' })}
+                         className="bg-[#ea7c69]/70 text-white rounded-full p-2 shadow-lg pointer-events-auto hover:bg-[#d96a56] transition-colors "
+                    >
+                        <RiArrowDownLine size={24}  />
+                    </button>
+                </div>
+            )}
 
             <div className="p-6 bg-[#252836] border-t border-[#1F1D2B]">
                 <div className="flex justify-between text-gray-400 text-sm mb-1">
@@ -302,7 +368,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
                 </button>
             </div>
 
-            <div className="flex-1 p-8 flex flex-col">
+            <div className="flex-1 p-8 flex flex-col overflow-y-auto custom-scrollbar">
                 
                 {activeTab === "SPLIT" && (
                     <div className="mb-6 animate-in fade-in slide-in-from-top-4">

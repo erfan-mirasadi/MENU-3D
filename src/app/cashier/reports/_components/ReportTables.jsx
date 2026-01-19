@@ -1,4 +1,6 @@
-import React from "react";
+import { useState } from "react";
+import TransactionDetailsModal from "./TransactionDetailsModal";
+import Loader from "@/components/ui/Loader";
 
 const TableWrapper = ({ headers, children }) => (
     <div className="bg-[#1F1D2B] rounded-lg p-6 w-full overflow-x-auto">
@@ -24,31 +26,45 @@ const EmptyRow = ({ colSpan, message }) => (
 );
 
 export const FinancialTable = ({ data, loading }) => {
-    if (loading) return <div className="text-white p-4">Loading...</div>;
+    const [selectedTx, setSelectedTx] = useState(null);
+
+    if (loading) return <Loader />;
     if (!data?.length) return <TableWrapper headers={["Time", "Bill ID", "Table", "Amount", "Method", "Staff"]}><EmptyRow colSpan={6} /></TableWrapper>;
 
     return (
-        <TableWrapper headers={["Time", "Bill ID", "Table", "Amount", "Method", "Staff"]}>
-            {data.map(t => (
-                <tr key={t.id} className="border-b border-[#393C49] hover:bg-[#252836]/50 transition-colors">
-                    <td className="py-4 pl-4">{t.time}</td>
-                    <td className="py-4">{t.billId}</td>
-                    <td className="py-4">{t.tableNo}</td>
-                    <td className="py-4 font-bold text-white">₺{parseFloat(t.amount || 0).toFixed(2)}</td>
-                    <td className="py-4">
-                        <span className={`px-2 py-1 rounded text-xs ${t.method?.toLowerCase().includes('cash') ? 'bg-green-500/20 text-green-500' : 'bg-blue-500/20 text-blue-500'}`}>
-                            {t.method}
-                        </span>
-                    </td>
-                    <td className="py-4">{t.staff}</td>
-                </tr>
-            ))}
-        </TableWrapper>
+        <>
+            <TableWrapper headers={["Time", "Bill ID", "Table", "Amount", "Method", "Staff"]}>
+                {data.map(t => (
+                    <tr 
+                        key={t.id} 
+                        onClick={() => setSelectedTx(t)}
+                        className="border-b border-[#393C49] hover:bg-[#252836]/80 transition-colors cursor-pointer"
+                    >
+                        <td className="py-4 pl-4">{t.time}</td>
+                        <td className="py-4">{t.billId}</td>
+                        <td className="py-4">{t.tableNo}</td>
+                        <td className="py-4 font-bold text-white">₺{parseFloat(t.amount || 0).toFixed(2)}</td>
+                        <td className="py-4">
+                            <span className={`px-2 py-1 rounded text-xs ${t.method?.toLowerCase().includes('cash') ? 'bg-green-500/20 text-green-500' : 'bg-blue-500/20 text-blue-500'}`}>
+                                {t.method}
+                            </span>
+                        </td>
+                        <td className="py-4">{t.staff}</td>
+                    </tr>
+                ))}
+            </TableWrapper>
+            
+            {/* Modal */}
+            <TransactionDetailsModal 
+                transaction={selectedTx} 
+                onClose={() => setSelectedTx(null)} 
+            />
+        </>
     );
 };
 
 export const ProductMixTable = ({ data, loading }) => {
-    if (loading) return <div className="text-white p-4">Loading...</div>;
+    if (loading) return <Loader />;
     if (!data?.length) return <TableWrapper headers={["Product Name", "Quantity Sold", "Total Revenue"]}><EmptyRow colSpan={3} /></TableWrapper>;
 
     return (
@@ -70,7 +86,7 @@ export const ProductMixTable = ({ data, loading }) => {
 };
 
 export const SecurityLogTable = ({ data, loading }) => {
-    if (loading) return <div className="text-white p-4">Loading...</div>;
+    if (loading) return <Loader />;
     if (!data?.length) return <TableWrapper headers={["Time", "Staff", "Action", "Item / Details", "Reason", "Value"]}><EmptyRow colSpan={6} /></TableWrapper>;
 
     return (

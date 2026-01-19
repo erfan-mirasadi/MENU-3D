@@ -324,6 +324,7 @@ export const reportService = {
             created_at,
             amount,
             method,
+            recorded_by,
             bills (
                 id,
                 session:sessions (
@@ -339,15 +340,49 @@ export const reportService = {
          return [];
      }
 
-     return data.map(t => ({
-         id: t.id,
-         time: new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-         billId: t.bills?.id || "N/A",
-         tableNo: t.bills?.session?.tables?.table_number || "-",
-         amount: t.amount,
-         method: t.method,
-         staff: "Admin/Cashier" 
-     }));
+     // Fetch staff profiles manually to be safe against missing FK relations
+     const userIds = [...new Set(data.map(t => t.recorded_by).filter(id => id))];
+     let profilesMap = {};
+
+     if (userIds.length > 0) {
+         const { data: profiles, error: profileError } = await supabase
+            .from("profiles")
+            .select("id, full_name, role")
+            .in("id", userIds);
+         
+         if (!profileError && profiles) {
+             profiles.forEach(p => {
+                 profilesMap[p.id] = { 
+                     name: p.full_name, 
+                     role: p.role 
+                 };
+             });
+         }
+     }
+
+     return data.map(t => {
+         const staffInfo = profilesMap[t.recorded_by];
+         let staffDisplay = "Admin/Cashier"; // Default fallback
+         
+         if (staffInfo) {
+             // User requested: Name | Role (e.g. erfan | cashier)
+             const role = staffInfo.role || "Unknown Role";
+             staffDisplay = `${staffInfo.name || "Unknown"} | ${role}`;
+         } else if (t.recorded_by) {
+            // If we have an ID but no profile found
+             staffDisplay = `User (${t.recorded_by.slice(0, 4)}...)`; 
+         }
+
+         return {
+            id: t.id,
+            time: new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            billId: t.bills?.id || "N/A",
+            tableNo: t.bills?.session?.tables?.table_number || "-",
+            amount: t.amount,
+            method: t.method,
+            staff: staffDisplay
+         };
+     });
   },
 
   async getProductMix(range) {
@@ -385,6 +420,78 @@ export const reportService = {
       });
 
       return Object.values(mix).sort((a,b) => b.revenue - a.revenue);
+  },
+
+
+
+  async getTransactionDetails(transactionId) {
+      if (!transactionId) return null;
+
+      // 1. Fetch Transaction & Bill info
+      const { data: transaction, error: txError } = await supabase
+        .from("transactions")
+        .select(`
+            id,
+            created_at,
+            amount,
+            method,
+            bills (
+                id,
+                session_id
+            )
+        `)
+        .eq("id", transactionId)
+        .single();
+      
+      if (txError || !transaction) throw txError || new Error("Transaction not found");
+
+      // Fetch Metadata from Activity Logs (WORKAROUND: transactions table has no metadata)
+      const { data: logData } = await supabase
+        .from("activity_logs")
+        .select("details")
+        .eq("action", "PAYMENT_METADATA")
+        .filter("details->>transaction_id", "eq", transactionId)
+        .maybeSingle();
+
+      const paidItemIds = logData?.details?.items || [];
+
+      const sessionId = transaction.bills?.session_id;
+      if (!sessionId) return { items: [], totalAmount: transaction.amount, method: transaction.method, time: new Date(transaction.created_at).toLocaleString() };
+
+      // 2. Fetch Order Items for this session
+      const { data: items, error: itemsError } = await supabase
+        .from("order_items")
+        .select(`
+            id,
+            quantity,
+            unit_price_at_order,
+            products (
+                title,
+                image_url
+            )
+        `)
+        .eq("session_id", sessionId)
+        .neq("status", "cancelled");
+
+      if (itemsError) throw itemsError;
+
+      // 3. Format Items
+      const formattedItems = items.map(item => ({
+          id: item.id,
+          title: item.products?.title?.en || "Unknown Item",
+          image: item.products?.image_url,
+          quantity: item.quantity,
+          price: parseFloat(item.unit_price_at_order) || 0
+      }));
+
+      return {
+          id: transaction.id,
+          time: new Date(transaction.created_at).toLocaleString(),
+          method: transaction.method,
+          totalAmount: transaction.amount,
+          paidItemIds: paidItemIds,
+          items: formattedItems
+      };
   },
 
   async getSecurityLog(range) {
