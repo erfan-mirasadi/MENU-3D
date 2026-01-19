@@ -8,6 +8,7 @@ import HourlyTrafficChart from "./_components/HourlyTrafficChart";
 import { RiMoneyDollarCircleLine, RiBookmarkLine, RiGroupLine } from "react-icons/ri";
 import { reportService } from "@/services/reportService";
 import { analyticsService } from "@/services/analyticsService";
+import SegmentedControl from "../_components/SegmentedControl";
 
 const ReportsPage = () => {
   // Default to Month so user sees data immediately (sample data is from a few days ago)
@@ -59,17 +60,12 @@ const ReportsPage = () => {
           <h1 className="text-3xl font-bold mb-1">Analytics</h1>
           <p className="text-[#ABBBC2] text-sm">{new Date().toDateString()}</p>
         </div>
-        <div className="flex bg-[#1F1D2B] border border-[#393C49] rounded-lg p-1">
-             {["Today", "Week", "Month", "3 Months", "Year"].map(opt => (
-                 <button
-                    key={opt}
-                    onClick={() => setFilter(opt)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === opt ? 'bg-[#EA7C69] text-white' : 'text-[#ABBBC2] hover:text-white'}`}
-                 >
-                     {opt}
-                 </button>
-             ))}
-        </div>
+             <SegmentedControl 
+                options={["Today", "Week", "Month", "3 Months", "Year"]} 
+                active={filter} 
+                onChange={setFilter} 
+             />
+    
       </div>
 
       {/* Main Layout Grid */}

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import StatsCard from "../analytics/_components/StatsCard"; // reused
-import DatePicker from "./_components/DatePicker";
+import SegmentedControl from "../_components/SegmentedControl";
 import { FinancialTable, ProductMixTable, SecurityLogTable } from "./_components/ReportTables";
 import { reportService } from "@/services/reportService";
 import { RiMoneyDollarCircleLine, RiBankCardLine, RiShieldKeyholeLine, RiBillLine } from "react-icons/ri";
@@ -54,7 +54,12 @@ const ReportsPage = () => {
           <h1 className="text-3xl font-bold mb-1">Financial & Security Reports</h1>
           <p className="text-[#ABBBC2] text-sm">Detailed breakdown for {filter}</p>
         </div>
-        <DatePicker filter={filter} setFilter={setFilter} />
+        {/* Tabs replaced DatePicker */}
+        <SegmentedControl 
+            options={["Today", "Week", "Month", "3 Months", "Year"]} 
+            active={filter} 
+            onChange={setFilter} 
+        />
       </div>
 
       {/* Stats Cards */}
@@ -94,28 +99,17 @@ const ReportsPage = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-6 border-b border-[#393C49] mb-6">
-          <button 
-            onClick={() => setActiveTab("financial")}
-            className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === 'financial' ? 'text-[#EA7C69]' : 'text-[#ABBBC2] hover:text-white'}`}
-          >
-              Transactional Report
-              {activeTab === 'financial' && <div className="absolute bottom-0 left-0 w-full h-[2px] bg-[#EA7C69] rounded-t-full"></div>}
-          </button>
-          <button 
-            onClick={() => setActiveTab("product")}
-            className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === 'product' ? 'text-[#EA7C69]' : 'text-[#ABBBC2] hover:text-white'}`}
-          >
-              Product Mix
-              {activeTab === 'product' && <div className="absolute bottom-0 left-0 w-full h-[2px] bg-[#EA7C69] rounded-t-full"></div>}
-          </button>
-          <button 
-            onClick={() => setActiveTab("security")}
-            className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === 'security' ? 'text-[#EA7C69]' : 'text-[#ABBBC2] hover:text-white'}`}
-          >
-              Security Log
-              {activeTab === 'security' && <div className="absolute bottom-0 left-0 w-full h-[2px] bg-[#EA7C69] rounded-t-full"></div>}
-          </button>
+      <div className="mb-6">
+          <SegmentedControl
+            options={[
+                { label: "Transactional Report", value: "financial" },
+                { label: "Product Mix", value: "product" },
+                { label: "Security Log", value: "security" }
+            ]}
+            active={activeTab}
+            onChange={setActiveTab}
+            className="w-full md:w-fit"
+          />
       </div>
 
       {/* Tables Content */}
