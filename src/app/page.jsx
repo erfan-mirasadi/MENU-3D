@@ -10,7 +10,9 @@ import {
   RiMagicLine,
   RiFlashlightLine,
   RiSmartphoneLine,
-  RiGlobalLine
+  RiGlobalLine,
+  RiWhatsappLine,
+  RiMailLine
 } from "react-icons/ri";
 
 export const metadata = {
@@ -184,10 +186,45 @@ export default function Home() {
           </div>
         </section>
 
-        {/* FOOTER */}
-        <footer className="text-center text-gray-600 text-sm pb-8">
-           &copy; {new Date().getFullYear()} Menu 3D. All rights reserved.
-        </footer>
+
+        {/* CONTACT & FOOTER */}
+        <section className="flex flex-col items-center gap-6 pb-20 pt-10">
+          <div className="flex flex-col md:flex-row gap-6 md:gap-12">
+            <a 
+              href="https://wa.me/905073542097" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 text-gray-400 hover:text-[#25D366] transition-colors group"
+            >
+              <div className="w-12 h-12 rounded-full bg-[#25D366]/10 flex items-center justify-center group-hover:bg-[#25D366]/20 transition-colors">
+                 <RiWhatsappLine className="text-2xl" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">WhatsApp</span>
+                <span className="text-lg font-medium">+90 507 354 2097</span>
+              </div>
+            </a>
+
+            <a 
+              href="mailto:erfan.mirasadi@gmail.com" 
+              className="flex items-center gap-3 text-gray-400 hover:text-[#ea7c69] transition-colors group"
+            >
+              <div className="w-12 h-12 rounded-full bg-[#ea7c69]/10 flex items-center justify-center group-hover:bg-[#ea7c69]/20 transition-colors">
+                 <RiMailLine className="text-2xl" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">Email</span>
+                <span className="text-lg font-medium">erfan.mirasadi@gmail.com</span>
+              </div>
+            </a>
+          </div>
+          
+          <div className="w-full h-px bg-white/5 max-w-lg mt-8 mb-4"></div>
+          
+          <footer className="text-center text-gray-600 text-sm">
+             &copy; {new Date().getFullYear()} Menu 3D. All rights reserved.
+          </footer>
+        </section>
 
       </div>
     </main>
