@@ -1,4 +1,5 @@
 import { FaTimes, FaPlus, FaPowerOff } from "react-icons/fa";
+import Loader from "@/components/ui/Loader";
 
 export default function DrawerHeader({
   table,
@@ -6,6 +7,8 @@ export default function DrawerHeader({
   onClose,
   onOpenMenu,
   onCloseTable,
+  loading,
+  loadingOp
 }) {
   return (
     <div className="p-4 bg-[#252836] border-b border-white/5 flex justify-between items-center shadow-md z-10 shrink-0">
@@ -27,21 +30,23 @@ export default function DrawerHeader({
       <div className="flex gap-2">
         {session && (
           <>
-            {/* ADD ITEM BUTTON */}
+            {/* ADD ITEM BUTTON (No loader needed for modal open, but disable while busy) */}
             <button
               onClick={onOpenMenu}
-              className="h-10 px-4 bg-[#ea7c69] text-white rounded-lg flex items-center gap-2 font-bold text-sm shadow-lg shadow-orange-900/20 active:scale-95 transition-transform"
+              disabled={loading}
+              className="h-10 px-4 bg-[#ea7c69] text-white rounded-lg flex items-center gap-2 font-bold text-sm shadow-lg shadow-orange-900/20 active:scale-95 transition-transform cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
             >
               <FaPlus /> ADD
             </button>
 
-            {/* CLOSE TABLE BUTTON (Small) */}
+            {/* CLOSE TABLE BUTTON (Specific Loader) */}
             <button
               onClick={onCloseTable}
-              className="w-10 h-10 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white active:scale-90 transition-all"
+              disabled={loading}
+              className="w-10 h-10 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white cursor-pointer active:scale-90 transition-all disabled:opacity-50 disabled:pointer-events-none"
               title="Close Table"
             >
-              <FaPowerOff />
+              {loadingOp === 'CLOSE_TABLE' ? <Loader variant="inline" className="w-4 h-4" /> : <FaPowerOff />}
             </button>
           </>
         )}

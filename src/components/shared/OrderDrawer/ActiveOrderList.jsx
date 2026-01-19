@@ -12,9 +12,11 @@ export default function ActiveOrderList({
     onSaveEdit,
     batchItems,
     onUpdateBatchQty,
+    onDeleteBatchItem,
     onUpdateQty,
     onDelete,
-    loading
+    loading,
+    loadingOp
 }) {
     if (items.length === 0) return null;
 
@@ -61,7 +63,7 @@ export default function ActiveOrderList({
             !isBatchEditing && (
                 <button 
                     onClick={onEditOrder} 
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
                         role === 'waiter' 
                             ? "bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20" 
                             : "bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20"
@@ -87,13 +89,15 @@ export default function ActiveOrderList({
                     ))}
                 </div>
                 <div className="flex gap-3">
-                    <button onClick={onCancelEdit} className="flex-1 py-3 bg-gray-700 text-gray-300 font-bold rounded-xl">Cancel</button>
+                    <button onClick={onCancelEdit} className="flex-1 py-3 bg-gray-700 text-gray-300 font-bold rounded-xl cursor-pointer hover:bg-gray-600">Cancel</button>
                     <button 
                         onClick={onSaveEdit} 
                         disabled={loading}
-                        className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl shadow-lg shadow-green-900/40 flex items-center justify-center gap-2"
+                        className={`flex-1 py-3 bg-green-600 text-white font-bold rounded-xl shadow-lg shadow-green-900/40 flex items-center justify-center gap-2 ${
+                            loading ? "opacity-70 cursor-not-allowed" : "cursor-pointer hover:bg-green-500"
+                        }`}
                     >
-                        {loading ? (
+                        {loadingOp === 'BATCH_UPDATE' ? (
                              <Loader active={true} variant="inline" className="h-5 w-5" />
                         ) : "Save Changes"}
                     </button>

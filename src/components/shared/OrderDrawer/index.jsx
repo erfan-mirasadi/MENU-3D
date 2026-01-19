@@ -1,12 +1,8 @@
 "use client";
-
 import { useEffect } from "react";
 import { FaPrint } from "react-icons/fa";
-import toast from "react-hot-toast";
-
 // Hooks
 import { useOrderDrawerLogic } from "@/app/hooks/useOrderDrawerLogic";
-
 // Sub-Components
 import DrawerHeader from "./DrawerHeader";
 import DrawerFooter from "./DrawerFooter";
@@ -15,11 +11,11 @@ import PendingOrderList from "./PendingOrderList";
 import ConfirmedOrderList from "./ConfirmedOrderList";
 import ActiveOrderList from "./ActiveOrderList";
 import ReceiptTemplate from "../ReceiptTemplate";
-
 // Shared Modals (Outside of this folder)
 import MenuModal from "../MenuModal";
 import PaymentModal from "../PaymentModal";
 import VoidReasonModal from "../VoidReasonModal";
+import Loader from "@/components/ui/Loader";
 
 export default function OrderDrawer({ 
     table, 
@@ -30,9 +26,10 @@ export default function OrderDrawer({
     role = "waiter", 
     onCheckout 
 }) {
-    const { state, setters, actions } = useOrderDrawerLogic(session, table, onCheckout, role);
+    // Pass onClose as the 5th argument to handle auto-close on table close
+    const { state, setters, actions } = useOrderDrawerLogic(session, table, onCheckout, role, onClose);
     const {
-        loading, localItems, pendingItems, confirmedItems, activeItems, totalAmount,
+        loading, loadingOp, localItems, pendingItems, confirmedItems, activeItems, totalAmount,
         isMenuOpen, isPaymentModalOpen, isVoidModalOpen, itemToVoid, isBatchEditing, batchItems
     } = state;
 
@@ -56,6 +53,8 @@ export default function OrderDrawer({
                     onClose={onClose}
                     onOpenMenu={() => setters.setIsMenuOpen(true)}
                     onCloseTable={actions.handleForceCloseTable}
+                    loading={loading}
+                    loadingOp={loadingOp}
                 />
 
                 {role === 'cashier' && (
@@ -78,7 +77,7 @@ export default function OrderDrawer({
                     restaurant={restaurant}
                 />
 
-                <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-8 bg-[#1F1D2B]">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-8 bg-[#1F1D2B] relative">
                     {!session ? (
                         <DrawerEmptyState 
                             onStartSession={actions.handleStartSession} 
@@ -91,6 +90,7 @@ export default function OrderDrawer({
                                 items={pendingItems}
                                 role={role}
                                 loading={loading}
+                                loadingOp={loadingOp}
                                 onUpdateQty={actions.onUpdateQty}
                                 onDelete={actions.onDeleteItem}
                                 onConfirm={
@@ -105,6 +105,7 @@ export default function OrderDrawer({
                                 items={confirmedItems}
                                 role={role}
                                 loading={loading}
+                                loadingOp={loadingOp}
                                 onUpdateQty={actions.onUpdateQty}
                                 onDelete={actions.onDeleteItem}
                                 onStartPreparing={actions.handleStartPreparing}
@@ -118,6 +119,7 @@ export default function OrderDrawer({
                                 isBatchEditing={isBatchEditing}
                                 batchItems={batchItems}
                                 loading={loading}
+                                loadingOp={loadingOp}
                                 onEditOrder={actions.handleStartBatchEdit}
                                 onCancelEdit={actions.handleCancelBatchEdit}
                                 onSaveEdit={actions.handleExecuteBatch}
@@ -136,6 +138,15 @@ export default function OrderDrawer({
                         onCloseTable={actions.handlePaymentRequest}
                         loading={loading}
                     />
+                )}
+                {/* LOADING OVERLAY (Centered in Drawer) */}
+                {(loadingOp === 'CONFIRM_ORDER' || loadingOp === 'PREPARE_ORDER') && (
+                    <div className="absolute inset-0 z-[60] bg-black/40 backdrop-blur-[2px] flex items-center justify-center animate-in fade-in duration-200">
+                        <div className="p-4 rounded-2xl shadow-2xl border border-white/10 flex flex-col items-center gap-3">
+                             <Loader variant="inline" className="w-10 h-10" />
+                             <span className="text-white/50 text-xs font-bold tracking-wider">UPDATING...</span>
+                        </div>
+                    </div>
                 )}
             </div>
 

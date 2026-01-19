@@ -255,6 +255,7 @@ export default function DashboardPage() {
        {/* ORDER DRAWER */}
        {selectedTableId && !isEditing && (
             <OrderDrawer 
+                key={selectedTableId}
                 isOpen={isDrawerOpen}
                 onClose={() => setIsDrawerOpen(false)}
                 table={mergedTables.find(t => t.id === selectedTableId)}

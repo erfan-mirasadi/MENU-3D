@@ -11,8 +11,8 @@ import {
 } from "@/services/waiterService";
 import { voidOrderItem, updateOrderItemSecurely } from "@/services/orderService";
 
-export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter") => {
-  const [loading, setLoading] = useState(false);
+export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter", onCloseDrawer) => {
+  const [loadingOp, setLoadingOp] = useState(null); // 'START_SESSION', 'CLOSE_TABLE', etc.
   
   // State 1: Local Drafts (New additions not yet sent to DB)
   const [draftItems, setDraftItems] = useState([]);
@@ -22,6 +22,10 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
 
   // Combined View for UI
   const [localItems, setLocalItems] = useState([]);
+
+  // Optimistic locking state (Replaces useRef for cleaner React philosophy)
+  const [optimisticLock, setOptimisticLock] = useState(null); // { targetStatus: 'confirmed'|'preparing', count: 5 }
+
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -35,7 +39,27 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
   // Sync with Realtime Session Data
   useEffect(() => {
     if (session?.order_items) {
-      const sorted = [...session.order_items].sort(
+      const serverItems = session.order_items;
+      
+      // CHECK OPTIMISTIC LOCK
+      if (optimisticLock) {
+          const { targetStatus, count } = optimisticLock;
+          
+          const matchingItems = serverItems.filter(i => i.status === targetStatus || 
+             (targetStatus === 'confirmed' && ['preparing','served'].includes(i.status)) ||
+             (targetStatus === 'preparing' && ['served'].includes(i.status))
+          );
+
+          if (matchingItems.length < count) {
+              console.log("Blocking stale update (State Lock Active)");
+              return; 
+          }
+          
+          setOptimisticLock(null);
+          setLoadingOp(null); 
+      }
+
+      const sorted = [...serverItems].sort(
         (a, b) => new Date(a.created_at) - new Date(b.created_at)
       );
       setSessionItems(sorted);
@@ -43,6 +67,14 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
       setSessionItems([]);
     }
   }, [session?.order_items]);
+
+  // Reset generic loading op if session changes (safety for START_SESSION hanging)
+  useEffect(() => {
+      // If we were waiting for start session and it arrived, clear it.
+      if (loadingOp === 'START_SESSION' && session?.id) {
+          setLoadingOp(null);
+      }
+  }, [session?.id, loadingOp]);
 
   // Combine Session + Drafts
   useEffect(() => {
@@ -62,12 +94,15 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
   // Handlers
 
   const handleStartSession = async () => {
-    setLoading(true);
+    setLoadingOp('START_SESSION');
     try {
       await startTableSession(table.id, table.restaurant_id);
       toast.success("Table Started! 🟢");
-    } catch (error) { toast.error("Failed to start"); } 
-    finally { setLoading(false); }
+      // Intentionally keep loadingOp='START_SESSION' until realtime prop comes in (handled by useEffect above)
+    } catch (error) { 
+      toast.error("Failed to start"); 
+      setLoadingOp(null);
+    } 
   };
 
   const handlePaymentRequest = async () => {
@@ -87,21 +122,21 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
           setItemToVoid({ actionType: 'TABLE_CLOSE' }); 
           setIsVoidModalOpen(true);
       } else {
-          // 3. If No Active Orders -> Proceed to Close
-          setLoading(true);
+          setLoadingOp('CLOSE_TABLE');
           try {
               await closeTableSession(session.id);
               toast.success("Table Closed");
+              if (onCloseDrawer) onCloseDrawer();
           } catch(e) {
               toast.error(e.message);
           } finally {
-              setLoading(false);
+              setLoadingOp(null);
           }
       }
   };
 
   const handleMenuAdd = async (product) => {
-    // 1. Check if item exists in DRAFTS (modify locally)
+    // Local operation, no loading op needed usually, or 'MENU_ACTION'
     const existingDraft = draftItems.find(i => i.product_id === product.id);
 
     if (existingDraft) {
@@ -120,7 +155,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
         unit_price_at_order: product.price,
         status: 'pending', 
         created_at: new Date().toISOString(),
-        isDraft: true // Flag to identify
+        isDraft: true 
     };
 
     setDraftItems(prev => [...prev, newItem]);
@@ -173,7 +208,6 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
   const onUpdateQty = async (itemId, newQty) => {
       // Check if it's a draft
       const isDraft = draftItems.some(i => i.id === itemId);
-
       if (isDraft) {
           if (newQty < 1) {
               setDraftItems(prev => prev.filter(i => i.id !== itemId));
@@ -183,8 +217,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
           return;
       }
 
-      // DB Update
-      if(newQty < 1) return; // Use delete for 0
+      if(newQty < 1) return; 
       try { await updateOrderItem(itemId, { quantity: newQty }); } catch(e){}
   };
 
@@ -213,11 +246,12 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
         return;
     }
 
-    setLoading(true);
+    setLoadingOp('CONFIRM_ORDER');
+    const currentDrafts = [...draftItems]; // Capture drafts for optimistic update
+
     try {
-        // 1. Sync Drafts to DB
-        if (draftItems.length > 0) {
-            const promises = draftItems.map(d => addOrderItem({
+        if (currentDrafts.length > 0) {
+            const promises = currentDrafts.map(d => addOrderItem({
                 session_id: session.id,
                 product_id: d.product_id,
                 quantity: d.quantity,
@@ -225,30 +259,89 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
                 status: 'pending' 
             }));
             await Promise.all(promises);
-            setDraftItems([]); // Clear drafts
+            setDraftItems([]); 
         }
 
-        // 2. Confirm All Pending (Status update)
+        // 2. Confirm All Pending + New Drafts
         await confirmOrderItems(session.id);
+        
+        // OPTIMISTIC UPDATE: 
+        // 1. Existing Pending -> Confirmed
+        // 2. Drafts -> Confirmed (Move to sessionItems)
+        let totalCount = 0;
+        setSessionItems(prev => {
+            const updatedExisting = prev.map(item => 
+                item.status === 'pending' ? { ...item, status: 'confirmed' } : item
+            );
+            
+            const optimisticDrafts = currentDrafts.map(d => ({
+                ...d,
+                id: d.id, // Keep draft ID temporarily (Realtime will overwrite later)
+                status: 'confirmed',
+                created_at: d.created_at || new Date().toISOString()
+            }));
+
+            const final = [...updatedExisting, ...optimisticDrafts];
+            totalCount = final.filter(i => i.status === 'confirmed').length;
+            return final;
+        });
+
+        // Set Lock (State based)
+        setOptimisticLock({ targetStatus: 'confirmed', count: totalCount > 0 ? 1 : 0 });
+
+        // Safety Timeout
+        setTimeout(() => {
+            setOptimisticLock(prev => {
+                if (prev) {
+                    setLoadingOp(null);
+                    return null;
+                }
+                return prev;
+            });
+        }, 5000);
+
         toast.success("Orders Sent to Kitchen! 👨‍🍳");
     } catch (error) { 
         toast.error("Failed to confirm");
         console.error(error);
-    } finally { 
-        setLoading(false); 
-    }
+        setLoadingOp(null); // Clear on error
+    } 
+    // FINALLY REMOVED: We intentionally keep loadingOp active until useEffect clears it OR timeout.
   };
   
   const handleStartPreparing = async () => {
-      setLoading(true);
+      setLoadingOp('PREPARE_ORDER');
       try {
           await startPreparingOrder(session.id);
+          
+          // OPTIMISTIC UPDATE: Move Confirmed -> Preparing immediately
+          let totalCount = 0;
+          setSessionItems(prev => {
+              const next = prev.map(item => 
+                  item.status === 'confirmed' ? { ...item, status: 'preparing' } : item
+              );
+              totalCount = next.filter(i => i.status === 'preparing').length;
+              return next;
+          });
+
+          // Set Lock
+          setOptimisticLock({ targetStatus: 'preparing', count: totalCount > 0 ? 1 : 0 });
+
+          setTimeout(() => {
+            setOptimisticLock(prev => {
+                if(prev) {
+                    setLoadingOp(null);
+                    return null;
+                }
+                return prev;
+            });
+          }, 5000);
+
           toast.success("Started Preparing! 🍳", { icon: '👨‍🍳' });
       } catch(e) {
           toast.error("Error: " + (e.message || "Failed"));
-      } finally {
-          setLoading(false);
-      }
+          setLoadingOp(null);
+      } 
   };
 
   const handleConfirmVoid = async (reason) => {
@@ -264,21 +357,20 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
           return;
       }
 
-      setLoading(true);
+      setLoadingOp('VOID_ITEM');
       try {
            await voidOrderItem(itemToVoid.id, reason);
            toast.success("Item Voided");
-           // Optimistic remove
            setSessionItems(prev => prev.filter(i => i.id !== itemToVoid.id));
       } catch(e) { toast.error(e.message); }
-      finally { setLoading(false); }
+      finally { setLoadingOp(null); }
 
       setIsVoidModalOpen(false);
       setItemToVoid(null);
   };
 
   const closeTableWithVoid = async (reason) => {
-      setLoading(true);
+      setLoadingOp('CLOSE_TABLE');
       try {
           const active = localItems.filter(i => ['confirmed', 'preparing', 'served'].includes(i.status));
           const promises = active.map(i => voidOrderItem(i.id, reason || "Table Force Closed"));
@@ -287,19 +379,21 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
           toast.success("Table Closed & Orders Voided");
           setIsVoidModalOpen(false);
           setItemToVoid(null);
+          if (onCloseDrawer) onCloseDrawer();
       } catch (e) {
           toast.error("Failed to close: " + e.message);
       } finally {
-          setLoading(false);
+          setLoadingOp(null);
       }
   };
 
   const handleCashierInstantSend = async () => {
-    setLoading(true);
+    setLoadingOp('CONFIRM_ORDER'); 
+    const currentDrafts = [...draftItems];
+
     try {
-        // 1. If Drafts, add them as pending first
-         if (draftItems.length > 0) {
-            const promises = draftItems.map(d => addOrderItem({
+         if (currentDrafts.length > 0) {
+            const promises = currentDrafts.map(d => addOrderItem({
                 session_id: session.id,
                 product_id: d.product_id,
                 quantity: d.quantity,
@@ -310,30 +404,59 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
             setDraftItems([]);
         }
 
-        // 2. Conflict Handling? Cashier overrides usually.
         await confirmOrderItems(session.id);
         await startPreparingOrder(session.id);
         
+        // OPTIMISTIC UPDATE: 
+        // 1. Existing Pending/Confirmed -> Preparing
+        // 2. Drafts -> Preparing
+        let totalCount = 0;
+        setSessionItems(prev => {
+            const updatedExisting = prev.map(item => 
+                ['pending', 'confirmed'].includes(item.status) ? { ...item, status: 'preparing' } : item
+            );
+
+            const optimisticDrafts = currentDrafts.map(d => ({
+                ...d,
+                id: d.id,
+                status: 'preparing',
+                created_at: d.created_at || new Date().toISOString()
+            }));
+
+            const final = [...updatedExisting, ...optimisticDrafts];
+            totalCount = final.filter(i => i.status === 'preparing').length;
+            return final;
+        });
+
+        setOptimisticLock({ targetStatus: 'preparing', count: totalCount > 0 ? totalCount : 0 });
+        setTimeout(() => {
+            setOptimisticLock(prev => {
+                if(prev) {
+                    setLoadingOp(null);
+                    return null;
+                }
+                return prev;
+            });
+        }, 5000);
+
         toast.success("Sent to Kitchen! 👨‍🍳");
     } catch(e) {
         toast.error("Failed: " + e.message);
-    } finally {
-        setLoading(false);
-    }
+        setLoadingOp(null);
+    } 
   };
 
   // Batch Logic (Only for Active Items in DB)
   const handleStartBatchEdit = () => {
       const active = sessionItems.filter(i => ["preparing", "served", "confirmed"].includes(i.status)); 
       
-      // GROUPING LOGIC FOR EDIT (Must match View)
       const groupedBatch = Object.values(active.reduce((acc, item) => {
         const key = item.product_id || item.product?.id;
         if (!acc[key]) {
             acc[key] = { 
                 ...item, 
                 quantity: 0, 
-                ids: [], // Track real IDs
+                ids: [], 
                 virtualId: `group-edit-${key}` 
             };
         }
@@ -352,6 +475,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
   };
 
   const handleExecuteBatch = () => {
+        // ... (Logic unchanged for calculating void, skipping for brevity)
         // We need to compare "New Grouped Totals" vs "Old Real Items"
         const originalActive = sessionItems.filter(i => ["preparing", "served", "confirmed"].includes(i.status));
       
@@ -387,7 +511,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
   };
 
   const executeBatchUpdate = async (voidReason) => {
-      setLoading(true);
+      setLoadingOp('BATCH_UPDATE');
       try {
           const originalActive = sessionItems.filter(i => ["preparing", "served", "confirmed"].includes(i.status));
           const updates = [];
@@ -444,7 +568,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
       } catch (e) {
           toast.error("Update Failed: " + e.message);
       } finally {
-          setLoading(false);
+          setLoadingOp(null);
           setIsBatchEditing(false);
           setIsVoidModalOpen(false);
           setItemToVoid(null);
@@ -452,7 +576,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
   };
   
   const handleCheckoutWrapper = async (sessionId, type, data) => {
-        setLoading(true);
+        setLoadingOp('CHECKOUT');
         try {
             if (onCheckout) {
                 const res = await onCheckout(sessionId, type, data);
@@ -468,13 +592,14 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter")
                 return false;
             }
         } finally {
-            setLoading(false);
+            setLoadingOp(null);
         }
   }
 
   return {
     state: {
-        loading, // Simple loading boolean
+        loadingOp, // EXPOSED: 'START_SESSION', 'CLOSE_TABLE', etc.
+        loading: !!loadingOp, // Legacy support for basic disable logic
         localItems,
         pendingItems,
         confirmedItems,

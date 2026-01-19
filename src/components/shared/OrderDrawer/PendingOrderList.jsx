@@ -7,6 +7,7 @@ export default function PendingOrderList({
     items, 
     role, 
     loading, 
+    loadingOp,
     onUpdateQty, 
     onDelete, 
     onConfirm 
@@ -35,11 +36,13 @@ export default function PendingOrderList({
                     <button
                         onClick={onConfirm}
                         disabled={loading}
-                        className={`w-full mt-4 py-4 ${
-                            loading ? "bg-[#ea7c69]/80 cursor-wait" : "bg-[#ea7c69] hover:bg-[#d96b58]"
-                        } text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg shadow-orange-900/30`}
+                        className={`w-full mt-4 py-4 text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg shadow-orange-900/30 ${
+                            loading 
+                            ? "bg-[#ea7c69]/80 cursor-not-allowed opacity-70" 
+                            : "bg-[#ea7c69] hover:bg-[#d96b58] cursor-pointer"
+                        }`}
                     >
-                        {loading ? (
+                        {loadingOp === 'CONFIRM_ORDER' ? (
                             <Loader active={true} variant="inline" className="h-6 w-6" />
                         ) : (
                             <>
@@ -68,11 +71,13 @@ export default function PendingOrderList({
                     <button
                         onClick={onConfirm}
                         disabled={loading}
-                        className={`w-full mt-4 py-4 ${
-                            loading ? "bg-[#ea7c69]/80 cursor-wait" : "bg-[#ea7c69] hover:bg-[#d96b58]"
-                        } text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg shadow-orange-900/30`}
+                        className={`w-full mt-4 py-4 text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg shadow-orange-900/30 ${
+                            loading 
+                            ? "bg-[#ea7c69]/80 cursor-not-allowed opacity-70" 
+                            : "bg-[#ea7c69] hover:bg-[#d96b58] cursor-pointer"
+                        }`}
                     >
-                         {loading ? (
+                         {loadingOp === 'CONFIRM_ORDER' ? (
                             <Loader active={true} variant="inline" className="h-6 w-6" />
                         ) : (
                             <>

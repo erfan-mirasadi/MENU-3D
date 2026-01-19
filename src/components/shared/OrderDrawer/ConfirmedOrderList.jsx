@@ -7,6 +7,7 @@ export default function ConfirmedOrderList({
     items, 
     role, 
     loading, 
+    loadingOp,
     onUpdateQty, 
     onDelete, 
     onStartPreparing 
@@ -29,13 +30,13 @@ export default function ConfirmedOrderList({
                     <button
                         onClick={onStartPreparing}
                         disabled={loading}
-                        className={`w-full mt-4 py-4 ${
+                        className={`w-full mt-4 py-4 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-900/40 transition-all ${
                             loading 
-                            ? "bg-blue-600/80 cursor-wait"
-                            : "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
-                        } text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-900/40 active:scale-95 transition-all`}
+                            ? "bg-blue-600/80 cursor-not-allowed opacity-70"
+                            : "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 cursor-pointer active:scale-95"
+                        }`}
                     >
-                        {loading ? (
+                        {loadingOp === 'PREPARE_ORDER' ? (
                             <Loader active={true} variant="inline" className="h-6 w-6" />
                         ) : (
                             <>

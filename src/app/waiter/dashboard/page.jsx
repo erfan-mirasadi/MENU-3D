@@ -140,6 +140,7 @@ export default function WaiterDashboard() {
 
       {/* --- DRAWER --- */}
       <OrderDrawer
+        key={selectedTable?.id}
         isOpen={isDrawerOpen}
         onClose={handleCloseDrawer}
         table={selectedTable}

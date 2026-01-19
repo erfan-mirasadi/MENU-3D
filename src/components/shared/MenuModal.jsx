@@ -5,6 +5,7 @@ import { FaSearch, FaTimes, FaPlus, FaMinus } from "react-icons/fa";
 import { getMenuProducts } from "@/services/waiterService";
 import { getCategories } from "@/services/categoryService";
 import SmartMedia from "@/components/ui/SmartMedia";
+import Loader from "@/components/ui/Loader";
 import toast from "react-hot-toast";
 
 export default function MenuModal({
@@ -99,7 +100,7 @@ export default function MenuModal({
         </div>
         <button
           onClick={onClose}
-          className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-white active:scale-95 transition-all"
+          className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-white active:scale-95 transition-all cursor-pointer"
         >
           <FaTimes size={20} />
         </button>
@@ -117,7 +118,7 @@ export default function MenuModal({
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all ${
+                className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all cursor-pointer ${
                   selectedCategory === cat.id
                     ? "bg-[#ea7c69] text-white shadow-lg shadow-orange-900/20"
                     : "bg-[#252836] text-gray-400 border border-white/5"
@@ -133,8 +134,8 @@ export default function MenuModal({
       {/* PRODUCTS GRID */}
       <div className="flex-1 overflow-y-auto p-4 bg-[#1F1D2B]">
         {loading ? (
-          <div className="flex justify-center mt-20 text-[#ea7c69] animate-pulse">
-            Loading Menu...
+          <div className="flex justify-center mt-20">
+             <Loader/>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pb-20">
@@ -179,7 +180,7 @@ export default function MenuModal({
                       disabled={qty === 0}
                       className={`flex-1 h-full rounded-lg flex items-center justify-center transition-colors ${
                         qty > 0
-                          ? "bg-[#1F1D2B] text-white border border-white/10 active:bg-red-500/20 active:text-red-400"
+                          ? "bg-[#1F1D2B] text-white border border-white/10 active:bg-red-500/20 active:text-red-400 cursor-pointer"
                           : "bg-[#1F1D2B]/50 text-gray-600 cursor-not-allowed"
                       }`}
                     >
@@ -188,7 +189,7 @@ export default function MenuModal({
 
                     <button
                       onClick={() => onAdd(product)}
-                      className="flex-1 h-full bg-[#ea7c69] hover:bg-[#d96b58] text-white rounded-lg flex items-center justify-center shadow-lg shadow-orange-900/20 active:scale-95 transition-all"
+                      className="flex-1 h-full bg-[#ea7c69] hover:bg-[#d96b58] text-white rounded-lg flex items-center justify-center shadow-lg shadow-orange-900/20 active:scale-95 transition-all cursor-pointer"
                     >
                       <FaPlus size={12} />
                     </button>
