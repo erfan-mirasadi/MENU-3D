@@ -1,9 +1,9 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useRestaurantData } from '@/app/hooks/useRestaurantData'
 import RestaurantMap from '../_components/RestaurantMap'
 import TableEditor from '../_components/TableEditor'
-import { calculateDefaultLayout } from '../_utils/layoutUtils'
+import { calculateDefaultLayout, calculateGridLayout } from '../_utils/layoutUtils'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import { RiEdit2Line, RiSave3Line, RiCloseLine, RiRestartLine, RiDragMove2Line, RiShapeLine, RiAddLine } from 'react-icons/ri'
@@ -32,6 +32,19 @@ export default function DashboardPage() {
 
   // Local state for layout changes
   const [localTables, setLocalTables] = useState([])
+  const [floorStyle, setFloorStyle] = useState('terazzo') 
+
+  // Load persistence
+  useEffect(() => {
+     const saved = localStorage.getItem('menu-app-floor-style')
+     if (saved) setFloorStyle(saved)
+  }, [])
+
+  const handleFloorChange = (e) => {
+      const newStyle = e.target.value
+      setFloorStyle(newStyle)
+      localStorage.setItem('menu-app-floor-style', newStyle)
+  }
 
   // Init local tables when entering edit mode or loading
   const mergedTables = useMemo(() => {
@@ -310,11 +323,8 @@ export default function DashboardPage() {
 
   const handleResetLayout = () => {
       if (!confirm("Are you sure? This will strictly arrange tables by number and reset all custom sizes.")) return;
-      
-      const reset = calculateDefaultLayout(localTables.map(t => ({
-          ...t,
-          layout_data: { x: 0, y: 0 } 
-      })))
+       
+      const reset = calculateGridLayout(localTables)
       const fullyReset = reset.map(t => ({ ...t, width: 2.2, depth: 2.2 }))
       
       setLocalTables(fullyReset)
@@ -330,7 +340,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-gray-50">
+    <div className="relative w-full h-full overflow-hidden bg-gray-50">
       
       {/* 3D Viewport */}
       <div className="absolute inset-0 z-0">
@@ -340,10 +350,12 @@ export default function DashboardPage() {
                 onTablesUpdate={handleUpdateTables}
                 selectedTableId={selectedTableId}
                 onSelectTable={setSelectedTableId}
+                floorType={floorStyle}
             />
         ) : (
             <RestaurantMap 
                 tables={mergedTables} 
+                floorType={floorStyle}
                 onSelectTable={(id) => {
                     if(!id) return;
                     
@@ -429,6 +441,24 @@ export default function DashboardPage() {
                         >
                             <RiAddLine size={20} /> Add Table
                         </button>
+                        
+                        <div className="relative group mr-2">
+                             <select
+                                value={floorStyle}
+                                onChange={handleFloorChange}
+                                className="bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors appearance-none pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 z-100"
+                             >
+                                <option value="parquet">Wood Parquet</option>
+                                <option value="concrete">Concrete</option>
+                                <option value="marble">White Marble</option>
+                                <option value="terrazzo">Terrazzo</option>
+                                <option value="white">White</option>
+                                <option value="black">Black</option>
+                             </select>
+                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                ▼
+                             </div>
+                        </div>
 
                         <button 
                             onClick={handleResetLayout}

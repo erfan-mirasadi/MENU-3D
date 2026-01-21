@@ -38,3 +38,51 @@ export function calculateDefaultLayout(tables) {
     };
   });
 }
+
+// Forces a complete grid reset, centered on 0,0
+export function calculateGridLayout(tables) {
+    if (!tables || tables.length === 0) return [];
+  
+    // Sort tables by number (T-01, T-02...)
+    const sorted = [...tables].sort((a, b) => {
+        const numA = parseInt(a.table_number.replace(/\D/g, '') || '0');
+        const numB = parseInt(b.table_number.replace(/\D/g, '') || '0');
+        return numA - numB;
+    });
+
+    const COLS = 6; // User asked for 5x6 roughly (30 tables), 6 cols is a good balance
+    const SPACING_X = 35;
+    const SPACING_Y = 35;
+    
+    const totalCount = sorted.length;
+    const numRows = Math.ceil(totalCount / COLS);
+    const actualCols = Math.min(totalCount, COLS);
+
+    // Calculate bounding box to center it
+    const gridWidth = (actualCols - 1) * SPACING_X;
+    const gridHeight = (numRows - 1) * SPACING_Y;
+    
+    const startX = -gridWidth / 2;
+    const startY = -gridHeight / 2; // Center vertically too? Or start from top? User said "markaz". Let's center.
+
+    return sorted.map((table, index) => {
+      const col = index % COLS;
+      const row = Math.floor(index / COLS);
+  
+      const x = startX + col * SPACING_X;
+      const y = startY + row * SPACING_Y; // Builds upwards? Or downwards? 
+      // 3D Z axis (Y in logic) usually increases "down" or "towards camera". 
+      // Let's assume standard grid filling.
+      
+      return {
+        ...table,
+        x: x,
+        y: y,
+        layout_data: {
+          ...table.layout_data,
+          x: x,
+          y: y
+        }
+      };
+    });
+}

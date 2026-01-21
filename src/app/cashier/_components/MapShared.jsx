@@ -9,14 +9,45 @@ export function MapCamera() {
     )
 }
 
-// 2. Shared Floor (Wood Parquet)
-export function MapFloor() {
-    const texture = useTexture('/textures/wood_parquet.png')
+// 2. Shared Floor (Dynamic Textures/Colors)
+export function MapFloor({ textureType = 'terrazzo' }) {
+    // Load all textures upfront (cached by three/fiber)
+    const textures = useTexture({
+        parquet: '/textures/wood_parquet.png',
+        concrete: '/textures/concrete.png',
+        marble: '/textures/marble.png',
+        terrazzo: '/textures/terrazzo.png',
+    })
+
+    // Configure repeating for all loaded textures
+    Object.values(textures).forEach(t => {
+        t.wrapS = t.wrapT = THREE.RepeatWrapping
+        t.repeat.set(15, 15)
+        t.colorSpace = THREE.SRGBColorSpace
+    })
+
+    // Render based on type
+    if (textureType === 'white') {
+        return (
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.4, 0]} receiveShadow>
+                <planeGeometry args={[70, 70]} />
+                <meshStandardMaterial color="#e0ебе9" roughness={0.1} />
+            </mesh>
+        )
+    }
     
-    // Repeat texture
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping
-    texture.repeat.set(10, 10)
-    texture.colorSpace = THREE.SRGBColorSpace
+    if (textureType === 'black') {
+        return (
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.4, 0]} receiveShadow>
+                <planeGeometry args={[70, 70]} />
+                <meshStandardMaterial color="#1f1d2b" roughness={0.1} />
+            </mesh>
+        )
+    }
+
+    // Default or Specific Texture
+    const selectedTexture = textures[textureType] || textures.parquet
+    const roughness = textureType === 'concrete' ? 0.9 : (textureType === 'marble' ? 0.1 : 0.8)
 
     return (
         <mesh 
@@ -24,10 +55,23 @@ export function MapFloor() {
             position={[0, -0.4, 0]} 
             receiveShadow
         >
-            <planeGeometry args={[70, 70]} />
-            <meshStandardMaterial map={texture} roughness={0.8} />
+            <planeGeometry args={[95, 95]} />
+            <meshStandardMaterial map={selectedTexture} roughness={roughness} />
         </mesh>
     )
+}
+
+// Helper to get background/fog color based on texture type
+export function getFloorColor(type) {
+    switch(type) {
+        case 'parquet': return '#d4c5b0' // Match wood tone
+        case 'concrete': return '#808080' // Match concrete grey
+        case 'marble': return '#e5e7eb' // Match white marble
+        case 'terrazzo': return '#f3f4f6' // Match terrazzo background
+        case 'white': return '#ffffff'
+        case 'black': return '#1f1d2b'
+        default: return '#f3f4f6'
+    }
 }
 
 // 3. Shared Table Visuals (Body + Legs + Text)
@@ -45,17 +89,33 @@ export function TableVisual({ width, depth, tableNumber, color = '#FDFBF7', mate
                 />
             </RoundedBox>
             
-            {/* Table Number */}
+            {/* FAKE SHADOW - "Stuck to table" */}
             <Text
-                position={[0, 0.26, 0]} 
-                rotation={[-Math.PI / 2, 0, 0]} 
+                position={[0, 0.3, -0.1]} // Slightly offset on the table surface
+                rotation={[-Math.PI / 2, 0, 0.005]} 
                 fontSize={Math.min(width, depth) * 0.35} 
                 maxWidth={width * 0.8} 
                 font="https://fonts.gstatic.com/s/bitcountpropsingle/v3/-W-gXIv9SyXT0xz0E9pIHCxbW8ZMGEVdhz4VoumsGFhzYseFqK9f_KOwYjYsHSocfu1DlxztzQH877SgJ2SUzQ4SJdODLz0JoLU3vXFrqXQooCdbs921GXZlLGU.ttf"
-                color="#1f2937" 
+                color="#000000" 
                 anchorX="center"
                 anchorY="middle"
-                fillOpacity={0.9}
+                fillOpacity={0.2} // Low opacity for shadow look
+                letterSpacing={-0.05}
+            >
+                {tableNumber}
+            </Text>
+
+            {/* FLOATING NUMBER - Hovering above */}
+            <Text
+                position={[0, 0.55, 0.1]} // Floating nicely high
+                rotation={[-Math.PI / 4, 0, 0]} 
+                fontSize={Math.min(width, depth) * 0.35} 
+                maxWidth={width * 0.8} 
+                font="https://fonts.gstatic.com/s/bitcountpropsingle/v3/-W-gXIv9SyXT0xz0E9pIHCxbW8ZMGEVdhz4VoumsGFhzYseFqK9f_KOwYjYsHSocfu1DlxztzQH877SgJ2SUzQ4SJdODLz0JoLU3vXFrqXQooCdbs921GXZlLGU.ttf"
+                color="#1f1d2b" 
+                anchorX="center"
+                anchorY="middle"
+                fillOpacity={1}
                 letterSpacing={-0.05}
             >
                 {tableNumber}

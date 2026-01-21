@@ -1,9 +1,9 @@
 'use client'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { MapControls, Environment, RoundedBox } from '@react-three/drei' // Removed PerspectiveCamera, Text, useTexture
+import { MapControls, Environment, RoundedBox, useCursor } from '@react-three/drei' // Removed PerspectiveCamera, Text, useTexture
 import { useState, useEffect, useRef, useMemo } from 'react'
 import * as THREE from 'three'
-import { MapCamera, MapFloor, TableVisual } from './MapShared'
+import { MapCamera, MapFloor, TableVisual, getFloorColor } from './MapShared'
 
 // Minimalist Avatar Component
 function CustomerAvatar({ position, color }) {
@@ -45,7 +45,7 @@ function CustomerAvatar({ position, color }) {
 
 function TableBox({ id, position, width = 2.2, depth = 2.2, tableNumber, status, isEditing, onSelect, isSelected, session, active_orders }) {
   const [hovered, setHovered] = useState(false)
-  // useCursor logic if needed, but handled by parent in some setups
+  useCursor(hovered, 'pointer', 'auto')
   const materialRef = useRef()
   
   // Guest Count Logic (Active Orders based)
@@ -233,11 +233,14 @@ function SceneContent({ tables, isEditing, onSelectTable }) {
     )
 }
 
-export default function RestaurantMap({ tables, isEditing = false, onSelectTable = () => {} }) {
+export default function RestaurantMap({ tables, isEditing = false, onSelectTable = () => {}, floorType = 'terrazzo' }) {
+  const floorColor = getFloorColor(floorType)
+  const controlsRef = useRef()
+
   return (
     <Canvas shadows dpr={[1, 2]}>
       {/* 1. Environment */}
-      <color attach="background" args={['#F5F5F0']} />
+      <color attach="background" args={[floorColor]} />
       <ambientLight intensity={0.7} />
       <directionalLight position={[10, 20, 10]} intensity={1.2} castShadow />
       <Environment preset="warehouse" />
@@ -246,6 +249,7 @@ export default function RestaurantMap({ tables, isEditing = false, onSelectTable
       <MapCamera />
       
       <MapControls 
+        ref={controlsRef}
         enableRotate={false}
         enableZoom={true}
         minDistance={70} // Minimum zoom (closest)
@@ -253,13 +257,37 @@ export default function RestaurantMap({ tables, isEditing = false, onSelectTable
         maxPolarAngle={Math.PI / 2.2} // Prevent going below ground
         dampingFactor={0.05}
         enabled={!isEditing} 
+        onChange={(e) => {
+            if (controlsRef.current) {
+                const controls = controlsRef.current
+                const camera = controls.object
+                const target = controls.target
+                const LIMIT = 30
+
+                const clampedX = Math.max(-LIMIT, Math.min(LIMIT, target.x))
+                const clampedZ = Math.max(-LIMIT, Math.min(LIMIT, target.z))
+
+                // Calculate the difference (how much we were "pushed back")
+                const deltaX = clampedX - target.x
+                const deltaZ = clampedZ - target.z
+
+                // If we hit the wall, apply the same offset to the camera
+                // This preserves the distance/angle between camera and target
+                if (deltaX !== 0 || deltaZ !== 0) {
+                    target.x = clampedX
+                    target.z = clampedZ
+                    camera.position.x += deltaX
+                    camera.position.z += deltaZ
+                }
+            }
+        }}
       />
 
       {/* 3. Render Tables */}
       <SceneContent tables={tables} isEditing={isEditing} onSelectTable={onSelectTable} />
 
       {/* 4. Shared Floor */}
-      <MapFloor />
+      <MapFloor textureType={floorType} />
       
       {/* 5. Grid (Subtle) */}
       <gridHelper args={[1000, 50, '#e5e7eb', '#e5e7eb']} position={[0, -0.38, 0]} />

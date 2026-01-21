@@ -3,7 +3,7 @@ import { Canvas, useThree } from '@react-three/fiber'
 import { MapControls, Environment, useCursor } from '@react-three/drei'
 import { useState, useRef, useEffect } from 'react'
 import * as THREE from 'three'
-import { MapCamera, MapFloor, TableVisual } from './MapShared'
+import { MapCamera, MapFloor, TableVisual, getFloorColor } from './MapShared'
 
 function ResizeHandle({ position, direction, onResizeStart }) {
     const [hovered, setHovered] = useState(false)
@@ -30,7 +30,7 @@ function ResizeHandle({ position, direction, onResizeStart }) {
     )
 }
 
-function SceneContent({ tables, onUpdate, selectedId, onSelect }) {
+function SceneContent({ tables, onUpdate, selectedId, onSelect, floorType }) {
     const orbitRef = useRef()
     const [draggingId, setDraggingId] = useState(null)
     const [dragStartOffset, setDragStartOffset] = useState([0,0])
@@ -42,7 +42,7 @@ function SceneContent({ tables, onUpdate, selectedId, onSelect }) {
 
     // Highlight hovered table
     const [hoveredId, setHoveredId] = useState(null)
-    useCursor(!!hoveredId && !draggingId && !resizingDirection, 'grab', 'auto')
+    useCursor(!!hoveredId && !draggingId && !resizingDirection, 'pointer', 'auto')
     useCursor(!!draggingId || !!resizingDirection, 'grabbing', 'auto')
 
     const tableRefs = useRef({})
@@ -189,6 +189,27 @@ function SceneContent({ tables, onUpdate, selectedId, onSelect }) {
                 maxDistance={200}
                 dampingFactor={0.05}
                 makeDefault
+                onChange={(e) => {
+                    if (orbitRef.current) {
+                        const controls = orbitRef.current
+                        const camera = controls.object
+                        const target = controls.target
+                        const LIMIT = 30
+
+                        const clampedX = Math.max(-LIMIT, Math.min(LIMIT, target.x))
+                        const clampedZ = Math.max(-LIMIT, Math.min(LIMIT, target.z))
+
+                        const deltaX = clampedX - target.x
+                        const deltaZ = clampedZ - target.z
+
+                        if (deltaX !== 0 || deltaZ !== 0) {
+                            target.x = clampedX
+                            target.z = clampedZ
+                            camera.position.x += deltaX
+                            camera.position.z += deltaZ
+                        }
+                    }
+                }}
             />
 
             {/* Tables */}
@@ -226,7 +247,7 @@ function SceneContent({ tables, onUpdate, selectedId, onSelect }) {
                         {/* Handles - Always show if Selected (Unified Mode) */}
                         {isSelected && !draggingId && (
                             <>
-                                <ResizeHandle direction="x+" position={[w/2 + 0.15, 0, 0]} 
+                                <ResizeHandle direction="x-" position={[-w/2 - 0.15, 0, 0]} 
                                     onResizeStart={(dir, p) => handleResizeHandleDown(dir, p, table)} 
                                 />
                                 <ResizeHandle direction="z+" position={[0, 0, d/2 + 0.15]} 
@@ -257,8 +278,14 @@ function SceneContent({ tables, onUpdate, selectedId, onSelect }) {
                             // OPTIMIZED: Direct Mutation
                              const mesh = tableRefs.current[draggingId]
                              if (mesh) {
-                                 const newX = e.point.x - dragStartOffset[0]
-                                 const newZ = e.point.z - dragStartOffset[1]
+                                 let newX = e.point.x - dragStartOffset[0]
+                                 let newZ = e.point.z - dragStartOffset[1]
+                                 
+                                 // Clamp to Floor Constraints (+/- 45)
+                                 const LIMIT = 45
+                                 newX = Math.max(-LIMIT, Math.min(LIMIT, newX))
+                                 newZ = Math.max(-LIMIT, Math.min(LIMIT, newZ))
+
                                  mesh.position.set(newX, 0.4, newZ)
                              }
                          }
@@ -274,7 +301,7 @@ function SceneContent({ tables, onUpdate, selectedId, onSelect }) {
             )}
 
             {/* Shared Permanent Floor */}
-             <MapFloor />
+             <MapFloor textureType={floorType} />
              
             {/* Grid - Subtler or removed for Cozy feel - Adding it very subtle */}
             <gridHelper args={[1000, 50, '#e5e7eb', '#e5e7eb']} position={[0, -0.39, 0]} />
@@ -282,7 +309,7 @@ function SceneContent({ tables, onUpdate, selectedId, onSelect }) {
     )
 }
 
-export default function TableEditor({ tables, onTablesUpdate, onSelectTable, selectedTableId }) {
+export default function TableEditor({ tables, onTablesUpdate, onSelectTable, selectedTableId, floorType = 'terrazzo' }) {
     
     // Internal handler to update one table in the list
     const handleOneTableUpdate = (updatedTable) => {
@@ -292,11 +319,18 @@ export default function TableEditor({ tables, onTablesUpdate, onSelectTable, sel
         onTablesUpdate(newTables)
     }
 
+    const floorColor = getFloorColor(floorType)
+
     return (
         <Canvas shadows dpr={[1, 2]} onPointerMissed={() => onSelectTable(null)}>
-             <color attach="background" args={['#f3f4f6']} />
-             <ambientLight intensity={0.7} />
-             <directionalLight position={[10, 20, 10]} intensity={1.2} castShadow />
+             <color attach="background" args={[floorColor]} />
+             <ambientLight intensity={0.5} />
+             <directionalLight 
+                position={[10, 20, 10]} 
+                intensity={1} 
+                castShadow 
+                shadow-mapSize={[1024, 1024]} 
+             />
              <Environment preset="warehouse" />
              
              {/* Shared Perspective Camera */}
@@ -307,6 +341,7 @@ export default function TableEditor({ tables, onTablesUpdate, onSelectTable, sel
                 onUpdate={handleOneTableUpdate} 
                 selectedId={selectedTableId}
                 onSelect={onSelectTable}
+                floorType={floorType}
              />
         </Canvas>
     )
