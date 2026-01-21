@@ -237,7 +237,7 @@ export async function getKitchenOrders(restaurantId) {
             )
         `)
         .eq("session.restaurant_id", restaurantId)
-        .in("status", ["pending", "confirmed", "preparing", "served"])
+        .in("status", ["pending", "confirmed", "preparing", "ready", "served"])
         .order("created_at", { ascending: true });
 
     if (error) {
@@ -248,7 +248,7 @@ export async function getKitchenOrders(restaurantId) {
 }
 
 export async function updateOrderItemStatus(itemId, newStatus) {
-    const validStatuses = ["preparing", "served", "cancelled"];
+    const validStatuses = ["preparing", "ready", "served", "cancelled"];
     if (!validStatuses.includes(newStatus)) {
         throw new Error(`Invalid status: ${newStatus}`);
     }

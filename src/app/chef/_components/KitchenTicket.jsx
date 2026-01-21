@@ -6,7 +6,8 @@ import { RiRestaurantLine, RiCheckboxCircleLine, RiCheckDoubleLine, RiTimeLine }
 function TicketItem({ item, onUpdateStatus }) {
     const isPending = item.status === 'pending' || item.status === 'confirmed'
     const isPreparing = item.status === 'preparing'
-    const isServed = item.status === 'served'
+    const isReady = item.status === 'ready' // Cooked but not served to table
+    const isServed = item.status === 'served' // Historical / Gone
 
     // Localized Title Helper
     const getTitle = (product) => {
@@ -22,7 +23,8 @@ function TicketItem({ item, onUpdateStatus }) {
             flex items-center justify-between p-3 rounded-xl border-2 transition-all duration-200
             ${isPending ? 'border-orange-200 bg-orange-50/30' : ''}
             ${isPreparing ? 'border-yellow-200 bg-yellow-50/30' : ''}
-            ${isServed ? 'border-emerald-500 bg-emerald-100' : ''}
+            ${isReady ? 'border-green-500 bg-green-50' : ''}
+            ${isServed ? 'border-gray-200 bg-gray-50 opacity-75' : ''} 
         `}>
             {/* Left: Qty & Name */}
             <div className="flex items-center gap-3">
@@ -30,12 +32,13 @@ function TicketItem({ item, onUpdateStatus }) {
                     flex items-center justify-center w-8 h-8 rounded-lg font-black text-lg
                     ${isPending ? 'bg-orange-100 text-orange-700' : ''}
                     ${isPreparing ? 'bg-yellow-100 text-yellow-700' : ''}
-                    ${isServed ? 'bg-emerald-500 text-white' : ''}
+                    ${isReady ? 'bg-green-500 text-white' : ''}
+                    ${isServed ? 'bg-gray-200 text-gray-500' : ''}
                 `}>
                     {item.quantity}
                 </span>
                 <div>
-                     <span className="block font-bold text-gray-800 text-lg leading-tight">
+                     <span className={`block font-bold text-lg leading-tight ${isServed ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
                         {getTitle(item.products)}
                      </span>
                      {/* Status Badge */}
@@ -57,10 +60,19 @@ function TicketItem({ item, onUpdateStatus }) {
                 )}
                 {isPreparing && (
                     <button 
-                        onClick={() => onUpdateStatus(item.id, 'served')}
-                        className="p-3 rounded-lg bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-200 active:scale-95 transition-all"
+                        onClick={() => onUpdateStatus(item.id, 'ready')}
+                        className="p-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-200 active:scale-95 transition-all"
                     >
                         <RiCheckboxCircleLine size={20} />
+                    </button>
+                )}
+                 {isReady && !isServed && (
+                    <button 
+                        onClick={() => onUpdateStatus(item.id, 'preparing')}
+                        className="p-3 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-500 shadow-md active:scale-95 transition-all"
+                        title="Undo (Set back to Preparing)"
+                    >
+                        <RiTimeLine size={20} />
                     </button>
                 )}
             </div>
@@ -77,7 +89,7 @@ export default function KitchenTicket({ session, orders, onUpdateStatus, onServe
     const hasPending = orders.some(o => o.status === 'pending' || o.status === 'confirmed')
     
     // Timer Base: Use oldest ACTIVE order. If all served, fallback to now (won't matter as ticket hides)
-    const activeOrders = orders.filter(o => ['pending', 'confirmed', 'preparing'].includes(o.status))
+    const activeOrders = orders.filter(o => ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status))
     const oldestOrderTime = activeOrders.reduce((oldest, o) => {
         return (new Date(o.created_at) < new Date(oldest)) ? o.created_at : oldest
     }, new Date().toISOString())
@@ -110,7 +122,7 @@ export default function KitchenTicket({ session, orders, onUpdateStatus, onServe
 
             {/* Ticket Body (Scrollable List) */}
             <div className="flex-1 p-3 space-y-3 bg-gray-50/50">
-                {orders.map(item => (
+                {orders.filter(item => item.status !== 'served').map(item => (
                     <TicketItem 
                         key={item.id} 
                         item={item} 

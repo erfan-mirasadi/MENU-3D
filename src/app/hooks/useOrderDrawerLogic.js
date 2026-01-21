@@ -84,7 +84,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
   // Derived Lists
   const pendingItems = localItems.filter((i) => i.status === "pending");
   const confirmedItems = localItems.filter((i) => i.status === "confirmed");
-  const activeItems = localItems.filter((i) => ["preparing", "served"].includes(i.status));
+  const activeItems = localItems.filter((i) => ["preparing", "ready", "served"].includes(i.status));
 
   const totalAmount = localItems.reduce(
     (sum, item) => sum + (item.unit_price_at_order || 0) * item.quantity,

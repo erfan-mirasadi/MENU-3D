@@ -87,9 +87,18 @@ export default function SwipeableOrderItem({
                 <span className="text-[#ea7c69] font-mono text-sm">
                 {item.unit_price_at_order} ₺
                 </span>
+                
+                {/* READY (Chef Finished) */}
+                {item.status === 'ready' && (
+                    <span className="text-[10px] font-black bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/50 uppercase tracking-wider">
+                        Ready
+                    </span>
+                )}
+
+                {/* SERVED (Delivered) */}
                 {showReadyBadge && item.status === 'served' && (
                     <span className="text-[10px] font-black bg-green-500/20 text-green-400 px-2 py-0.5 rounded border border-green-500/50 uppercase tracking-wider">
-                        Ready
+                        Served
                     </span>
                 )}
             </div>

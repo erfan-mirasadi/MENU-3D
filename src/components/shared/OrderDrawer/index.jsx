@@ -128,10 +128,9 @@ export default function OrderDrawer({
                                 onStartPreparing={actions.handleStartPreparing}
                             />
 
-                            {/* 3. Active/Served Items (Both) */}
+                            {/* 3.1. In Kitchen Items (Yellow) */}
                             <ActiveOrderList
-                                // Waiter: Active Only (Confirmed now handled separately above)
-                                items={activeItems}
+                                items={activeItems.filter(i => i.status !== 'served')}
                                 role={role}
                                 isBatchEditing={isBatchEditing}
                                 batchItems={batchItems}
@@ -142,6 +141,23 @@ export default function OrderDrawer({
                                 onSaveEdit={actions.handleExecuteBatch}
                                 onUpdateBatchQty={(id, qty) => setters.setBatchItems(p => p.map(i => i.id === id ? {...i, quantity: qty} : i))}
                                 onDeleteBatchItem={(id) => setters.setBatchItems(p => p.filter(i => i.id !== id))}
+                                onUpdateQty={actions.onUpdateQty}
+                                onDelete={actions.onDeleteItem}
+                            />
+
+                            {/* 3.2. Served Items (Green) */}
+                            <ActiveOrderList
+                                items={activeItems.filter(i => i.status === 'served')}
+                                role={role}
+                                isBatchEditing={false} 
+                                batchItems={[]}
+                                loading={loading}
+                                loadingOp={loadingOp}
+                                onEditOrder={() => {}} 
+                                onCancelEdit={() => {}} 
+                                onSaveEdit={() => {}} 
+                                onUpdateBatchQty={() => {}}
+                                onDeleteBatchItem={() => {}}
                                 onUpdateQty={actions.onUpdateQty}
                                 onDelete={actions.onDeleteItem}
                             />
