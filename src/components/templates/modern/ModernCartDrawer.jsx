@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useLanguage } from "@/context/LanguageContext";
+import FeatureGuard from "@/components/shared/FeatureGuard";
 
 import { useDrag } from "@use-gesture/react";
 import { MdDeleteOutline, MdAdd, MdRemove } from "react-icons/md";
@@ -263,6 +264,7 @@ export default function ModernCartDrawer({
           </div>
 
           {draftItems.length > 0 ? (
+            <FeatureGuard feature="ordering_enabled">
             <button
               onClick={() => {
                 onSubmit();
@@ -275,6 +277,7 @@ export default function ModernCartDrawer({
                 {draftItems.reduce((a, b) => a + b.quantity, 0)} {t("items")}
               </span>
             </button>
+            </FeatureGuard>
           ) : (
             <div className="w-full h-14 rounded-2xl border border-white/10 flex items-center justify-center text-gray-500 text-sm font-medium cursor-not-allowed">
               {t("noNewItems")}

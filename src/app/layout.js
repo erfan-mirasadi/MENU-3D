@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import { RestaurantProvider } from "@/app/hooks/useRestaurantData";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,7 +47,9 @@ export default function RootLayout({ children }) {
         suppressHydrationWarning={true}
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}
       >
+        <RestaurantProvider>
         {children}
+        </RestaurantProvider>
 
         {/* Global Toast Notification Component */}
         <Toaster

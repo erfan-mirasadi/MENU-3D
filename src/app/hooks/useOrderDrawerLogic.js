@@ -7,11 +7,14 @@ import {
   updateOrderItem,
   deleteOrderItem,
   addOrderItem,
-  startPreparingOrder
+  startPreparingOrder,
+  serveConfirmedOrders
 } from "@/services/waiterService";
 import { voidOrderItem, updateOrderItemSecurely } from "@/services/orderService";
+import { useRestaurantFeatures } from "./useRestaurantFeatures";
 
 export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter", onCloseDrawer) => {
+  const { features } = useRestaurantFeatures();
   const [loadingOp, setLoadingOp] = useState(null); // 'START_SESSION', 'CLOSE_TABLE', etc.
   
   // State 1: Local Drafts (New additions not yet sent to DB)
@@ -262,32 +265,46 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
             setDraftItems([]); 
         }
 
-        // 2. Confirm All Pending + New Drafts
-        await confirmOrderItems(session.id);
+        // Revised Logic per User Request: 
+        // 1. Kitchen ON, Cashier ON -> 'confirmed' (Standard Queue)
+        // 2. Kitchen ON, Cashier OFF -> 'preparing' (Direct to Kitchen, skip confirmation)
+        // 3. Kitchen OFF -> 'served' (Instant Serve)
+        
+        let targetStatus = 'confirmed';
+        if (features.kitchen) {
+            if (!features.cashier) {
+                targetStatus = 'preparing'; 
+            } else {
+                targetStatus = 'confirmed';
+            }
+        } else {
+            targetStatus = 'served';
+        }
+
+        // 3. Confirm All Pending + New Drafts
+        await confirmOrderItems(session.id, targetStatus);
         
         // OPTIMISTIC UPDATE: 
-        // 1. Existing Pending -> Confirmed
-        // 2. Drafts -> Confirmed (Move to sessionItems)
         let totalCount = 0;
         setSessionItems(prev => {
             const updatedExisting = prev.map(item => 
-                item.status === 'pending' ? { ...item, status: 'confirmed' } : item
+                item.status === 'pending' ? { ...item, status: targetStatus } : item
             );
             
             const optimisticDrafts = currentDrafts.map(d => ({
                 ...d,
                 id: d.id, // Keep draft ID temporarily (Realtime will overwrite later)
-                status: 'confirmed',
+                status: targetStatus,
                 created_at: d.created_at || new Date().toISOString()
             }));
 
             const final = [...updatedExisting, ...optimisticDrafts];
-            totalCount = final.filter(i => i.status === 'confirmed').length;
+            totalCount = final.filter(i => i.status === targetStatus).length;
             return final;
         });
 
         // Set Lock (State based)
-        setOptimisticLock({ targetStatus: 'confirmed', count: totalCount > 0 ? 1 : 0 });
+        setOptimisticLock({ targetStatus: targetStatus, count: totalCount > 0 ? 1 : 0 });
 
         // Safety Timeout
         setTimeout(() => {
@@ -300,7 +317,13 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
             });
         }, 5000);
 
-        toast.success("Orders Sent to Kitchen! 👨‍🍳");
+        if (targetStatus === 'confirmed') {
+            toast.success("Sent to Cashier for Approval! ⏳");
+        } else if (targetStatus === 'preparing') {
+            toast.success("Sent Directly to Kitchen! 👨‍🍳");
+        } else {
+             toast.success("Orders Served! ✅");
+        }
     } catch (error) { 
         toast.error("Failed to confirm");
         console.error(error);
@@ -312,20 +335,40 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
   const handleStartPreparing = async () => {
       setLoadingOp('PREPARE_ORDER');
       try {
-          await startPreparingOrder(session.id);
-          
-          // OPTIMISTIC UPDATE: Move Confirmed -> Preparing immediately
-          let totalCount = 0;
-          setSessionItems(prev => {
-              const next = prev.map(item => 
-                  item.status === 'confirmed' ? { ...item, status: 'preparing' } : item
-              );
-              totalCount = next.filter(i => i.status === 'preparing').length;
-              return next;
-          });
+          if (features.kitchen) {
+               // Standard Flow: Confirmed -> Preparing
+              await startPreparingOrder(session.id);
+              
+              // OPTIMISTIC UPDATE: Move Confirmed -> Preparing
+              let totalCount = 0;
+              setSessionItems(prev => {
+                  const next = prev.map(item => 
+                      item.status === 'confirmed' ? { ...item, status: 'preparing' } : item
+                  );
+                  totalCount = next.filter(i => i.status === 'preparing').length;
+                  return next;
+              });
 
-          // Set Lock
-          setOptimisticLock({ targetStatus: 'preparing', count: totalCount > 0 ? 1 : 0 });
+              setOptimisticLock({ targetStatus: 'preparing', count: totalCount > 0 ? 1 : 0 });
+              toast.success("Started Preparing! 🍳", { icon: '👨‍🍳' });
+
+          } else {
+              // No Kitchen Flow: Confirmed -> Served (Directly)
+              await serveConfirmedOrders(session.id);
+              
+              // OPTIMISTIC UPDATE: Move Confirmed -> Served
+              let totalCount = 0;
+              setSessionItems(prev => {
+                  const next = prev.map(item => 
+                      item.status === 'confirmed' ? { ...item, status: 'served' } : item
+                  );
+                  totalCount = next.filter(i => i.status === 'served').length;
+                  return next;
+              });
+
+              setOptimisticLock({ targetStatus: 'served', count: totalCount > 0 ? 1 : 0 });
+              toast.success("Orders Served! ✅");
+          }
 
           setTimeout(() => {
             setOptimisticLock(prev => {
@@ -337,7 +380,6 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
             });
           }, 5000);
 
-          toast.success("Started Preparing! 🍳", { icon: '👨‍🍳' });
       } catch(e) {
           toast.error("Error: " + (e.message || "Failed"));
           setLoadingOp(null);
@@ -404,31 +446,60 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
             setDraftItems([]);
         }
 
-        await confirmOrderItems(session.id);
-        await startPreparingOrder(session.id);
+        if (features.kitchen) {
+            // Standard Flow: Confirm -> Preparing
+            await confirmOrderItems(session.id, 'confirmed');
+            await startPreparingOrder(session.id);
+             // OPTIMISTIC UPDATE: Preparing
+            let totalCount = 0;
+            setSessionItems(prev => {
+                const updatedExisting = prev.map(item => 
+                    ['pending', 'confirmed'].includes(item.status) ? { ...item, status: 'preparing' } : item
+                );
+
+                const optimisticDrafts = currentDrafts.map(d => ({
+                    ...d,
+                    id: d.id,
+                    status: 'preparing',
+                    created_at: d.created_at || new Date().toISOString()
+                }));
+
+                const final = [...updatedExisting, ...optimisticDrafts];
+                totalCount = final.filter(i => i.status === 'preparing').length;
+                return final;
+            });
+            setOptimisticLock({ targetStatus: 'preparing', count: totalCount > 0 ? totalCount : 0 });
+
+            toast.success("Sent to Kitchen! 👨‍🍳");
+
+        } else {
+            // No Kitchen: Confirm -> Served directly
+             await confirmOrderItems(session.id, 'served');
+             
+             // OPTIMISTIC UPDATE: Served
+             let totalCount = 0;
+            setSessionItems(prev => {
+                const updatedExisting = prev.map(item => 
+                    ['pending', 'confirmed'].includes(item.status) ? { ...item, status: 'served' } : item
+                );
+
+                const optimisticDrafts = currentDrafts.map(d => ({
+                    ...d,
+                    id: d.id,
+                    status: 'served',
+                    created_at: d.created_at || new Date().toISOString()
+                }));
+
+                const final = [...updatedExisting, ...optimisticDrafts];
+                totalCount = final.filter(i => i.status === 'served').length;
+                return final;
+            });
+             setOptimisticLock({ targetStatus: 'served', count: totalCount > 0 ? totalCount : 0 });
+
+             toast.success("Orders Served! ✅");
+        }
         
-        // OPTIMISTIC UPDATE: 
-        // 1. Existing Pending/Confirmed -> Preparing
-        // 2. Drafts -> Preparing
-        let totalCount = 0;
-        setSessionItems(prev => {
-            const updatedExisting = prev.map(item => 
-                ['pending', 'confirmed'].includes(item.status) ? { ...item, status: 'preparing' } : item
-            );
-
-            const optimisticDrafts = currentDrafts.map(d => ({
-                ...d,
-                id: d.id,
-                status: 'preparing',
-                created_at: d.created_at || new Date().toISOString()
-            }));
-
-            const final = [...updatedExisting, ...optimisticDrafts];
-            totalCount = final.filter(i => i.status === 'preparing').length;
-            return final;
-        });
-
-        setOptimisticLock({ targetStatus: 'preparing', count: totalCount > 0 ? totalCount : 0 });
+        // Timeout Logic shared
         setTimeout(() => {
             setOptimisticLock(prev => {
                 if(prev) {
@@ -438,8 +509,6 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
                 return prev;
             });
         }, 5000);
-
-        toast.success("Sent to Kitchen! 👨‍🍳");
     } catch(e) {
         toast.error("Failed: " + e.message);
         setLoadingOp(null);

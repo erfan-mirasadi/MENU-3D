@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { RiLogoutBoxRLine } from "react-icons/ri";
 import GeneralForm from "@/app/admin/_components/settings/GeneralForm";
 import LanguageSettings from "@/app/admin/_components/settings/LanguageSettings";
+import FeatureSettings from "@/app/admin/_components/settings/FeatureSettings";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -51,6 +52,14 @@ export default function SettingsPage() {
           {/* 2. Languages */}
           <section>
             <LanguageSettings />
+          </section>
+
+          {/* Divider */}
+          <div className="border-t border-gray-800" />
+
+          {/* 3. Features */}
+          <section>
+            <FeatureSettings />
           </section>
 
           {/* Divider */}

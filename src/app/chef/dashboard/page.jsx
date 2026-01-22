@@ -6,6 +6,7 @@ import { useRestaurantData } from '@/app/hooks/useRestaurantData'
 import KitchenTicket from '../_components/KitchenTicket'
 import KitchenSummaryBar from '../_components/KitchenSummaryBar'
 import Loader from '@/components/ui/Loader'
+import FeatureGuard from "@/components/shared/FeatureGuard";
 import toast from 'react-hot-toast'
 
 export default function ChefDashboard() {
@@ -146,7 +147,20 @@ export default function ChefDashboard() {
         )
     }
 
+
+
     return (
+        <FeatureGuard 
+            feature="kitchen" 
+            fallback={
+                <div className="flex h-screen items-center justify-center bg-[#1f1d2b] text-white">
+                  <div className="text-center space-y-4">
+                    <h1 className="text-3xl font-bold text-gray-500">Kitchen Display Disabled</h1>
+                    <p className="text-gray-400">This module is currently turned off in settings.</p>
+                  </div>
+                </div>
+            }
+        >
         <div className="min-h-screen bg-dark-900 flex overflow-hidden">
             {/* Left Sidebar: Summary */}
             <KitchenSummaryBar orders={orders} />
@@ -191,5 +205,7 @@ export default function ChefDashboard() {
                 )}
             </main>
         </div>
+
+        </FeatureGuard>
     )
 }

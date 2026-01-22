@@ -1,9 +1,16 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+"use client";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { getUserProfile } from "@/services/userService";
 import { getRestaurantById } from "@/services/restaurantService";
 
-export const useRestaurantData = () => {
+// --- CONTEXT DEFINITION ---
+const RestaurantContext = createContext(null);
+
+// --- PROVIDER COMPONENT ---
+// This acts as a Singleton for data fetching.
+// It should be wrapped around the root of the application (e.g. layout.js)
+export const RestaurantProvider = ({ children }) => {
   const [tables, setTables] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +30,7 @@ export const useRestaurantData = () => {
   // 1. Fetch Data
   const fetchData = useCallback(async () => {
     try {
-      console.log("🔄 Fetching Data..."); 
+      console.log("🔄 Fetching Data (Singleton Context)..."); 
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -74,7 +81,6 @@ export const useRestaurantData = () => {
       if (error) console.error("Session fetch error:", error);
 
       setSessions(sessionsData || []);
-      // console.log(`✅ Data Updated: ${sessionsData?.length || 0} sessions loaded`);
 
     } catch (error) {
       console.error("Error fetching restaurant data:", error);
@@ -92,7 +98,7 @@ export const useRestaurantData = () => {
   useEffect(() => {
     if (!restaurantId) return;
 
-     console.log("🔌 Subscribing to Restaurant Channel...");
+     console.log("🔌 Context: Subscribing to Restaurant Channel...");
     const channel = supabase.channel(`restaurant-${restaurantId}`);
 
     const handleUpdate = () => {
@@ -162,7 +168,7 @@ export const useRestaurantData = () => {
       });
 
     return () => {
-       console.log("🧹 Cleanup: Unsubscribing");
+       console.log("🧹 Context: Cleanup Unsubscribing");
       setIsConnected(false);
       supabase.removeChannel(channel);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -185,5 +191,27 @@ export const useRestaurantData = () => {
       }
   };
 
-  return { tables, sessions, loading, restaurantId, restaurant, refetch: fetchData, handleCheckout, isConnected };
+  const value = useMemo(() => ({ 
+      tables, 
+      sessions, 
+      loading, 
+      restaurantId, 
+      restaurant, 
+      refetch: fetchData, 
+      handleCheckout, 
+      isConnected 
+  }), [tables, sessions, loading, restaurantId, restaurant, fetchData, isConnected]);
+
+  return <RestaurantContext.Provider value={value}>{children}</RestaurantContext.Provider>;
+};
+
+// --- SINGLETON HOOK ---
+export const useRestaurantData = () => {
+    const context = useContext(RestaurantContext);
+    if (!context) {
+        // Fallback for pages that might not be wrapped yet or during migration
+        console.warn("useRestaurantData used outside of Provider");
+        return { loading: true, tables: [], sessions: [] }; 
+    }
+    return context;
 };

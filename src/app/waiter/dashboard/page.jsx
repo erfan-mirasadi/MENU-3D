@@ -6,6 +6,7 @@ import { FaLayerGroup } from "react-icons/fa";
 import OrderDrawer from "@/components/shared/OrderDrawer";
 import OfflineAlert from "@/components/shared/OfflineAlert";
 import TableCard from "../_components/TableCard";
+import FeatureGuard from "@/components/shared/FeatureGuard";
 
 export default function WaiterDashboard() {
   const { tables, sessions, loading, handleCheckout, isConnected } = useRestaurantData();
@@ -141,6 +142,14 @@ export default function WaiterDashboard() {
   }
 
   return (
+    <FeatureGuard feature="waiter" fallback={
+        <div className="flex h-screen items-center justify-center bg-[#1F1D2B] text-white">
+          <div className="text-center space-y-4">
+            <h1 className="text-3xl font-bold text-gray-500">Waiter App Disabled</h1>
+            <p className="text-gray-400">This module is currently turned off.</p>
+          </div>
+        </div>
+    }>
     <div className="min-h-screen pb-20 relative">
       {/* TRANSFER MODE BANNER */}
       {isTransferMode && (
@@ -256,6 +265,7 @@ export default function WaiterDashboard() {
         onTransfer={handleEnterTransferMode}
       />
     </div>
+    </FeatureGuard>
   );
 }
 

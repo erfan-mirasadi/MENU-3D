@@ -4,6 +4,7 @@ import { MapControls, Environment, RoundedBox, useCursor } from '@react-three/dr
 import { useState, useEffect, useRef, useMemo } from 'react'
 import * as THREE from 'three'
 import { MapCamera, MapFloor, TableVisual, getFloorColor } from './MapShared'
+import { useRestaurantFeatures } from '@/app/hooks/useRestaurantFeatures'
 
 // Minimalist Avatar Component
 function CustomerAvatar({ position, color }) {
@@ -43,7 +44,7 @@ function CustomerAvatar({ position, color }) {
     )
 }
 
-function TableBox({ id, position, width = 2.2, depth = 2.2, tableNumber, status, isEditing, onSelect, isSelected, session, active_orders }) {
+function TableBox({ id, position, width = 2.2, depth = 2.2, tableNumber, status, isEditing, onSelect, isSelected, session, active_orders, features }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered, 'pointer', 'auto')
   const materialRef = useRef()
@@ -77,8 +78,10 @@ function TableBox({ id, position, width = 2.2, depth = 2.2, tableNumber, status,
 
       const time = state.clock.getElapsedTime()
 
-      if (status === 'confirmed') {
-          // Orange Pulse / Blink (User Request: "vaqti garson taeid kone... cheshmak narenji")
+      if (status === 'confirmed' || (status === 'kitchen_sent' && features && !features.waiter)) {
+          // Orange Pulse / Blink 
+          // 1. Standard: "Confirmed" means waiter approved, waiting for kitchen.
+          // 2. No Waiter Mode: "Ordering" means customer placed order, waiting for Cashier/Kitchen (Direct Alert).
           const intensity = 0.5 + Math.sin(time * 8) * 0.5 // Fast blink
           materialRef.current.emissive.set('#f97316')
           materialRef.current.emissiveIntensity = intensity * 0.8
@@ -211,7 +214,7 @@ function TableBox({ id, position, width = 2.2, depth = 2.2, tableNumber, status,
   )
 }
 
-function SceneContent({ tables, isEditing, onSelectTable }) {
+function SceneContent({ tables, isEditing, onSelectTable, features }) {
     const [localTables, setLocalTables] = useState(tables)
 
     useEffect(() => {
@@ -234,6 +237,7 @@ function SceneContent({ tables, isEditing, onSelectTable }) {
                     isSelected={false}
                     session={table.session}
                     active_orders={table.active_orders}
+                    features={features}
                 />
             ))}
         </>
@@ -243,6 +247,7 @@ function SceneContent({ tables, isEditing, onSelectTable }) {
 export default function RestaurantMap({ tables, isEditing = false, onSelectTable = () => {}, floorType = 'terrazzo' }) {
   const floorColor = getFloorColor(floorType)
   const controlsRef = useRef()
+  const { features } = useRestaurantFeatures()
 
   return (
     <Canvas shadows dpr={[1, 2]}>
@@ -291,7 +296,7 @@ export default function RestaurantMap({ tables, isEditing = false, onSelectTable
       />
 
       {/* 3. Render Tables */}
-      <SceneContent tables={tables} isEditing={isEditing} onSelectTable={onSelectTable} />
+      <SceneContent tables={tables} isEditing={isEditing} onSelectTable={onSelectTable} features={features} />
 
       {/* 4. Shared Floor */}
       <MapFloor textureType={floorType} />

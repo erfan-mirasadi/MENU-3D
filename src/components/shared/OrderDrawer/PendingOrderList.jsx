@@ -2,6 +2,8 @@ import { FaClock, FaCheck } from "react-icons/fa";
 import OrderSection from "./OrderSection";
 import SwipeableOrderItem from "./SwipeableOrderItem";
 import Loader from "@/components/ui/Loader";
+import { useRestaurantFeatures } from "@/app/hooks/useRestaurantFeatures";
+import FeatureGuard from "@/components/shared/FeatureGuard";
 
 export default function PendingOrderList({ 
     items, 
@@ -12,6 +14,8 @@ export default function PendingOrderList({
     onDelete, 
     onConfirm 
 }) {
+    const { features } = useRestaurantFeatures();
+    
     if (items.length === 0) return null;
 
     // WAITER VIEW
@@ -33,6 +37,7 @@ export default function PendingOrderList({
                             onDelete={onDelete}
                         />
                     ))}
+                    <FeatureGuard feature="ordering_enabled">
                     <button
                         onClick={onConfirm}
                         disabled={loading}
@@ -46,10 +51,14 @@ export default function PendingOrderList({
                             <Loader active={true} variant="inline" className="h-6 w-6" />
                         ) : (
                             <>
-                                <FaCheck className="text-xl" /> CONFIRM & SEND TO KITCHEN
+                                <FaCheck className="text-xl" /> 
+                                {features.kitchen 
+                                    ? (features.cashier ? "CONFIRM & SEND TO CASHIER" : "CONFIRM & SEND TO KITCHEN")
+                                    : "CONFIRM & SERVE"}
                             </>
                         )}
                     </button>
+                    </FeatureGuard>
                 </div>
             </OrderSection>
         );
@@ -81,7 +90,7 @@ export default function PendingOrderList({
                             <Loader active={true} variant="inline" className="h-6 w-6" />
                         ) : (
                             <>
-                                <FaCheck className="text-xl" /> SEND TO KITCHEN
+                                <FaCheck className="text-xl" /> {features.kitchen ? "SEND TO KITCHEN" : "MARK AS SERVED"}
                             </>
                         )}
                     </button>

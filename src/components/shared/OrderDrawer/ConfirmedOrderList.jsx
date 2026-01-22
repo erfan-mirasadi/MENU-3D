@@ -1,7 +1,8 @@
-import { FaFire, FaUtensils } from "react-icons/fa";
+import { FaFire, FaUtensils, FaCheck } from "react-icons/fa";
 import OrderSection from "./OrderSection";
 import SwipeableOrderItem from "./SwipeableOrderItem";
 import Loader from "@/components/ui/Loader";
+import { useRestaurantFeatures } from "@/app/hooks/useRestaurantFeatures";
 
 export default function ConfirmedOrderList({ 
     items, 
@@ -12,6 +13,7 @@ export default function ConfirmedOrderList({
     onDelete, 
     onStartPreparing 
 }) {
+    const { features } = useRestaurantFeatures();
     if (items.length === 0) return null;
 
     // CASHIER & WAITER VIEW (Actionable)
@@ -30,17 +32,23 @@ export default function ConfirmedOrderList({
                     <button
                         onClick={onStartPreparing}
                         disabled={loading}
-                        className={`w-full mt-4 py-4 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-yellow-900/40 transition-all ${
+                        className={`w-full mt-4 py-4 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all ${
                             loading 
-                            ? "bg-yellow-600/80 cursor-not-allowed opacity-70"
-                            : "bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 cursor-pointer active:scale-95"
+                            ? "bg-gray-500 cursor-not-allowed opacity-70"
+                            : features.kitchen 
+                                ? "bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 shadow-yellow-900/40"
+                                : "bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 shadow-green-900/40"
                         }`}
                     >
                         {loadingOp === 'PREPARE_ORDER' ? (
                             <Loader active={true} variant="inline" className="h-6 w-6" />
                         ) : (
                             <>
-                                <FaUtensils className="text-xl" /> START PREPARING
+                                {features.kitchen ? (
+                                    <><FaUtensils className="text-xl" /> START PREPARING</>
+                                ) : (
+                                    <><FaCheck className="text-xl" /> MARK AS SERVED</>
+                                )}
                             </>
                         )}
                     </button>

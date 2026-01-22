@@ -1,16 +1,14 @@
 import { supabase } from "@/lib/supabase";
 
 // 1. Confirm Orders (Convert Pending -> Confirmed)
-export async function confirmOrderItems(sessionId) {
+export async function confirmOrderItems(sessionId, destinationStatus = "confirmed") {
   const { data, error } = await supabase
     .from("order_items")
-    .update({ status: "confirmed" })
+    .update({ status: destinationStatus })
     .eq("session_id", sessionId)
     .eq("status", "pending")
     .select();
 
-  if (error) throw error;
-  return data;
   if (error) throw error;
   return data;
 }
@@ -24,6 +22,22 @@ export async function startPreparingOrder(sessionId) {
     .update({ status: "preparing" })
     .eq("session_id", sessionId)
     .eq("status", "confirmed")
+    .select();
+
+  if (error) throw error;
+  return data;
+}
+
+// 1.6 Serve Confirmed Orders (Directly Serve from Confirmed, skipping Preparing)
+// Used when Kitchen module is disabled but we want to clear the queue
+export async function serveConfirmedOrders(sessionId) {
+  const { data, error } = await supabase
+    .from("order_items")
+    .update({ status: "served" })
+    .eq("session_id", sessionId)
+    // We update 'confirmed' items. 
+    // If we also want to catch 'preparing' items (in case they got there somehow), we could use IN operator, but usually it's just confirmed.
+    .eq("status", "confirmed") 
     .select();
 
   if (error) throw error;
