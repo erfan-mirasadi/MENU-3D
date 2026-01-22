@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation'
 import OrderDrawer from '@/components/shared/OrderDrawer'
 import OfflineAlert from "@/components/shared/OfflineAlert";
 import Loader from '@/components/ui/Loader'
-import FeatureGuard from "@/components/shared/FeatureGuard";
+import { useRestaurantFeatures } from '@/app/hooks/useRestaurantFeatures';
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -336,23 +336,28 @@ export default function DashboardPage() {
       toast('Layout reset to grid', { icon: 'ℹ️' })
   }
 
+  const { isEnabled } = useRestaurantFeatures();
+  
   if (loading) {
      return (
         <div className="flex h-screen items-center justify-center bg-gray-200">
-           <Loader />
+           <Loader active={true} />
         </div>
      )
   }
 
-  return (
-    <FeatureGuard feature="cashier" fallback={
+  if (!isEnabled("cashier")) {
+      return (
         <div className="flex h-screen items-center justify-center bg-[#1F1D2B] text-white">
-          <div className="text-center space-y-4">
-            <h1 className="text-3xl font-bold text-gray-500">Cashier POS Disabled</h1>
-            <p className="text-gray-400">This module is currently turned off.</p>
-          </div>
+            <div className="text-center space-y-4">
+                <h1 className="text-3xl font-bold text-gray-500">Cashier POS Disabled</h1>
+                <p className="text-gray-400">This module is currently turned off.</p>
+            </div>
         </div>
-    }>
+      )
+  }
+
+  return (
     <div className="relative w-full h-full overflow-hidden bg-gray-50">
       
       {/* 3D Viewport */}
@@ -524,6 +529,5 @@ export default function DashboardPage() {
         )}
       </div>
     </div>
-    </FeatureGuard>
   )
 }

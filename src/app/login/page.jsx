@@ -17,6 +17,7 @@ import {
   RiMoneyDollarCircleLine,
 } from "react-icons/ri";
 import { PiChefHat } from "react-icons/pi";
+import Loader from "@/components/ui/Loader";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -65,7 +66,6 @@ export default function LoginPage() {
 
       // 4. Redirect based on Role
       if (role === "owner") {
-        // Owner Logic: Check if restaurant exists
         const restaurant = await getRestaurantByOwnerId(authData.user.id);
         if (restaurant) {
           router.push("/admin/dashboard");
@@ -81,13 +81,15 @@ export default function LoginPage() {
       }
 
       router.refresh();
+      // NOTE: We intentionally do NOT set loading(false) here. 
+      // The navigation events or unmount will handle it.
+      // Setting it to false causes the "double click" issue as UI re-enables before page change.
     } catch (error) {
       console.error(error);
       toast.error(error.message || "Login failed");
       await supabase.auth.signOut(); // Force logout on failure to prevent stuck session
-    } finally {
-      setLoading(false);
-    }
+      setLoading(false); // Only reset loading on error
+    } 
   };
 
   return (
@@ -249,6 +251,8 @@ export default function LoginPage() {
           © 2026 Digital Menu. System v1.0
         </p>
       </div>
+
+      <Loader active={loading} />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { FaLayerGroup } from "react-icons/fa";
 import OrderDrawer from "@/components/shared/OrderDrawer";
 import OfflineAlert from "@/components/shared/OfflineAlert";
 import TableCard from "../_components/TableCard";
-import FeatureGuard from "@/components/shared/FeatureGuard";
+import { useRestaurantFeatures } from "@/app/hooks/useRestaurantFeatures";
 
 export default function WaiterDashboard() {
   const { tables, sessions, loading, handleCheckout, isConnected } = useRestaurantData();
@@ -130,6 +130,8 @@ export default function WaiterDashboard() {
       ? sessions.find((s) => s.table_id === selectedTable.id)
       : selectedSession;
 
+  const { isEnabled } = useRestaurantFeatures();
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-[#1F1D2B]">
@@ -141,15 +143,18 @@ export default function WaiterDashboard() {
     );
   }
 
-  return (
-    <FeatureGuard feature="waiter" fallback={
-        <div className="flex h-screen items-center justify-center bg-[#1F1D2B] text-white">
-          <div className="text-center space-y-4">
-            <h1 className="text-3xl font-bold text-gray-500">Waiter App Disabled</h1>
-            <p className="text-gray-400">This module is currently turned off.</p>
-          </div>
+  if (!isEnabled("waiter")) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#1F1D2B] text-white">
+        <div className="text-center space-y-4">
+          <h1 className="text-3xl font-bold text-gray-500">Waiter App Disabled</h1>
+          <p className="text-gray-400">This module is currently turned off.</p>
         </div>
-    }>
+      </div>
+    );
+  }
+
+  return (
     <div className="min-h-screen pb-20 relative">
       {/* TRANSFER MODE BANNER */}
       {isTransferMode && (
@@ -265,7 +270,6 @@ export default function WaiterDashboard() {
         onTransfer={handleEnterTransferMode}
       />
     </div>
-    </FeatureGuard>
   );
 }
 

@@ -15,10 +15,19 @@ export const useRestaurantFeatures = () => {
             ordering_enabled: true
         };
 
-        if (loading || !restaurant) {
+        if (loading) {
             return {
                 features: defaults,
                 loading: true
+            };
+        }
+        
+        // Safety: If not loading, but no restaurant (e.g. error or not found),
+        // return defaults and loading: false to prevent infinite loops.
+        if (!restaurant) {
+            return {
+                features: defaults,
+                loading: false
             };
         }
 
