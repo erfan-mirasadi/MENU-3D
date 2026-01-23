@@ -21,6 +21,7 @@ export default function ThreeDLayout({ restaurant, categories }) {
     decreaseFromCart,
     submitOrder,
     isLoading: isLoadingCart,
+    sessionData,
   } = useCart(params?.table_id, restaurant.id);
 
   // --- STATE ---
@@ -203,6 +204,7 @@ export default function ThreeDLayout({ restaurant, categories }) {
         removeFromCart={removeFromCart}
         submitOrder={submitOrder}
         isLoadingCart={isLoadingCart}
+        session={sessionData}
         /* --- NAVIGATION PROPS --- */
         activeIndex={activeIndex}
         setActiveIndex={setActiveIndex}

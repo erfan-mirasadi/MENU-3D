@@ -5,6 +5,7 @@ import { getKitchenOrders, updateOrderItemStatus } from '@/services/orderService
 import { useRestaurantData } from '@/app/hooks/useRestaurantData'
 import KitchenTicket from '../_components/KitchenTicket'
 import KitchenSummaryBar from '../_components/KitchenSummaryBar'
+import MasonryGrid from '../_components/MasonryGrid'
 import Loader from '@/components/ui/Loader'
 import { useRestaurantFeatures } from '@/app/hooks/useRestaurantFeatures';
 import toast from 'react-hot-toast'
@@ -191,7 +192,7 @@ export default function ChefDashboard() {
                         <p>No active orders pending or preparing.</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 pb-10 items-start">
+                    <MasonryGrid className="pb-10">
                         {groupedTickets.map(ticket => (
                             <KitchenTicket 
                                 key={ticket.session.id} 
@@ -201,7 +202,7 @@ export default function ChefDashboard() {
                                 onServeAll={handleServeAll}
                             />
                         ))}
-                    </div>
+                    </MasonryGrid>
                 )}
             </main>
         </div>

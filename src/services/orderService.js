@@ -232,7 +232,8 @@ export async function getKitchenOrders(restaurantId) {
             session:sessions!inner (
                 id,
                 restaurant_id,
-                table_id, 
+                table_id,
+                note, 
                 tables (table_number)
             )
         `)

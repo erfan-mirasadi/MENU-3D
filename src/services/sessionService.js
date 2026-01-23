@@ -56,3 +56,21 @@ export async function updateSessionStatus(sessionId, status) {
 
   return data;
 }
+
+export async function updateSessionNote(sessionId, noteText) {
+  const { data, error } = await supabase
+    .from("sessions")
+    .update({ note: noteText })
+    .eq("id", sessionId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating session note:", error);
+    toast.error("Failed to update note");
+    throw error;
+  }
+
+  return data;
+}
+

@@ -187,5 +187,7 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
     removeFromCart,
     submitOrder,
     isLoading,
+    sessionData,
   };
 };
+

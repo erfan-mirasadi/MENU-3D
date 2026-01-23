@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useLanguage } from "@/context/LanguageContext";
+import { updateSessionNote } from "@/services/sessionService";
 
 export default function ImmersiveCartDrawer({
   isOpen,
@@ -9,9 +10,17 @@ export default function ImmersiveCartDrawer({
   cartItems,
   onRemove,
   onSubmit,
+  session,
 }) {
   const { content, t } = useLanguage();
   const [visible, setVisible] = useState(false);
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    if (session?.note) {
+      setNote(session.note);
+    }
+  }, [session?.note]);
 
   useEffect(() => {
     if (isOpen) {
@@ -92,6 +101,19 @@ export default function ImmersiveCartDrawer({
         </div>
 
         <div className="p-6 bg-black/40 border-t border-white/10">
+          <div className="mb-4">
+            <label className="text-white/60 text-xs mb-2 block uppercase tracking-wider font-bold">
+              Chef Instructions / Special Requests
+            </label>
+            <textarea
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-purple-500/50 placeholder:text-white/20 resize-none"
+              rows={3}
+              placeholder="Allergies, birthday surprises, etc..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+          </div>
+
           <div className="flex justify-between text-white mb-6">
             <span>Total</span>
             <span className="font-black text-2xl">
@@ -99,7 +121,10 @@ export default function ImmersiveCartDrawer({
             </span>
           </div>
           <button
-            onClick={() => {
+            onClick={async () => {
+              if (session?.id && note !== session.note) {
+                await updateSessionNote(session.id, note);
+              }
               onSubmit();
               onClose();
             }}

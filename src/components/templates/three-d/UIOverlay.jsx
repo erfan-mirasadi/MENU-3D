@@ -82,6 +82,7 @@ export default function UIOverlay({
   // State lifted from ThreeDLayout
   isCartOpen,
   setIsCartOpen,
+  session,
 }) {
   const { content, t } = useLanguage();
   const { active } = useProgress();
@@ -131,6 +132,7 @@ export default function UIOverlay({
         cartItems={cartItems || []}
         onRemove={removeFromCart}
         onSubmit={submitOrder}
+        session={session}
       />
 
       {/* --- LIQUID GLASS NAVIGATION ARROWS (CENTERED) --- */}

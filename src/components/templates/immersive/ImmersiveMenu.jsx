@@ -9,7 +9,7 @@ import ImmersiveCartDrawer from "./ImmersiveCartDrawer";
 import { useCart } from "@/app/hooks/useCart";
 
 export default function ImmersiveMenu({ restaurant, categories, tableId }) {
-  const { cartItems, addToCart, removeFromCart, submitOrder, isLoading } =
+  const { cartItems, addToCart, removeFromCart, submitOrder, isLoading, sessionData } =
     useCart(tableId, restaurant.id);
   const [activeCategory, setActiveCategory] = useState(categories?.[0]?.id);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -82,6 +82,7 @@ export default function ImmersiveMenu({ restaurant, categories, tableId }) {
         cartItems={cartItems}
         onRemove={removeFromCart}
         onSubmit={submitOrder}
+        session={sessionData}
       />
     </div>
   );

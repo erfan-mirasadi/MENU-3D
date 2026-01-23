@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useLanguage } from "@/context/LanguageContext";
 import FeatureGuard from "@/components/shared/FeatureGuard";
+import { updateSessionNote } from "@/services/sessionService";
 
 import { useDrag } from "@use-gesture/react";
 import { MdDeleteOutline, MdAdd, MdRemove } from "react-icons/md";
@@ -101,10 +102,18 @@ export default function ModernCartDrawer({
   cartItems,
   onRemove,
   onSubmit,
+  session,
 }) {
   const { content, t } = useLanguage();
   const [isAnimating, setIsAnimating] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    if (session?.note) {
+      setNote(session.note);
+    }
+  }, [session?.note]);
 
   useEffect(() => {
     if (isOpen) {
@@ -212,6 +221,22 @@ export default function ModernCartDrawer({
                 </div>
               )}
 
+              {/* --- NOTE SECTION (Always visible if session exists) --- */}
+              {session && (
+               <div className="pt-4 border-t border-white/5 mx-1">
+                 <label className="text-white/40 text-[10px] font-bold uppercase tracking-wider mb-2 block">
+                   Chef Instructions / Special Requests
+                 </label>
+                 <textarea
+                   className="w-full bg-black/20 border border-white/5 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-[#ea7c69]/50 placeholder:text-white/20 resize-none transition-colors"
+                   rows={3}
+                   placeholder="Allergies, extra spicy, etc..."
+                   value={note}
+                   onChange={(e) => setNote(e.target.value)}
+                 />
+               </div>
+             )}
+
               {/* SECTION 2: ORDERED ITEMS (Already Sent) */}
               {orderedItems.length > 0 && (
                 <div className="space-y-4 pt-4 border-t border-white/5 opacity-70 grayscale-[0.3]">
@@ -266,7 +291,10 @@ export default function ModernCartDrawer({
           {draftItems.length > 0 ? (
             <FeatureGuard feature="ordering_enabled">
             <button
-              onClick={() => {
+              onClick={async () => {
+                 if (session?.id && note !== session.note) {
+                   await updateSessionNote(session.id, note);
+                 }
                 onSubmit();
                 onClose();
               }}
@@ -279,12 +307,28 @@ export default function ModernCartDrawer({
             </button>
             </FeatureGuard>
           ) : (
-            <div className="w-full h-14 rounded-2xl border border-white/10 flex items-center justify-center text-gray-500 text-sm font-medium cursor-not-allowed">
-              {t("noNewItems")}
-            </div>
+             <>
+               {/* If no new items but note changed, allow saving note? */}
+               {session && note !== session.note ? (
+                 <button
+                 onClick={async () => {
+                   await updateSessionNote(session.id, note);
+                   onClose();
+                 }}
+                 className="w-full bg-white/10 hover:bg-white/20 text-white h-14 rounded-2xl font-bold text-lg active:scale-95 transition-all"
+               >
+                 Save Note
+               </button>
+               ) : (
+                <div className="w-full h-14 rounded-2xl border border-white/10 flex items-center justify-center text-gray-500 text-sm font-medium cursor-not-allowed">
+                  {t("noNewItems")}
+                </div>
+               )}
+             </>
           )}
         </div>
       </div>
     </div>
   );
 }
+

@@ -1,6 +1,6 @@
 'use client'
 import KitchenTimer from './KitchenTimer'
-import { RiRestaurantLine, RiCheckboxCircleLine, RiCheckDoubleLine, RiTimeLine } from 'react-icons/ri'
+import { RiRestaurantLine, RiCheckboxCircleLine, RiCheckDoubleLine, RiTimeLine, RiAlertFill } from 'react-icons/ri'
 
 // Single Item Row Component
 function TicketItem({ item, onUpdateStatus }) {
@@ -119,6 +119,21 @@ export default function KitchenTicket({ session, orders, onUpdateStatus, onServe
                 {/* Timer (Based on oldest item) */}
                 <KitchenTimer createdAt={oldestOrderTime} />
             </div>
+
+            {/* Session Note (Alert) */}
+            {session?.note && (
+                <div className="mx-4 mt-4 p-3 bg-red-100 border border-red-200 rounded-lg flex items-start gap-2">
+                    <RiAlertFill className="text-red-500 text-xl shrink-0 mt-0.5" />
+                    <div>
+                        <span className="text-xs font-bold text-red-600 uppercase tracking-wider block mb-0.5">
+                            Special Instructions
+                        </span>
+                        <p className="text-red-800 text-lg font-medium leading-snug">
+                            {session.note}
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Ticket Body (Scrollable List) */}
             <div className="flex-1 p-3 space-y-3 bg-gray-50/50">

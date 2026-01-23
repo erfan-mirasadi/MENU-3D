@@ -15,6 +15,7 @@ export default function ModernMenu({ restaurant, categories, tableId }) {
     removeFromCart,
     submitOrder,
     isLoading: isLoadingCart,
+    sessionData,
   } = useCart(tableId, restaurant.id);
 
   const [activeCategory, setActiveCategory] = useState(categories?.[0]?.id);
@@ -89,6 +90,7 @@ export default function ModernMenu({ restaurant, categories, tableId }) {
         cartItems={cartItems}
         onRemove={removeFromCart}
         onSubmit={submitOrder}
+        session={sessionData}
       />
     </div>
   );
