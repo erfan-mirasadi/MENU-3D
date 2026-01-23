@@ -202,6 +202,7 @@ export default function OrderDrawer({
                     const success = await actions.handleCheckoutWrapper(sid, method, amt);
                     if (success) onClose();
                 }}
+                onRefetch={onRefetch}
             />
 
             <VoidReasonModal

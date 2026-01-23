@@ -176,19 +176,68 @@ const TransactionDetailsModal = ({ transaction, onClose }) => {
                   </div>
               </div>
 
+              {/* Session Note */}
+              {details.sessionNote && (
+                  <div className="bg-[#252836] p-4 rounded-xl border border-yellow-500/20">
+                      <h3 className="text-sm font-bold text-[#EA7C69] uppercase tracking-wider mb-2 flex items-center gap-2">
+                          <RiFileList3Line /> Session Note
+                      </h3>
+                      <p className="text-white text-sm italic">"{details.sessionNote}"</p>
+                  </div>
+              )}
+
+              {/* Bill Adjustments */}
+              {details.adjustments && details.adjustments.length > 0 && (
+                  <div className="bg-[#252836] p-4 rounded-xl">
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-3">Bill Adjustments</h3>
+                      <div className="flex flex-col gap-2">
+                          {details.adjustments.map((adj, idx) => (
+                              <div key={idx} className="flex justify-between items-center text-sm border-b border-[#393C49] pb-2 last:border-0 last:pb-0">
+                                  <span className="text-[#ABBBC2]">{adj.title}</span>
+                                  <span className={`font-medium ${adj.type === 'discount' ? 'text-green-400' : 'text-red-400'}`}>
+                                      {adj.type === 'discount' ? '-' : '+'}₺{parseFloat(adj.amount).toLocaleString()}
+                                  </span>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+              )}
+
               {/* Bill Summary */}
               <div className="bg-[#252836] p-4 rounded-xl flex flex-col gap-2">
                    <div className="flex justify-between text-sm">
-                        <span className="text-[#ABBBC2]">Subtotal</span>
-                        <span className="text-white">₺{parseFloat(details.totalAmount).toLocaleString()}</span>
+                        <span className="text-[#ABBBC2]">Items Total</span>
+                        <span className="text-white">₺{details.items.reduce((acc, item) => acc + (item.quantity * item.price), 0).toLocaleString()}</span>
                    </div>
+                   
+                   {/* Extra Charges Summary */}
+                   {details.adjustments?.filter(a => a.type === 'charge').length > 0 && (
+                       <div className="flex justify-between text-sm">
+                            <span className="text-[#ABBBC2]">Extra Charges</span>
+                            <span className="text-red-400">
+                                +₺{details.adjustments.filter(a => a.type === 'charge').reduce((sum, a) => sum + parseFloat(a.amount), 0).toLocaleString()}
+                            </span>
+                       </div>
+                   )}
+
+                   {/* Discounts Summary */}
+                   {details.adjustments?.filter(a => a.type === 'discount').length > 0 && (
+                       <div className="flex justify-between text-sm">
+                            <span className="text-[#ABBBC2]">Discounts</span>
+                            <span className="text-green-400">
+                                -₺{details.adjustments.filter(a => a.type === 'discount').reduce((sum, a) => sum + parseFloat(a.amount), 0).toLocaleString()}
+                            </span>
+                       </div>
+                   )}
+
                    <div className="flex justify-between text-sm">
-                        <span className="text-[#ABBBC2]">Tax / Service</span>
-                        <span className="text-white">included</span>
+                        <span className="text-[#ABBBC2]">Bill Total</span>
+                        <span className="text-white font-medium">₺{parseFloat(details.billTotal).toLocaleString()}</span>
                    </div>
+
                    <div className="h-[1px] bg-[#393C49] my-1" />
                    <div className="flex justify-between text-lg font-bold">
-                        <span className="text-white">Total Paid</span>
+                        <span className="text-white">Paid (This Transaction)</span>
                         <span className="text-[#EA7C69]">₺{parseFloat(details.totalAmount).toLocaleString()}</span>
                    </div>
               </div>

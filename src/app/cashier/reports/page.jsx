@@ -4,7 +4,7 @@ import StatsCard from "../analytics/_components/StatsCard"; // reused
 import SegmentedControl from "../_components/SegmentedControl";
 import { FinancialTable, ProductMixTable, SecurityLogTable } from "./_components/ReportTables";
 import { reportService } from "@/services/reportService";
-import { RiMoneyDollarCircleLine, RiBankCard2Line, RiDeleteBin5Line, RiWallet3Line } from "react-icons/ri";
+import { RiMoneyDollarCircleLine, RiBankCard2Line, RiDeleteBin5Line, RiWallet3Line, RiDiscountPercentLine, RiFundsBoxLine } from "react-icons/ri";
 
 const ReportsPage = () => {
   const [filter, setFilter] = useState("Today");
@@ -15,7 +15,9 @@ const ReportsPage = () => {
       grossSales: { value: 0, trend: 0 },
       netCash: { value: 0, trend: 0 },
       netCard: { value: 0, trend: 0 },
-      voidedValue: { value: 0, trend: 0 }
+      voidedValue: { value: 0, trend: 0 },
+      extraCharges: { value: 0, trend: 0 },
+      discounts: { value: 0, trend: 0 }
   });
 
   const [financialData, setFinancialData] = useState([]);
@@ -63,7 +65,7 @@ const ReportsPage = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <StatsCard
           title="Gross Sales"
           value={`₺${stats.grossSales.value.toLocaleString()}`}
@@ -94,6 +96,24 @@ const ReportsPage = () => {
           percentage={stats.voidedValue.trend != null ? stats.voidedValue.trend.toFixed(1) : null}
           isPositive={stats.voidedValue.trend != null && stats.voidedValue.trend <= 0} // Less void is positive
           icon={RiDeleteBin5Line}
+          loading={loading}
+        />
+        <StatsCard
+          title="Extra Charges"
+          value={`₺${stats.extraCharges.value.toLocaleString()}`}
+          percentage={stats.extraCharges.trend != null ? stats.extraCharges.trend.toFixed(1) : null}
+          isPositive={stats.extraCharges.trend != null && stats.extraCharges.trend >= 0}
+          icon={RiFundsBoxLine}
+          loading={loading}
+        />
+        <StatsCard
+          title="Total Discounts"
+          value={`₺${stats.discounts.value.toLocaleString()}`}
+          percentage={stats.discounts.trend != null ? stats.discounts.trend.toFixed(1) : null}
+          isPositive={stats.discounts.trend != null && stats.discounts.trend <= 0} // Less discounts is usually "better" for revenue, but context varies.
+          // Let's assume less discount = better for revenue? Or maybe neutral.
+          // Usually Discounts are "bad" for revenue, so negative trend (less discount) is Green (Positive).
+          icon={RiDiscountPercentLine}
           loading={loading}
         />
       </div>

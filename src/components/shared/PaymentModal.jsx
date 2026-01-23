@@ -14,22 +14,67 @@ import {
     RiCheckboxBlankCircleLine,
     RiAddLine,
     RiSubtractLine,
-    RiArrowDownLine
+    RiArrowDownLine,
+    RiDiscountPercentLine
 } from "react-icons/ri";
 import toast from "react-hot-toast";
 import { useMountTransition } from "@/app/hooks/useMountTransition";
+import { cashierService } from "@/services/cashierService";
 
-const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
+
+const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
   /* ... (existing state) */
   const [activeTab, setActiveTab] = useState("FULL"); 
   const [processing, setProcessing] = useState(false);
   const [splitMode, setSplitMode] = useState("PEOPLE");
   const [splitCount, setSplitCount] = useState(1);
   const [selectedItemIds, setSelectedItemIds] = useState(new Set());
+  const [selectedAdjustmentIndices, setSelectedAdjustmentIndices] = useState(new Set());
   const [customAmount, setCustomAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [mixedCash, setMixedCash] = useState("");
   const [mixedCard, setMixedCard] = useState("");
+
+  // Adjustment State
+  const [showAdjModal, setShowAdjModal] = useState(false);
+  const [adjData, setAdjData] = useState({ title: '', amount: '', type: 'charge' });
+  const [adjLoading, setAdjLoading] = useState(false);
+
+  const handleAddAdjustment = async () => {
+    if (!adjData.title || !adjData.amount) {
+        toast.error("Please fill all fields");
+        return;
+    }
+    setAdjLoading(true);
+    try {
+        let targetBillId = bill?.id;
+
+        if (!targetBillId) {
+             // If no bill exists yet (e.g. first payment attempt), create it now.
+             const newBill = await cashierService.getOrCreateBill(session.id);
+             if (!newBill || !newBill.id) {
+                 throw new Error("Failed to generate bill record.");
+             }
+             targetBillId = newBill.id;
+        }
+        
+        await cashierService.addBillAdjustment(targetBillId, {
+            ...adjData,
+            amount: parseFloat(adjData.amount)
+        });
+        
+        toast.success("Adjustment Added");
+        setShowAdjModal(false);
+        setAdjData({ title: '', amount: '', type: 'charge' });
+        
+        if (onRefetch) await onRefetch();
+    } catch (err) {
+        console.error(err);
+        toast.error(err.message);
+    } finally {
+        setAdjLoading(false);
+    }
+  };
 
   // Scroll Indicator State
   const listRef = useRef(null);
@@ -101,7 +146,9 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
   useEffect(() => {
       if (isOpen) {
           setSplitCount(1);
+          setSplitCount(1);
           setSelectedItemIds(new Set());
+          setSelectedAdjustmentIndices(new Set());
           setCustomAmount("");
           setPaymentMethod("CASH");
           setActiveTab("FULL");
@@ -128,9 +175,25 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
                   sum += (item.quantity * Number(item.unit_price_at_order));
               }
           });
+          
+          // Add selected adjustments
+          if (bill?.adjustments) {
+              bill.adjustments.forEach((adj, idx) => {
+                  if (selectedAdjustmentIndices.has(idx)) {
+                       const amount = parseFloat(adj.amount) || 0;
+                       if (adj.type === 'charge') sum += amount;
+                       else if (adj.type === 'discount') sum -= amount;
+                  }
+              });
+          }
+
           // Check if selecting all items matches roughly remaining
-          if (sum > remainingTotal + 0.1) return remainingTotal; // Cap at remaining
-          return sum;
+          // If sum is greater than remaining, cap it. But adjustments might push it over if they are extra charges?
+          // Actually, if we select charges, we SHOULD pay for them.
+          // BUT, we shouldn't pay more than the *Bill's* remaining total?
+          // If remainingTotal accounts for adjustments, then yes, cap it.
+          if (sum > remainingTotal + 0.1) return remainingTotal; 
+          return Math.max(0, sum); // Ensure no negative payment
       }
 
       if (splitMode === "CUSTOM") {
@@ -159,6 +222,13 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
       if (next.has(id)) next.delete(id);
       else next.add(id);
       setSelectedItemIds(next);
+  };
+
+  const toggleAdjustmentSelection = (idx) => {
+      const next = new Set(selectedAdjustmentIndices);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      setSelectedAdjustmentIndices(next);
   };
 
   // Mixed Payment Logic
@@ -320,7 +390,97 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout }) => {
                          </div>
                      )
                  })}
+
+                 {/* ADJUSTMENTS SECTION */}
+                 {bill?.adjustments?.length > 0 && (
+                     <div className="mt-4 pt-4 border-t border-[#252836]">
+                         <h3 className="text-xs font-bold text-gray-400 uppercase mb-2">Adjustments</h3>
+                         {bill.adjustments.map((adj, idx) => (
+                             <div key={idx} className="flex justify-between items-center py-1 px-2 hover:bg-white/5 rounded">
+                                 <span className="text-gray-300 text-sm">{adj.title}</span>
+                                 <span className={`font-bold text-sm ${adj.type === 'charge' ? 'text-red-400' : 'text-green-400'}`}>
+                                     {adj.type === 'charge' ? '+' : '-'}{new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 }).format(parseFloat(adj.amount))} ₺
+                                 </span>
+                             </div>
+                         ))}
+                     </div>
+                 )}
+
+                 <button 
+                    onClick={() => setShowAdjModal(true)}
+                    className="mt-4 w-full py-3 border-2 border-dashed border-[#ea7c69]/30 text-[#ea7c69] rounded-xl text-sm font-bold hover:bg-[#ea7c69]/10 transition-colors flex items-center justify-center gap-2"
+                 >
+                     <RiDiscountPercentLine size={18} /> Add Discount / Charge
+                 </button>
+
             </div>
+
+        {/* ADJUSTMENT MODAL OVERLAY */}
+        {showAdjModal && (
+            <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div onClick={e => e.stopPropagation()} className="bg-[#1F1D2B] w-full max-w-sm rounded-2xl border border-[#393C49] shadow-2xl overflow-hidden">
+                    <div className="p-4 border-b border-[#252836] flex justify-between items-center bg-[#252836]/50">
+                        <h3 className="text-white font-bold">Add Adjustment</h3>
+                        <button onClick={() => setShowAdjModal(false)} className="text-gray-400 hover:text-white"><RiCloseLine size={24}/></button>
+                    </div>
+                    <div className="p-6 space-y-4">
+                        
+                        {/* Type Switch */}
+                        <div className="flex bg-[#252836] p-1 rounded-lg border border-[#393C49]">
+                            <button 
+                                onClick={() => setAdjData({...adjData, type: 'charge'})}
+                                className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${adjData.type === 'charge' ? 'bg-red-500/20 text-red-500 shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                + Extra Charge
+                            </button>
+                            <button 
+                                onClick={() => setAdjData({...adjData, type: 'discount'})}
+                                className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${adjData.type === 'discount' ? 'bg-green-500/20 text-green-500 shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                - Discount
+                            </button>
+                        </div>
+
+                        {/* Title */}
+                        <div>
+                            <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">Description</label>
+                            <input 
+                                type="text"
+                                placeholder={adjData.type === 'charge' ? "e.g. Service Fee" : "e.g. Happy Hour"}
+                                value={adjData.title}
+                                onChange={e => setAdjData({...adjData, title: e.target.value})}
+                                property="off"
+                                className="w-full bg-[#252836] border border-[#393C49] rounded-xl p-3 text-white focus:border-[#ea7c69] outline-none transition-colors"
+                            />
+                        </div>
+
+                        {/* Amount */}
+                        <div>
+                            <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">Amount ({adjData.type === 'charge' ? 'Charge' : 'Discount'})</label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₺</span>
+                                <input 
+                                    type="number"
+                                    placeholder="0.00"
+                                    value={adjData.amount}
+                                    onChange={e => setAdjData({...adjData, amount: e.target.value})}
+                                    className="w-full bg-[#252836] border border-[#393C49] rounded-xl p-3 pl-8 text-white font-bold text-lg focus:border-[#ea7c69] outline-none transition-colors"
+                                />
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={handleAddAdjustment}
+                            disabled={adjLoading}
+                            className="w-full bg-[#ea7c69] hover:bg-[#d96a56] text-white py-3 rounded-xl font-bold shadow-lg shadow-[#ea7c69]/20 transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+                        >
+                            {adjLoading ? <RiLoader4Line className="animate-spin"/> : <RiCheckLine />}
+                            Apply Adjustment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
             
             {/* Scroll Indicator */}
             {showScrollIndicator && (

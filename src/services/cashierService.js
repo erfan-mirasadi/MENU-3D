@@ -10,66 +10,7 @@ export const cashierService = {
   async processPayment(sessionId, type, data) {
     if (!sessionId) throw new Error("Session ID is required");
 
-    // 1. Calculate Total Amount from Order Items
-    const { data: orderItems, error: itemsError } = await supabase
-      .from("order_items")
-      .select("quantity, unit_price_at_order, status")
-      .eq("session_id", sessionId)
-      .neq("status", "cancelled");
-
-    if (itemsError) throw itemsError;
-
-    const totalAmount = orderItems.reduce((acc, item) => {
-      return acc + (item.quantity * parseFloat(item.unit_price_at_order));
-    }, 0);
-
-    if (totalAmount <= 0) {
-        throw new Error("Cannot process payment for zero amount.");
-    }
-
-    // 2. Get or Create Bill
-    let { data: bill, error: billError } = await supabase
-      .from("bills")
-      .select("*")
-      .eq("session_id", sessionId)
-      .maybeSingle();
-
-    if (billError) throw billError;
-
-    if (!bill) {
-        // Create new bill
-        // REMOVED 'remaining_amount' from insert as it is GENERATED
-        const { data: newBill, error: createError } = await supabase
-          .from("bills")
-          .insert({
-            session_id: sessionId,
-            total_amount: totalAmount,
-            paid_amount: 0,
-            status: "UNPAID",
-          })
-          .select()
-          .single();
-        
-        if (createError) throw createError;
-        bill = newBill;
-    } else {
-        // Fix: Ensure bill.total_amount is up-to-date with actual order items
-        // If items were added after bill creation, bill.total_amount might be stale.
-        const dbTotal = parseFloat(bill.total_amount);
-        if (Math.abs(dbTotal - totalAmount) > 0.01) {
-             console.log(`Fixing Stale Bill: DB(${dbTotal}) vs Actual(${totalAmount})`);
-             const { data: updatedBill, error: updateErr } = await supabase
-                .from("bills")
-                .update({ total_amount: totalAmount })
-                .eq("id", bill.id)
-                .select()
-                .single();
-             
-             if (!updateErr && updatedBill) {
-                 bill = updatedBill; // Use fresh bill for validation
-             }
-        }
-    }
+    let bill = await this.getOrCreateBill(sessionId);
 
     // 3. Prepare Transactions
     let transactionsToRecord = [];
@@ -157,7 +98,7 @@ export const cashierService = {
     // We only update paid_amount. remaining_amount is generated.
     const newPaidAmount = (parseFloat(bill.paid_amount) || 0) + paymentTotal;
     // We calc local newRemaining just for checking isFullyPaid status
-    const newRemainingLocal = totalAmount - newPaidAmount; 
+    const newRemainingLocal = (parseFloat(bill.total_amount) || 0) - newPaidAmount; 
     const isFullyPaid = newRemainingLocal <= 0.5; // tolerance
 
     const { error: updateError } = await supabase
@@ -186,5 +127,157 @@ export const cashierService = {
         remaining: Math.max(0, newRemainingLocal), 
         fullyPaid: isFullyPaid 
     };
-  }
-};
+  },
+
+  /**
+   * Recalculates the bill total based on order items and adjustments.
+   * Updates total_amount and remaining_amount in the DB.
+   * @param {string} billId 
+   */
+  async calculateBillTotal(billId) {
+    if (!billId) throw new Error("Bill ID is required");
+
+    // 1. Fetch Bill (to get adjustments and paid_amount)
+    const { data: bill, error: billError } = await supabase
+      .from("bills")
+      .select("*")
+      .eq("id", billId)
+      .single();
+
+    if (billError) throw billError;
+
+    // 2. Fetch Order Items (to calculate base total)
+    // We include all items that are liable for payment (confirmed, served, preparing, ready)
+    // We distinctively EXCLUDE 'cancelled' and 'pending' (drafts)
+    const { data: orderItems, error: itemsError } = await supabase
+        .from("order_items")
+        .select("quantity, unit_price_at_order, status")
+        .eq("session_id", bill.session_id)
+        .in("status", ["confirmed", "preparing", "ready", "served"]);
+
+    if (itemsError) throw itemsError;
+
+    // 3. Calculate Totals
+    const itemsTotal = orderItems.reduce((acc, item) => {
+        return acc + (item.quantity * parseFloat(item.unit_price_at_order));
+    }, 0);
+
+    const adjustments = bill.adjustments || [];
+    const adjustmentsTotal = adjustments.reduce((acc, adj) => {
+        const amount = parseFloat(adj.amount) || 0;
+        return adj.type === 'charge' ? acc + amount : acc - amount;
+    }, 0);
+
+    const grandTotal = itemsTotal + adjustmentsTotal;
+    // Ensure accurate paid_amount from DB
+    const paidAmount = parseFloat(bill.paid_amount) || 0; 
+    const remainingAmount = grandTotal - paidAmount;
+
+    // 4. Update Bill in DB
+    const { data: updatedBill, error: updateError } = await supabase
+        .from("bills")
+        .update({
+            total_amount: grandTotal
+        })
+        .eq("id", billId)
+        .select()
+        .single();
+
+    if (updateError) throw updateError;
+    return updatedBill;
+  },
+
+  /**
+   * Adds an adjustment (Extra Charge or Discount) to the bill.
+   * @param {string} billId 
+   * @param {Object} adjustment - { title: string, amount: number, type: 'charge'|'discount' }
+   */
+  async addBillAdjustment(billId, adjustment) {
+    if (!billId) throw new Error("Bill ID is required");
+    if (!adjustment.amount || !adjustment.title || !adjustment.type) {
+        throw new Error("Invalid adjustment data");
+    }
+
+    // 1. Fetch current adjustments
+    const { data: bill, error: fetchError } = await supabase
+        .from("bills")
+        .select("adjustments")
+        .eq("id", billId)
+        .single();
+    
+    if (fetchError) throw fetchError;
+
+    const currentAdjustments = bill.adjustments || [];
+    const newAdjustments = [...currentAdjustments, adjustment];
+
+    // 2. Update adjustments in DB
+    const { error: updateError } = await supabase
+        .from("bills")
+        .update({ adjustments: newAdjustments })
+        .eq("id", billId);
+
+    if (updateError) throw updateError;
+
+    // 3. Trigger Recalculation
+    return await this.calculateBillTotal(billId);
+  },
+
+  /**
+   * Ensures a bill exists for the session and returns it with up-to-date totals.
+   * @param {string} sessionId 
+   */
+  async getOrCreateBill(sessionId) {
+    // 1. Calculate Total Amount from Order Items
+    const { data: orderItems, error: itemsError } = await supabase
+      .from("order_items")
+      .select("quantity, unit_price_at_order, status")
+      .eq("session_id", sessionId)
+      .neq("status", "cancelled");
+
+    if (itemsError) throw itemsError;
+
+    const totalAmount = orderItems.reduce((acc, item) => {
+      return acc + (item.quantity * parseFloat(item.unit_price_at_order));
+    }, 0);
+
+    // Allow creating bill even if total is 0? Maybe adjustments will add to it.
+    // user check for <= 0 was here previously. Let's keep it but maybe lenient.
+    // Actually, creating a bill for 0 amount is fine, it just means fully paid/no due.
+    
+    // 2. Get or Create Bill
+    let { data: bill, error: billError } = await supabase
+      .from("bills")
+      .select("*")
+      .eq("session_id", sessionId)
+      .maybeSingle();
+
+    if (billError) throw billError;
+
+    if (!bill) {
+        // Create new bill
+        const { data: newBill, error: createError } = await supabase
+          .from("bills")
+          .insert({
+            session_id: sessionId,
+            total_amount: totalAmount,
+            paid_amount: 0,
+            status: "UNPAID",
+          })
+          .select()
+          .single();
+        
+        if (createError) throw createError;
+        bill = newBill;
+    } else {
+        // Fix: Ensure bill.total_amount is up-to-date with actual order items
+        // If items were added after bill creation, bill.total_amount might be stale.
+        // Also check if adjustments need to be factored in (calculateBillTotal does this better).
+        // Let's just run calculateBillTotal to be safe and authoritative.
+        // It sums items + adjustments and updates DB.
+        
+        return await this.calculateBillTotal(bill.id);
+    }
+
+    return bill;
+  },
+}

@@ -244,18 +244,35 @@ export const reportService = {
     const { currentStart, previousStart, previousEnd } = getDateRanges(range);
     
     // Helper to fetch data for a given period
+    // Helper to fetch data for a given period
     const fetchPeriodData = async (start, end) => {
-        // Bills (Gross Sales)
-        // Fetch ALL bills in range, filter 'paid'/'PAID' in JS to avoid Enum 400 errors
+        // Bills (Gross Sales, Adjustments)
         const { data: bills } = await supabase
             .from("bills")
-            .select("total_amount, status")
+            .select("total_amount, status, adjustments")
             .gte("created_at", start)
             .lt("created_at", end || new Date().toISOString());
 
         const sales = bills
             ?.filter(b => b.status?.toUpperCase() === 'PAID')
             .reduce((sum, b) => sum + (parseFloat(b.total_amount) || 0), 0) || 0;
+
+        // Calculate Adjustments
+        let extraCharges = 0;
+        let discounts = 0;
+
+        bills?.forEach(b => {
+             // Only count adjustments for PAID bills? Or all? 
+             // Usually financial reports track accrual or cash basis. 
+             // If we count gross sales only for PAID, we should probably align adjustments to PAID too.
+             if (b.status?.toUpperCase() === 'PAID' && b.adjustments && Array.isArray(b.adjustments)) {
+                 b.adjustments.forEach(adj => {
+                     const amt = parseFloat(adj.amount) || 0;
+                     if (adj.type === 'charge') extraCharges += amt;
+                     if (adj.type === 'discount') discounts += amt;
+                 });
+             }
+        });
 
         // Transactions (Net Cash/Card)
         const { data: transactions } = await supabase
@@ -288,7 +305,7 @@ export const reportService = {
             return sum + (price * quantityToUse);
         }, 0) || 0;
 
-        return { sales, cash, card, voidVal };
+        return { sales, cash, card, voidVal, extraCharges, discounts };
     };
 
     const current = await fetchPeriodData(currentStart);
@@ -310,6 +327,14 @@ export const reportService = {
         voidedValue: {
             value: current.voidVal,
             trend: calculateTrend(current.voidVal, previous.voidVal)
+        },
+        extraCharges: {
+            value: current.extraCharges,
+            trend: calculateTrend(current.extraCharges, previous.extraCharges)
+        },
+        discounts: {
+            value: current.discounts,
+            trend: calculateTrend(current.discounts, previous.discounts)
         }
     };
   },
@@ -437,7 +462,12 @@ export const reportService = {
             method,
             bills (
                 id,
-                session_id
+                session_id,
+                total_amount,
+                adjustments,
+                sessions (
+                    note
+                )
             )
         `)
         .eq("id", transactionId)
@@ -456,7 +486,15 @@ export const reportService = {
       const paidItemIds = logData?.details?.items || [];
 
       const sessionId = transaction.bills?.session_id;
-      if (!sessionId) return { items: [], totalAmount: transaction.amount, method: transaction.method, time: new Date(transaction.created_at).toLocaleString() };
+      if (!sessionId) return { 
+          items: [], 
+          totalAmount: transaction.amount, 
+          method: transaction.method, 
+          time: new Date(transaction.created_at).toLocaleString(),
+          billTotal: 0,
+          adjustments: [],
+          sessionNote: null 
+      };
 
       // 2. Fetch Order Items for this session
       const { data: items, error: itemsError } = await supabase
@@ -489,6 +527,9 @@ export const reportService = {
           time: new Date(transaction.created_at).toLocaleString(),
           method: transaction.method,
           totalAmount: transaction.amount,
+          billTotal: transaction.bills?.total_amount || 0,
+          adjustments: transaction.bills?.adjustments || [],
+          sessionNote: transaction.bills?.sessions?.note || null,
           paidItemIds: paidItemIds,
           items: formattedItems
       };
