@@ -22,6 +22,8 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
   useEffect(() => {
     if (!tableNumberFromUrl || !restaurantId) return;
 
+    let ignore = false;
+
     const initializeSession = async () => {
       try {
         let storedGuestId = localStorage.getItem("menu_guest_id");
@@ -32,10 +34,12 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
               : `guest-${Date.now()}-${Math.random().toString(36).slice(2)}`;
           localStorage.setItem("menu_guest_id", storedGuestId);
         }
-        setGuestId(storedGuestId);
+        if (!ignore) setGuestId(storedGuestId);
 
         console.log("🔍 Checking Table:", tableNumberFromUrl);
         const tableData = await getTableByNumber(tableNumberFromUrl, restaurantId);
+
+        if (ignore) return;
 
         if (!tableData) {
           console.error("❌ Table not found");
@@ -45,7 +49,11 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
         const realTableUuid = tableData.id;
         const realRestaurantId = tableData.restaurant_id;
 
+        // Check for active session
         let session = await getActiveSession(realTableUuid);
+        
+        if (ignore) return;
+
         if (!session) {
           console.log("🆕 Creating new session...");
           session = await createSession(realTableUuid, realRestaurantId);
@@ -53,14 +61,21 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
           console.log("✅ Found active session:", session.id);
         }
 
+        if (ignore) return;
+
         setSessionId(session?.id);
         sessionRef.current = session?.id;
       } catch (err) {
-        console.error("❌ Error init session:", err);
+        if (!ignore) console.error("❌ Error init session:", err);
       }
     };
 
     initializeSession();
+
+    return () => {
+      ignore = true;
+      console.log("🧹 Cleanup: Ignoring stale session initialization");
+    };
   }, [tableNumberFromUrl, restaurantId]);
 
 
