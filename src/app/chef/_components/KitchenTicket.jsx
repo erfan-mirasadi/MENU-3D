@@ -1,13 +1,28 @@
 'use client'
+import { useState } from 'react'
 import KitchenTimer from './KitchenTimer'
 import { RiRestaurantLine, RiCheckboxCircleLine, RiCheckDoubleLine, RiTimeLine, RiAlertFill } from 'react-icons/ri'
+import Loader from '@/components/ui/Loader'
 
 // Single Item Row Component
 function TicketItem({ item, onUpdateStatus }) {
+    const [loading, setLoading] = useState(false)
+
     const isPending = item.status === 'pending' || item.status === 'confirmed'
     const isPreparing = item.status === 'preparing'
     const isReady = item.status === 'ready' // Cooked but not served to table
     const isServed = item.status === 'served' // Historical / Gone
+
+    // Wrapper to handle local loading state
+    const handleAction = async (newStatus) => {
+        if (loading) return
+        setLoading(true)
+        try {
+            await onUpdateStatus(item.id, newStatus)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     // Localized Title Helper
     const getTitle = (product) => {
@@ -52,27 +67,30 @@ function TicketItem({ item, onUpdateStatus }) {
             <div className="flex items-center gap-2">
                 {isPending && (
                     <button 
-                        onClick={() => onUpdateStatus(item.id, 'preparing')}
-                        className="p-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-200 active:scale-95 transition-all"
+                        onClick={() => handleAction('preparing')}
+                        disabled={loading}
+                        className={`p-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-200 active:scale-95 transition-all w-12 h-12 flex items-center justify-center ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
                     >
-                        <RiRestaurantLine size={20} />
+                        {loading ? <Loader variant="inline" /> : <RiRestaurantLine size={20} />}
                     </button>
                 )}
                 {isPreparing && (
                     <button 
-                        onClick={() => onUpdateStatus(item.id, 'ready')}
-                        className="p-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-200 active:scale-95 transition-all"
+                        onClick={() => handleAction('ready')}
+                        disabled={loading}
+                        className={`p-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-200 active:scale-95 transition-all w-12 h-12 flex items-center justify-center ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
                     >
-                        <RiCheckboxCircleLine size={20} />
+                        {loading ? <Loader variant="inline" /> : <RiCheckboxCircleLine size={20} />}
                     </button>
                 )}
                  {isReady && !isServed && (
                     <button 
-                        onClick={() => onUpdateStatus(item.id, 'preparing')}
-                        className="p-3 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-500 shadow-md active:scale-95 transition-all"
+                        onClick={() => handleAction('preparing')}
+                        disabled={loading}
+                        className={`p-3 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-500 shadow-md active:scale-95 transition-all w-12 h-12 flex items-center justify-center ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
                         title="Undo (Set back to Preparing)"
                     >
-                        <RiTimeLine size={20} />
+                        {loading ? <Loader variant="inline" /> : <RiTimeLine size={20} />}
                     </button>
                 )}
             </div>
@@ -81,6 +99,19 @@ function TicketItem({ item, onUpdateStatus }) {
 }
 
 export default function KitchenTicket({ session, orders, onUpdateStatus, onServeAll }) {
+    const [loading, setLoading] = useState(false)
+
+    // Handle Bulk Action Loading Locally
+    const handleServeAllWrapper = async () => {
+        if (loading) return
+        setLoading(true)
+        try {
+            await onServeAll(orders)
+        } finally {
+            setLoading(false)
+        }
+    }
+
     // Determine Ticket Status (Worst case scenario wins)
     // If ANY item is pending -> Ticket is "New" (Blinking)
     // If ALL are preparing/served -> Ticket is "Working"
@@ -149,11 +180,16 @@ export default function KitchenTicket({ session, orders, onUpdateStatus, onServe
             {/* Ticket Footer (Bulk Actions) */}
             <div className="p-3 bg-white border-t border-gray-100">
                 <button 
-                    onClick={() => onServeAll(orders)}
-                    className="w-full py-3 rounded-xl bg-green-500 hover:bg-green-600 active:scale-95 text-white font-black uppercase tracking-wider shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2"
+                    onClick={handleServeAllWrapper}
+                    disabled={loading}
+                    className={`w-full py-3 rounded-xl bg-green-500 hover:bg-green-600 active:scale-95 text-white font-black uppercase tracking-wider shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
                 >
-                    <span>ALL PREPARED</span>
-                    <RiCheckDoubleLine size={20} />
+                    {loading ? <Loader variant="inline" /> : (
+                        <>
+                            <span>ALL PREPARED</span>
+                            <RiCheckDoubleLine size={20} />
+                        </>
+                    )}
                 </button>
             </div>
         </div>

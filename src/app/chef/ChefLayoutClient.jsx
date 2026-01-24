@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { RiLogoutBoxLine } from "react-icons/ri";
 import toast from "react-hot-toast";
 
+import NotificationManager from "@/components/shared/NotificationManager";
+
 export default function ChefLayoutClient({ children }) {
   const router = useRouter();
 
@@ -18,6 +20,7 @@ export default function ChefLayoutClient({ children }) {
 
   return (
     <div className="relative w-full h-[100dvh] bg-dark-900 text-text-light font-sans overflow-hidden">
+      <NotificationManager role="chef" />
       {/* Main Content */}
       <div className="w-full h-full">
           {children}
