@@ -1,6 +1,7 @@
 import { useState } from "react";
 import TransactionDetailsModal from "./TransactionDetailsModal";
 import Loader from "@/components/ui/Loader";
+import { useLanguage } from "@/context/LanguageContext";
 
 const TableWrapper = ({ headers, children }) => (
     <div className="bg-[#1F1D2B] rounded-lg p-6 w-full overflow-x-auto">
@@ -27,13 +28,16 @@ const EmptyRow = ({ colSpan, message }) => (
 
 export const FinancialTable = ({ data, loading }) => {
     const [selectedTx, setSelectedTx] = useState(null);
+    const { t } = useLanguage();
+
+    const headers = [t('time') || "Time", t('billId'), t('table'), t('amount') || "Amount", t('method'), t('staff')];
 
     if (loading) return <Loader />;
-    if (!data?.length) return <TableWrapper headers={["Time", "Bill ID", "Table", "Amount", "Method", "Staff"]}><EmptyRow colSpan={6} /></TableWrapper>;
+    if (!data?.length) return <TableWrapper headers={headers}><EmptyRow colSpan={6} /></TableWrapper>;
 
     return (
         <>
-            <TableWrapper headers={["Time", "Bill ID", "Table", "Amount", "Method", "Staff"]}>
+            <TableWrapper headers={headers}>
                 {data.map(t => (
                     <tr 
                         key={t.id} 
@@ -64,18 +68,21 @@ export const FinancialTable = ({ data, loading }) => {
 };
 
 export const ProductMixTable = ({ data, loading }) => {
+    const { t, content } = useLanguage();
+    const headers = [t('productName'), t('quantitySold'), t('totalRevenue')];
+
     if (loading) return <Loader />;
-    if (!data?.length) return <TableWrapper headers={["Product Name", "Quantity Sold", "Total Revenue"]}><EmptyRow colSpan={3} /></TableWrapper>;
+    if (!data?.length) return <TableWrapper headers={headers}><EmptyRow colSpan={3} /></TableWrapper>;
 
     return (
-        <TableWrapper headers={["Product Name", "Quantity Sold", "Total Revenue"]}>
+        <TableWrapper headers={headers}>
             {data.map((item, idx) => (
                 <tr key={idx} className="border-b border-[#393C49] hover:bg-[#252836]/50 transition-colors">
                     <td className="py-4 pl-4 flex items-center gap-3">
                         <div className="w-8 h-8 rounded bg-gray-700 flex items-center justify-center text-xs font-bold text-white">
                             {idx + 1}
                         </div>
-                        {item.name}
+                        {content(item.name)}
                     </td>
                     <td className="py-4">{item.quantity}</td>
                     <td className="py-4 font-bold text-[#EA7C69]">₺{item.revenue.toFixed(2)}</td>
@@ -86,11 +93,14 @@ export const ProductMixTable = ({ data, loading }) => {
 };
 
 export const SecurityLogTable = ({ data, loading }) => {
+    const { t, content } = useLanguage();
+    const headers = [t('time') || "Time", t('staff'), t('action'), t('items'), t('reason'), t('total') || "Value"];
+
     if (loading) return <Loader />;
-    if (!data?.length) return <TableWrapper headers={["Time", "Staff", "Action", "Item / Details", "Reason", "Value"]}><EmptyRow colSpan={6} /></TableWrapper>;
+    if (!data?.length) return <TableWrapper headers={headers}><EmptyRow colSpan={6} /></TableWrapper>;
 
     return (
-        <TableWrapper headers={["Time", "Staff", "Action", "Item / Details", "Reason", "Value"]}>
+        <TableWrapper headers={headers}>
             {data.map((log, idx) => (
                 <tr key={idx} className="border-b border-[#393C49] hover:bg-[#252836]/50 transition-colors">
                     <td className="py-4 pl-4 text-xs text-[#ABBBC2]">{log.time}</td>
@@ -98,7 +108,7 @@ export const SecurityLogTable = ({ data, loading }) => {
                     <td className="py-4">
                         <span className="px-2 py-1 rounded text-xs bg-red-500/20 text-red-500 font-bold">{log.action}</span>
                     </td>
-                    <td className="py-4">{log.item}</td>
+                    <td className="py-4">{content(log.item)}</td>
                     <td className="py-4 text-[#ABBBC2] italic">"{log.reason}"</td>
                     <td className="py-4 text-white">₺{parseFloat(log.value).toFixed(2)}</td>
                 </tr>

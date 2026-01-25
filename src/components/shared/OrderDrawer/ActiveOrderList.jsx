@@ -2,6 +2,7 @@ import { FaReceipt, FaCheck, FaPen, FaFire, FaCheckDouble } from "react-icons/fa
 import OrderSection from "./OrderSection";
 import SwipeableOrderItem from "./SwipeableOrderItem";
 import Loader from "@/components/ui/Loader";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ActiveOrderList({ 
     items, 
@@ -18,6 +19,8 @@ export default function ActiveOrderList({
     loading,
     loadingOp
 }) {
+    const { t } = useLanguage();
+
     if (items.length === 0) return null;
 
     // Unified View
@@ -42,8 +45,8 @@ export default function ActiveOrderList({
     const allServed = items.every(i => i.status === 'served');
 
     const getTitle = () => {
-        if (allServed) return "Served";
-        return "In Kitchen / Preparing";
+        if (allServed) return t('served');
+        return t('inKitchen');
     };
 
     const getIcon = () => {
@@ -72,7 +75,7 @@ export default function ActiveOrderList({
                             : "bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20"
                     }`}
                 >
-                    <FaPen /> Edit
+                    <FaPen /> {t('edit')}
                 </button>
             )
             }
@@ -93,7 +96,7 @@ export default function ActiveOrderList({
                     ))}
                 </div>
                 <div className="flex gap-3">
-                    <button onClick={onCancelEdit} className="flex-1 py-3 bg-gray-700 text-gray-300 font-bold rounded-xl cursor-pointer hover:bg-gray-600">Cancel</button>
+                    <button onClick={onCancelEdit} className="flex-1 py-3 bg-gray-700 text-gray-300 font-bold rounded-xl cursor-pointer hover:bg-gray-600">{t('cancel')}</button>
                     <button 
                         onClick={onSaveEdit} 
                         disabled={loading}
@@ -103,7 +106,7 @@ export default function ActiveOrderList({
                     >
                         {loadingOp === 'BATCH_UPDATE' ? (
                              <Loader active={true} variant="inline" className="h-5 w-5" />
-                        ) : "Save Changes"}
+                        ) : t('saveChanges')}
                     </button>
                 </div>
             </div>

@@ -3,6 +3,7 @@ import { FaTimes, FaPlus, FaPowerOff, FaPen, FaSave } from "react-icons/fa";
 import { LuArrowRightLeft } from "react-icons/lu";
 import Loader from "@/components/ui/Loader";
 import { updateSessionNote } from "@/services/sessionService";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function DrawerHeader({
   table,
@@ -14,12 +15,14 @@ export default function DrawerHeader({
   loading,
   loadingOp
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="p-4 bg-[#252836] border-b border-white/5 flex flex-col gap-4 shadow-md z-10 shrink-0">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-black text-white tracking-tight">
-            Table <span className="text-[#ea7c69]">{table.table_number}</span>
+            {t('table')} <span className="text-[#ea7c69]">{table.table_number}</span>
           </h2>
           <span
             className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
@@ -28,7 +31,7 @@ export default function DrawerHeader({
                 : "bg-gray-500/10 text-gray-400"
             }`}
           >
-            {session ? "Active" : "Closed"}
+            {session ? t('active') : t('closed')}
           </span>
         </div>
 
@@ -41,7 +44,7 @@ export default function DrawerHeader({
                 disabled={loading}
                 className="h-10 px-4 bg-[#ea7c69] text-white rounded-lg flex items-center gap-2 font-bold text-sm shadow-lg shadow-orange-900/20 active:scale-95 transition-transform cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
               >
-                <FaPlus /> ADD
+                <FaPlus /> {t('add')}
               </button>
 
               {/* TRANSFER BUTTON */}
@@ -49,7 +52,7 @@ export default function DrawerHeader({
                  onClick={onTransfer}
                  disabled={loading}
                  className="w-10 h-10 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-lg flex items-center justify-center hover:bg-blue-500 hover:text-white cursor-pointer active:scale-90 transition-all disabled:opacity-50 disabled:pointer-events-none"
-                 title="Transfer/Merge Table"
+                 title={t('transferTable')}
               >
                  <LuArrowRightLeft />
               </button>
@@ -59,7 +62,7 @@ export default function DrawerHeader({
                 onClick={onCloseTable}
                 disabled={loading}
                 className="w-10 h-10 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white cursor-pointer active:scale-90 transition-all disabled:opacity-50 disabled:pointer-events-none"
-                title="Close Table"
+                title={t('closeTable')}
               >
                 {loadingOp === 'CLOSE_TABLE' ? <Loader variant="inline" className="w-4 h-4" /> : <FaPowerOff />}
               </button>
@@ -88,6 +91,7 @@ function NoteSection({ session }) {
   const [isEditing, setIsEditing] = useState(false);
   const [noteText, setNoteText] = useState("");
   const [saving, setSaving] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     setNoteText(session?.note || "");
@@ -109,20 +113,20 @@ function NoteSection({ session }) {
     return (
       <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 animate-in fade-in zoom-in-95 duration-200">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-yellow-500 text-xs font-bold uppercase tracking-wider">Editing Note</span>
+          <span className="text-yellow-500 text-xs font-bold uppercase tracking-wider">{t('editingNote')}</span>
           <div className="flex gap-2">
              <button 
                onClick={() => setIsEditing(false)}
                className="text-xs text-white/40 hover:text-white"
              >
-               Cancel
+               {t('cancel')}
              </button>
              <button 
                onClick={handleSave}
                disabled={saving}
                className="flex items-center gap-1 text-xs bg-yellow-500 text-black px-2 py-1 rounded font-bold hover:bg-yellow-400 disabled:opacity-50"
              >
-               {saving ? "Saving..." : <><FaSave /> Save</>}
+               {saving ? t('saving') : <><FaSave /> {t('save')}</>}
              </button>
           </div>
         </div>
@@ -132,7 +136,7 @@ function NoteSection({ session }) {
           onChange={(e) => setNoteText(e.target.value)}
           className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-yellow-500/50 resize-none"
           rows={3}
-          placeholder="Add a note for this table..."
+          placeholder={t('addNotePlaceholder')}
         />
       </div>
     );
@@ -143,10 +147,10 @@ function NoteSection({ session }) {
        <div className="flex justify-between items-start">
           <div>
             <span className="text-yellow-500/50 text-[10px] font-bold uppercase tracking-wider block mb-1">
-              Table Note
+              {t('tableNote')}
             </span>
             <p className="text-white/90 text-sm leading-relaxed whitespace-pre-wrap">
-              {session.note || <span className="text-white/20 italic">No notes added.</span>}
+              {session.note || <span className="text-white/20 italic">{t('noNotes')}</span>}
             </p>
           </div>
           <button 

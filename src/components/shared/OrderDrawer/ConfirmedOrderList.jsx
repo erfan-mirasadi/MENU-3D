@@ -3,6 +3,7 @@ import OrderSection from "./OrderSection";
 import SwipeableOrderItem from "./SwipeableOrderItem";
 import Loader from "@/components/ui/Loader";
 import { useRestaurantFeatures } from "@/app/hooks/useRestaurantFeatures";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ConfirmedOrderList({ 
     items, 
@@ -14,13 +15,15 @@ export default function ConfirmedOrderList({
     onStartPreparing 
 }) {
     const { features } = useRestaurantFeatures();
+    const { t } = useLanguage();
+
     if (items.length === 0) return null;
 
     // CASHIER & WAITER VIEW (Actionable)
     if (role === 'cashier' || role === 'waiter') {
         return (
              <OrderSection
-                title={role === 'waiter' ? "Sent to Kitchen" : "Ready for Prep (Waiter Confirmed)"}
+                title={role === 'waiter' ? t('sentToKitchen') : t('readyForPrep')}
                 count={items.length}
                 accentColor="yellow"
                 icon={<FaFire />}
@@ -45,9 +48,9 @@ export default function ConfirmedOrderList({
                         ) : (
                             <>
                                 {features.kitchen ? (
-                                    <><FaUtensils className="text-xl" /> START PREPARING</>
+                                    <><FaUtensils className="text-xl" /> {t('startPreparing')}</>
                                 ) : (
-                                    <><FaCheck className="text-xl" /> MARK AS SERVED</>
+                                    <><FaCheck className="text-xl" /> {t('markServed')}</>
                                 )}
                             </>
                         )}

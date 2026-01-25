@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 const OrderReportTable = ({ orders, loading, filter }) => {
     // Add internal state for status filtering
+    const { t, content } = useLanguage();
     const [statusFilter, setStatusFilter] = useState("All");
     const [showFilterMenu, setShowFilterMenu] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -33,7 +35,7 @@ const OrderReportTable = ({ orders, loading, filter }) => {
     return (
       <div className="bg-[#1F1D2B] rounded-lg p-6 w-full">
         <div className="flex justify-between items-center mb-6 relative">
-            <h2 className="text-xl font-bold text-white">Analytics</h2>
+            <h2 className="text-xl font-bold text-white">{t('analytics')}</h2>
              
              <div className="relative">
                 <button 
@@ -67,10 +69,10 @@ const OrderReportTable = ({ orders, loading, filter }) => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="text-[#ABBBC2] text-sm border-b border-[#393C49]">
-                <th className="py-4 font-semibold pl-4">Table No</th>
-                <th className="py-4 font-semibold">Menu</th>
-                <th className="py-4 font-semibold">Total Payment</th>
-                <th className="py-4 font-semibold">Status</th>
+                <th className="py-4 font-semibold pl-4">{t('table')}</th>
+                <th className="py-4 font-semibold">{t('menu') || "Menu"}</th>
+                <th className="py-4 font-semibold">{t('total') || "Total"}</th>
+                <th className="py-4 font-semibold">{t('status') || "Status"}</th>
               </tr>
             </thead>
             <tbody className="text-neutral-300 font-medium text-sm">
@@ -97,7 +99,7 @@ const OrderReportTable = ({ orders, loading, filter }) => {
                         <td className="py-4 pl-4 text-[#E0E6E9] font-bold">
                             {order.tableNo}
                         </td>
-                        <td className="py-4 text-[#E0E6E9]">{order.menu}</td>
+                        <td className="py-4 text-[#E0E6E9]">{content(order.menu)}</td>
                         <td className="py-4 text-[#E0E6E9]">{formatCurrency(order.total)}</td>
                         <td className="py-4">
                             <span

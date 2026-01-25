@@ -9,8 +9,10 @@ import { RiMoneyDollarCircleLine, RiRestaurantLine, RiGroupLine } from "react-ic
 import { reportService } from "@/services/reportService";
 import { analyticsService } from "@/services/analyticsService";
 import SegmentedControl from "../_components/SegmentedControl";
+import { useLanguage } from "@/context/LanguageContext";
 
 const ReportsPage = () => {
+  const { t } = useLanguage();
   // Default to Month so user sees data immediately (sample data is from a few days ago)
   const [filter, setFilter] = useState("Today"); 
   const [loading, setLoading] = useState(true);
@@ -52,19 +54,32 @@ const ReportsPage = () => {
     fetchData();
   }, [filter]);
 
+  // Filters mapping
+  const filters = [
+      { label: t('today'), value: "Today" },
+      { label: t('week'), value: "Week" },
+      { label: t('month'), value: "Month" },
+      { label: t('threeMonths'), value: "3 Months" },
+      { label: t('year'), value: "Year" },
+  ];
+
   return (
     <div className="bg-[#1F1D2B] min-h-screen text-white p-2 overflow-x-hidden pb-20">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-1">Analytics</h1>
+          <h1 className="text-3xl font-bold mb-1">{t('analytics')}</h1>
           <p className="text-[#ABBBC2] text-sm">{new Date().toDateString()}</p>
         </div>
+        
+        {/* <div className="flex items-center gap-4">
+             <LanguageSwitcher /> */}
              <SegmentedControl 
-                options={["Today", "Week", "Month", "3 Months", "Year"]} 
+                options={filters}
                 active={filter} 
                 onChange={setFilter} 
              />
+        {/* </div> */}
     
       </div>
 
@@ -76,7 +91,7 @@ const ReportsPage = () => {
             {/* Stats Cards Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatsCard
-                title="Total Revenue"
+                title={t('totalRevenue')}
                 value={`₺${stats.revenue.value.toLocaleString()}`}
                 percentage={stats.revenue.trend != null ? stats.revenue.trend.toFixed(2) : null}
                 isPositive={stats.revenue.trend != null && stats.revenue.trend >= 0}
@@ -84,7 +99,7 @@ const ReportsPage = () => {
                 loading={loading}
                 />
                 <StatsCard
-                title="Total Dish Ordered"
+                title={t('totalDishOrdered')}
                 value={stats.dishes.value.toLocaleString()}
                 percentage={stats.dishes.trend != null ? stats.dishes.trend.toFixed(2) : null}
                 isPositive={stats.dishes.trend != null && stats.dishes.trend >= 0}
@@ -92,7 +107,7 @@ const ReportsPage = () => {
                 loading={loading}
                 />
                 <StatsCard
-                title="Total Customer"
+                title={t('totalCustomer')}
                 value={stats.customers.value.toLocaleString()}
                 percentage={stats.customers.trend != null ? stats.customers.trend.toFixed(2) : null}
                 isPositive={stats.customers.trend != null && stats.customers.trend >= 0}

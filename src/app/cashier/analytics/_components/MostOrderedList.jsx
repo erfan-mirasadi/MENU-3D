@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 const MostOrderedList = ({ items, loading, filter }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { content } = useLanguage();
 
   return (
     <div className="bg-[#252836] p-6 rounded-lg">
@@ -28,14 +30,14 @@ const MostOrderedList = ({ items, loading, filter }) => {
             <div key={index} className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
                 {item.image ? (
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    <img src={item.image} alt="Food" className="w-full h-full object-cover" />
                 ) : (
                     <div className="w-full h-full bg-gray-600 flex items-center justify-center text-xs text-white">?</div>
                 )}
                 </div>
                 <div>
                 <h4 className="text-white text-sm font-medium mb-1 leading-snug line-clamp-2">
-                    {item.name}
+                    {content(item.name)}
                 </h4>
                 <p className="text-[#ABBBC2] text-xs">{item.count} dishes ordered</p>
                 </div>

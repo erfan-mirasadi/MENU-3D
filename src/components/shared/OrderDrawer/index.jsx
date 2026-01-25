@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { FaPrint } from "react-icons/fa";
 // Hooks
 import { useOrderDrawerLogic } from "@/app/hooks/useOrderDrawerLogic";
+import { useLanguage } from "@/context/LanguageContext";
 // Animation Hook
 import { useMountTransition } from "@/app/hooks/useMountTransition";
 // Sub-Components
@@ -36,6 +37,7 @@ export default function OrderDrawer({
         loading, loadingOp, localItems, pendingItems, confirmedItems, activeItems, totalAmount,
         isMenuOpen, isPaymentModalOpen, isVoidModalOpen, itemToVoid, isBatchEditing, batchItems
     } = state;
+    const { t } = useLanguage();
 
     // Animation Hook
     const isTransitioning = useMountTransition(isOpen, 300);
@@ -81,7 +83,7 @@ export default function OrderDrawer({
                             onClick={() => window.print()}
                             className="flex items-center gap-2 text-xs font-bold bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-gray-300 transition-colors"
                         >
-                            <FaPrint /> Print Bill
+                            <FaPrint /> {t('printBill')}
                         </button>
                     </div>
                 )}
@@ -178,7 +180,7 @@ export default function OrderDrawer({
                     <div className="absolute inset-0 z-[60] bg-black/40 backdrop-blur-[2px] flex items-center justify-center animate-in fade-in duration-200">
                         <div className="p-4 rounded-2xl shadow-2xl border border-white/10 flex flex-col items-center gap-3">
                              <Loader variant="inline" className="w-10 h-10" />
-                             <span className="text-white/50 text-xs font-bold tracking-wider">UPDATING...</span>
+                             <span className="text-white/50 text-xs font-bold tracking-wider">{t('updating')}</span>
                         </div>
                     </div>
                 )}

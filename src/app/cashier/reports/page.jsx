@@ -5,8 +5,11 @@ import SegmentedControl from "../_components/SegmentedControl";
 import { FinancialTable, ProductMixTable, SecurityLogTable } from "./_components/ReportTables";
 import { reportService } from "@/services/reportService";
 import { RiMoneyDollarCircleLine, RiBankCard2Line, RiDeleteBin5Line, RiWallet3Line, RiDiscountPercentLine, RiFundsBoxLine } from "react-icons/ri";
+import { useLanguage } from "@/context/LanguageContext";
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 
 const ReportsPage = () => {
+  const { t } = useLanguage();
   const [filter, setFilter] = useState("Today");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("financial");
@@ -48,26 +51,38 @@ const ReportsPage = () => {
     fetchData();
   }, [filter]);
 
+  // Filters mapping
+  const timeFilters = [
+      { label: t('today'), value: "Today" },
+      { label: t('week'), value: "Week" },
+      { label: t('month'), value: "Month" },
+      { label: t('threeMonths'), value: "3 Months" },
+      { label: t('year'), value: "Year" },
+  ];
+
   return (
     <div className="bg-[#1F1D2B] min-h-screen text-white p-2 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-1">Financial & Security Reports</h1>
-          <p className="text-[#ABBBC2] text-sm">Detailed breakdown for {filter}</p>
+          <h1 className="text-3xl font-bold mb-1">{t('financialReports')}</h1>
+          <p className="text-[#ABBBC2] text-sm">{t('detailedBreakdown')} {filter}</p>
         </div>
-        {/* Tabs replaced DatePicker */}
-        <SegmentedControl 
-            options={["Today", "Week", "Month", "3 Months", "Year"]} 
-            active={filter} 
-            onChange={setFilter} 
-        />
+        
+        <div className="flex items-center gap-4">
+             <LanguageSwitcher />
+             <SegmentedControl 
+                options={timeFilters} 
+                active={filter} 
+                onChange={setFilter} 
+             />
+        </div>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <StatsCard
-          title="Gross Sales"
+          title={t('grossSales')}
           value={`₺${stats.grossSales.value.toLocaleString()}`}
           percentage={stats.grossSales.trend != null ? stats.grossSales.trend.toFixed(1) : null}
           isPositive={stats.grossSales.trend != null && stats.grossSales.trend >= 0}
@@ -75,7 +90,7 @@ const ReportsPage = () => {
           loading={loading}
         />
         <StatsCard
-          title="Net Cash"
+          title={t('netCash')}
           value={`₺${stats.netCash.value.toLocaleString()}`}
           percentage={stats.netCash.trend != null ? stats.netCash.trend.toFixed(1) : null}
           isPositive={stats.netCash.trend != null && stats.netCash.trend >= 0}
@@ -83,7 +98,7 @@ const ReportsPage = () => {
           loading={loading}
         />
         <StatsCard
-          title="Net Card"
+          title={t('netCard')}
           value={`₺${stats.netCard.value.toLocaleString()}`}
           percentage={stats.netCard.trend != null ? stats.netCard.trend.toFixed(1) : null}
           isPositive={stats.netCard.trend != null && stats.netCard.trend >= 0}
@@ -91,7 +106,7 @@ const ReportsPage = () => {
           loading={loading}
         />
         <StatsCard
-          title="Voided Value"
+          title={t('voidedValue')}
           value={`₺${stats.voidedValue.value.toLocaleString()}`}
           percentage={stats.voidedValue.trend != null ? stats.voidedValue.trend.toFixed(1) : null}
           isPositive={stats.voidedValue.trend != null && stats.voidedValue.trend <= 0} // Less void is positive
@@ -99,7 +114,7 @@ const ReportsPage = () => {
           loading={loading}
         />
         <StatsCard
-          title="Extra Charges"
+          title={t('extraCharges')}
           value={`₺${stats.extraCharges.value.toLocaleString()}`}
           percentage={stats.extraCharges.trend != null ? stats.extraCharges.trend.toFixed(1) : null}
           isPositive={stats.extraCharges.trend != null && stats.extraCharges.trend >= 0}
@@ -107,7 +122,7 @@ const ReportsPage = () => {
           loading={loading}
         />
         <StatsCard
-          title="Total Discounts"
+          title={t('totalDiscounts')}
           value={`₺${stats.discounts.value.toLocaleString()}`}
           percentage={stats.discounts.trend != null ? stats.discounts.trend.toFixed(1) : null}
           isPositive={stats.discounts.trend != null && stats.discounts.trend <= 0} // Less discounts is usually "better" for revenue, but context varies.
@@ -122,9 +137,9 @@ const ReportsPage = () => {
       <div className="mb-6">
           <SegmentedControl
             options={[
-                { label: "Transactional Report", value: "financial" },
-                { label: "Product Mix", value: "product" },
-                { label: "Security Log", value: "security" }
+                { label: t('transactionalReport'), value: "financial" },
+                { label: t('productMix'), value: "product" },
+                { label: t('securityLog'), value: "security" }
             ]}
             active={activeTab}
             onChange={setActiveTab}

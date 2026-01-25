@@ -179,7 +179,7 @@ export const reportService = {
       id: order.id,
       customer: profilesMap[order.added_by_guest_id] || "Guest",
       avatar: null, 
-      menu: order.products?.title?.en || "Unknown Item",
+      menu: order.products?.title || "Unknown Item", // Return raw object
       total: (order.quantity * (parseFloat(order.unit_price_at_order) || 0)),
       status: order.status,
       created_at: order.created_at
@@ -209,7 +209,7 @@ export const reportService = {
         const pid = item.product_id;
         if (!aggregation[pid]) {
             aggregation[pid] = {
-                name: item.products?.title?.en || "Unknown",
+                name: item.products?.title || "Unknown", // Return raw object
                 image: item.products?.image_url,
                 count: 0
             };
@@ -516,7 +516,7 @@ export const reportService = {
       // 3. Format Items
       const formattedItems = items.map(item => ({
           id: item.id,
-          title: item.products?.title?.en || "Unknown Item",
+          title: item.products?.title || "Unknown Item", // Return raw object
           image: item.products?.image_url,
           quantity: item.quantity,
           price: parseFloat(item.unit_price_at_order) || 0
@@ -555,11 +555,8 @@ export const reportService = {
 
       return data.map(log => {
           let rawItem = log.details?.snapshot?.product || log.details?.snapshot?.product_title || "Unknown Item";
-          // If rawItem is the localization object {en, tr...}, take English
-          if (rawItem && typeof rawItem === 'object') {
-              rawItem = rawItem.en || Object.values(rawItem)[0] || "Unknown Item";
-          }
-
+           // Return raw object if available, allowing UI to localize
+          
           return {
               time: new Date(log.created_at).toLocaleString(),
               staff: "Staff " + (log.user_id?.slice(0,4) || ""), // Placeholder

@@ -12,11 +12,13 @@ import OrderDrawer from '@/components/shared/OrderDrawer'
 import OfflineAlert from "@/components/shared/OfflineAlert";
 import Loader from '@/components/ui/Loader'
 import { useRestaurantFeatures } from '@/app/hooks/useRestaurantFeatures';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function DashboardPage() {
   const router = useRouter()
   // unified hook
   const { tables, sessions, loading, restaurantId, restaurant, refetch, handleCheckout, isConnected } = useRestaurantData()
+  const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false)
   const [loadingTransfer, setLoadingTransfer] = useState(false)
   
@@ -129,13 +131,13 @@ export default function DashboardPage() {
      setSourceTableIdForTransfer(selectedTableId);
      // Clear selection
      setSelectedTableId(null);
-     toast("Select a target table to transfer/merge", { icon: "🔄" });
+     toast(t('selectTargetTable'), { icon: "🔄" });
   };
 
   const handleCancelTransfer = () => {
      setIsTransferMode(false);
      setSourceTableIdForTransfer(null);
-     toast("Transfer cancelled");
+     toast(t('transferCancelled'));
   };
 
   const handleTableSelection = async (targetId) => {
@@ -172,7 +174,7 @@ export default function DashboardPage() {
          try {
              setLoadingTransfer(true);
              await mergeSessions(sourceSession.id, targetSession.id);
-             toast.success("Tables merged successfully!");
+             toast.success(t('mergeSuccess'));
              // Refresh Data
              refetch();
          } catch(err) {
@@ -185,7 +187,7 @@ export default function DashboardPage() {
          try {
              setLoadingTransfer(true);
              await moveSession(sourceSession.id, targetId);
-             toast.success("Table moved successfully!");
+             toast.success(t('moveSuccess'));
              // Refresh Data
              refetch();
          } catch(err) {
@@ -333,7 +335,7 @@ export default function DashboardPage() {
       const fullyReset = reset.map(t => ({ ...t, width: 2.2, depth: 2.2 }))
       
       setLocalTables(fullyReset)
-      toast('Layout reset to grid', { icon: 'ℹ️' })
+      toast(t('resetSort'), { icon: 'ℹ️' })
   }
 
   const { isEnabled } = useRestaurantFeatures();
@@ -412,14 +414,14 @@ export default function DashboardPage() {
       {isTransferMode && (
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 bg-[#ea7c69] text-white px-8 py-4 rounded-full shadow-2xl animate-in slide-in-from-bottom flex gap-6 items-center">
               <div>
-                  <p className="font-bold text-lg whitespace-nowrap">Select Target Table</p>
-                  <p className="text-white/80 text-xs">Click any table to Move or Merge</p>
+                  <p className="font-bold text-lg whitespace-nowrap">{t('selectTargetTable')}</p>
+                  <p className="text-white/80 text-xs">{t('clickToMove')}</p>
               </div>
               <button 
                 onClick={handleCancelTransfer}
                 className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-full font-bold transition-colors text-sm"
               >
-                Cancel
+                {t('cancel')}
               </button>
           </div>
       )}
@@ -430,22 +432,25 @@ export default function DashboardPage() {
         {/* Header */}
         <header className="flex justify-between items-start pointer-events-auto">
           <div className="flex items-start flex-col gap-1">
-              <h1 className="text-2xl font-bold text-gray-800 drop-shadow-md">Floor Manager</h1>
-              {isEditing && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded border border-blue-200 font-bold">EDIT MODE</span>}
+              <h1 className="text-2xl font-bold text-gray-800 drop-shadow-md">{t('floorManager')}</h1>
+              {isEditing && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded border border-blue-200 font-bold">{t('editMode')}</span>}
           </div>
           
           <div className="flex items-center gap-4">
+               {/* Language Switcher */}
+               {/* <LanguageSwitcher /> */}
+
                {/* Stats */}
               {!isEditing && (
                   <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-white/20 text-sm font-medium flex items-center gap-3">
                      <div className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
-                        <span className="text-gray-700">{isConnected ? 'System Online' : 'Offline'}</span>
+                        <span className="text-gray-700">{isConnected ? t('systemOnline') : t('offline')}</span>
                      </div>
                      <div className="w-px h-4 bg-gray-200"></div>
                      <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
-                        <span className="text-gray-700">{mergedTables.filter(t => t.status !== 'free').length} Occupied</span>
+                        <span className="text-gray-700">{mergedTables.filter(t => t.status !== 'free').length} {t('occupied')}</span>
                      </div>
                   </div>
               )}
@@ -458,7 +463,7 @@ export default function DashboardPage() {
                             onClick={handleAddTable}
                             className="bg-white text-green-600 border border-green-100 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-green-50 transition-colors mr-2"
                         >
-                            <RiAddLine size={20} /> Add Table
+                            <RiAddLine size={20} /> {t('addTable')}
                         </button>
                         
                         <div className="relative group mr-2">
@@ -467,11 +472,11 @@ export default function DashboardPage() {
                                 onChange={handleFloorChange}
                                 className="bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors appearance-none pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 z-100"
                              >
-                                <option value="parquet">Wood Parquet</option>
-                                <option value="concrete">Concrete</option>
-                                <option value="marble">White Marble</option>
-                                <option value="terrazzo">Terrazzo</option>
-                                <option value="black">Black</option>
+                                <option value="parquet">{t('woodParquet')}</option>
+                                <option value="concrete">{t('concrete')}</option>
+                                <option value="marble">{t('whiteMarble')}</option>
+                                <option value="terrazzo">{t('terrazzo')}</option>
+                                <option value="black">{t('black')}</option>
                              </select>
                              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                                 ▼
@@ -482,7 +487,7 @@ export default function DashboardPage() {
                             onClick={handleResetLayout}
                             className="bg-white text-red-600 border border-red-100 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-red-50 transition-colors mr-4"
                         >
-                            <RiRestartLine size={20} /> Reset Sort
+                            <RiRestartLine size={20} /> {t('resetSort')}
                         </button>
 
                         <button 
@@ -491,13 +496,13 @@ export default function DashboardPage() {
                             }}
                             className="bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors"
                         >
-                            <RiCloseLine size={20} /> Cancel
+                            <RiCloseLine size={20} /> {t('cancel')}
                         </button>
                         <button 
                             onClick={handleSaveLayout}
                             className="bg-blue-600 text-white px-6 py-2 rounded-xl shadow-lg shadow-blue-500/30 font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors"
                         >
-                            <RiSave3Line size={20} /> Save
+                            <RiSave3Line size={20} /> {t('save')}
                         </button>
                       </div>
                   ) : (
@@ -505,7 +510,7 @@ export default function DashboardPage() {
                         onClick={handleStartEdit}
                         className="bg-white text-gray-800 border border-gray-200 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors"
                       >
-                        <RiEdit2Line size={18} /> Edit Floor
+                        <RiEdit2Line size={18} /> {t('editFloor')}
                       </button>
                   )}
               </div>
@@ -518,12 +523,12 @@ export default function DashboardPage() {
                  <div className="bg-black/80 text-white px-6 py-3 rounded-2xl backdrop-blur-md text-sm font-medium shadow-xl flex items-center gap-6">
                      <div className="flex items-center gap-2">
                          <RiDragMove2Line className="text-blue-400" />
-                         <span>Drag tables to move</span>
+                         <span>{t('dragTables')}</span>
                      </div>
                      <div className="w-px h-4 bg-white/20"></div>
                      <div className="flex items-center gap-2">
                          <RiShapeLine className="text-orange-400" />
-                         <span>Drag handles to resize</span>
+                         <span>{t('resizeTables')}</span>
                      </div>
                  </div>
              </div>

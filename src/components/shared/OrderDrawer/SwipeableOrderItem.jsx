@@ -2,6 +2,7 @@
 import { useState, useRef } from "react";
 import { FaTrash, FaPlus, FaMinus } from "react-icons/fa";
 import SmartMedia from "@/components/ui/SmartMedia";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function SwipeableOrderItem({
   item,
@@ -16,12 +17,10 @@ export default function SwipeableOrderItem({
   const startX = useRef(0);
   const isDragging = useRef(false);
   const rowRef = useRef(null);
+  const { content, t } = useLanguage();
 
   // Helper for title extraction
-  const title =
-    typeof item.product?.title === "object"
-      ? item.product.title.tr || item.product.title.en
-      : item.product?.title || "Unknown";
+  const title = content(item.product?.title) || "Unknown";
 
   // --- Touch Logic ---
   const handleTouchStart = (e) => {
@@ -91,14 +90,14 @@ export default function SwipeableOrderItem({
                 {/* READY (Chef Finished) */}
                 {item.status === 'ready' && (
                     <span className="text-[10px] font-black bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/50 uppercase tracking-wider">
-                        Ready
+                        {t('ready') || "Ready"}
                     </span>
                 )}
 
                 {/* SERVED (Delivered) */}
                 {showReadyBadge && item.status === 'served' && (
                     <span className="text-[10px] font-black bg-green-500/20 text-green-400 px-2 py-0.5 rounded border border-green-500/50 uppercase tracking-wider">
-                        Served
+                        {t('served')}
                     </span>
                 )}
             </div>

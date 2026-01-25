@@ -11,13 +11,17 @@ import OfflineAlert from "@/components/shared/OfflineAlert";
 import TableCard from "../_components/TableCard";
 import { useRestaurantFeatures } from "@/app/hooks/useRestaurantFeatures";
 
+import { useLanguage } from "@/context/LanguageContext";
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
+
 export default function WaiterDashboard() {
   const { tables, sessions, loading, handleCheckout, isConnected, refetch } = useRestaurantData();
+  const { t } = useLanguage();
   const [loadingTransfer, setLoadingTransfer] = useState(false);
   const router = useRouter(); // Added router
 
   const handleLogout = async () => {
-    if (confirm("Are you sure you want to logout?")) {
+    if (confirm(t('logout') + "?")) {
       await supabase.auth.signOut();
       router.push("/login");
     }
@@ -57,13 +61,13 @@ export default function WaiterDashboard() {
      // Clear selection temporarily
      setSelectedTable(null);
      setSelectedSession(null);
-     toast("Select a target table to transfer/merge", { icon: "🔄" });
+     toast(t('selectTargetTable'), { icon: "🔄" });
   };
 
   const handleCancelTransfer = () => {
      setIsTransferMode(false);
      setSourceTableForTransfer(null);
-     toast("Transfer cancelled");
+     toast(t('transferCancelled'));
   };
 
   const handleTransferAction = async (targetTable) => {
@@ -87,7 +91,7 @@ export default function WaiterDashboard() {
          try {
              setLoadingTransfer(true);
              await mergeSessions(sourceSession.id, targetSession.id);
-             toast.success("Tables merged successfully!");
+             toast.success(t('mergeSuccess'));
          } catch(err) {
              console.error(err);
              toast.error("Merge failed");
@@ -98,7 +102,7 @@ export default function WaiterDashboard() {
          try {
              setLoadingTransfer(true);
              await moveSession(sourceSession.id, targetTable.id);
-             toast.success("Table moved successfully!");
+             toast.success(t('moveSuccess'));
          } catch(err) {
              console.error(err);
              toast.error("Move failed");
@@ -171,14 +175,14 @@ export default function WaiterDashboard() {
       {isTransferMode && (
           <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#ea7c69] text-white p-4 shadow-2xl animate-in slide-in-from-bottom flex justify-between items-center">
               <div>
-                  <p className="font-bold text-lg">Transferring {sourceTableForTransfer?.table_number}</p>
-                  <p className="text-white/80 text-sm">Select a target table to move or merge.</p>
+                  <p className="font-bold text-lg">{t('transferring')} {sourceTableForTransfer?.table_number}</p>
+                  <p className="text-white/80 text-sm">{t('selectTargetTable')}</p>
               </div>
               <button 
                 onClick={handleCancelTransfer}
                 className="bg-white/20 hover:bg-white/30 px-6 py-2 rounded-lg font-bold transition-colors"
               >
-                Cancel
+                {t('cancel')}
               </button>
           </div>
       )}
@@ -189,29 +193,33 @@ export default function WaiterDashboard() {
           <div className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-2xl font-black text-white tracking-tight">
-                Floor <span className="text-[#ea7c69]">Overview</span>
+                {t('floorOverview')}
               </h1>
               <p className="text-xs text-gray-500 font-medium mt-0.5">
-                {tables.length} Tables · Realtime Active
+                {tables.length} {t('tables')} · {t('active')}
               </p>
             </div>
             {/* Realtime Status Indicator */}
             <div className="relative flex flex-col items-end gap-3 translate-x-1">
-                <div className="flex items-center gap-2">
-                   <span className={`text-[10px] font-bold uppercase tracking-wider ${isConnected ? 'text-green-400' : 'text-red-400'}`}>
-                      {isConnected ? 'Live' : 'Offline'}
-                   </span>
-                   <div className="relative flex h-3 w-3">
-                      {isConnected && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
-                      <span className={`relative inline-flex rounded-full h-3 w-3 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                <div className="flex items-center gap-4">
+                   <LanguageSwitcher />
+
+                   <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${isConnected ? 'text-green-400' : 'text-red-400'}`}>
+                         {isConnected ? t('live') : t('offline')}
+                      </span>
+                      <div className="relative flex h-3 w-3">
+                         {isConnected && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
+                         <span className={`relative inline-flex rounded-full h-3 w-3 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                      </div>
                    </div>
                 </div>
 
                 {/* Logout Button (Absolute / Floating out of layout) */}
                <button 
                   onClick={handleLogout}
-                  className="absolute top-8 right-0 bg-red-500/10 hover:bg-red-500/20 text-red-500 p-2 rounded-xl transition-colors border border-red-500/20"
-                  title="Logout"
+                  className="absolute top-10 right-0 bg-red-500/10 hover:bg-red-500/20 text-red-500 p-2 rounded-xl transition-colors border border-red-500/20 md:static md:mt-0"
+                  title={t('logout')}
                >
                   <RiLogoutBoxRLine size={18} />
                </button>
@@ -224,7 +232,7 @@ export default function WaiterDashboard() {
             {alertCount > 0 && (
               <div className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl shadow-lg shadow-red-900/50 animate-bounce">
                 <span className="font-bold">{alertCount}</span>
-                <span className="text-xs font-bold uppercase">Requests</span>
+                <span className="text-xs font-bold uppercase">{t('requests')}</span>
               </div>
             )}
 
@@ -237,13 +245,13 @@ export default function WaiterDashboard() {
               }`}
             >
               <span className="font-bold">{pendingCount}</span>
-              <span className="text-xs font-bold uppercase">To Confirm</span>
+              <span className="text-xs font-bold uppercase">{t('toConfirm')}</span>
             </div>
 
             {/* ACTIVE PILL */}
             <div className="flex items-center gap-2 bg-[#252836] border border-white/5 text-blue-200 px-4 py-2 rounded-xl">
               <span className="font-bold">{activeCount}</span>
-              <span className="text-xs font-bold uppercase">Occupied</span>
+              <span className="text-xs font-bold uppercase">{t('occupied')}</span>
             </div>
           </div>
         </div>

@@ -9,11 +9,14 @@ import MasonryGrid from '../_components/MasonryGrid'
 import Loader from '@/components/ui/Loader'
 import { useRestaurantFeatures } from '@/app/hooks/useRestaurantFeatures';
 import toast from 'react-hot-toast'
+import { useLanguage } from "@/context/LanguageContext";
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 
 export default function ChefDashboard() {
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
     const { restaurantId } = useRestaurantData()
+    const { t } = useLanguage();
 
     // 1. Initial Fetch
     useEffect(() => {
@@ -170,26 +173,30 @@ export default function ChefDashboard() {
             <main className="flex-1 p-6 overflow-y-auto h-screen">
                 <header className="flex justify-between items-center mb-8">
                     <div>
-                    <h1 className="text-4xl font-black text-text-light tracking-tight">KITCHEN DISPLAY</h1>
+                    <h1 className="text-4xl font-black text-text-light tracking-tight">{t('kitchenDisplay')}</h1>
                     <p className="text-text-dim mt-2 font-medium">
-                        {groupedTickets.length} Active Tickets • {orders.length} Items
+                        {groupedTickets.length} {t('activeTickets')} • {orders.length} {t('items')}
                     </p>
                     </div>
                     
-                    {/* Connection Status Indicator */}
-                    <div className="flex items-center gap-2 bg-dark-800 px-4 py-2 rounded-full shadow-lg border border-dark-700">
-                        <span className="relative flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                        </span>
-                        <span className="text-emerald-400 text-sm font-bold">LIVE</span>
+                    <div className="flex items-center gap-4">
+                        <LanguageSwitcher />
+
+                        {/* Connection Status Indicator */}
+                        <div className="flex items-center gap-2 bg-dark-800 px-4 py-2 rounded-full shadow-lg border border-dark-700">
+                            <span className="relative flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                            </span>
+                            <span className="text-emerald-400 text-sm font-bold">LIVE</span>
+                        </div>
                     </div>
                 </header>
 
                 {groupedTickets.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-text-dim">
-                        <p className="text-2xl font-bold text-text-light">All clear, Chef!</p>
-                        <p>No active orders pending or preparing.</p>
+                        <p className="text-2xl font-bold text-text-light">{t('allClear')}</p>
+                        <p>{t('noActiveOrders')}</p>
                     </div>
                 ) : (
                     <MasonryGrid className="pb-10">

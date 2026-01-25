@@ -4,6 +4,7 @@ import SwipeableOrderItem from "./SwipeableOrderItem";
 import Loader from "@/components/ui/Loader";
 import { useRestaurantFeatures } from "@/app/hooks/useRestaurantFeatures";
 import FeatureGuard from "@/components/shared/FeatureGuard";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function PendingOrderList({ 
     items, 
@@ -15,6 +16,7 @@ export default function PendingOrderList({
     onConfirm 
 }) {
     const { features } = useRestaurantFeatures();
+    const { t } = useLanguage();
     
     if (items.length === 0) return null;
 
@@ -22,7 +24,7 @@ export default function PendingOrderList({
     if (role === 'waiter') {
         return (
             <OrderSection
-                title="New Orders (To Confirm)"
+                title={t('newOrders')}
                 count={items.length}
                 accentColor="orange"
                 icon={<FaClock />}
@@ -53,8 +55,8 @@ export default function PendingOrderList({
                             <>
                                 <FaCheck className="text-xl" /> 
                                 {features.kitchen 
-                                    ? (features.cashier ? "CONFIRM & SEND TO CASHIER" : "CONFIRM & SEND TO KITCHEN")
-                                    : "CONFIRM & SERVE"}
+                                    ? (features.cashier ? t('confirmSendCashier') : t('confirmSendKitchen'))
+                                    : t('confirmServe')}
                             </>
                         )}
                     </button>
@@ -68,7 +70,7 @@ export default function PendingOrderList({
     if (role === 'cashier') {
         return (
             <OrderSection
-                title="New Order (Cashier)"
+                title={t('newOrderCashier')}
                 count={items.length}
                 accentColor="blue"
                 icon={<FaClock />}
@@ -90,7 +92,7 @@ export default function PendingOrderList({
                             <Loader active={true} variant="inline" className="h-6 w-6" />
                         ) : (
                             <>
-                                <FaCheck className="text-xl" /> {features.kitchen ? "SEND TO KITCHEN" : "MARK AS SERVED"}
+                                <FaCheck className="text-xl" /> {features.kitchen ? t('sendKitchen') : t('markServed')}
                             </>
                         )}
                     </button>
