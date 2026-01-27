@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"; // Added router
 import { supabase } from "@/lib/supabase"; // Added supabase
 import OrderDrawer from "@/components/shared/OrderDrawer";
 import OfflineAlert from "@/components/shared/OfflineAlert";
-import TableCard from "../_components/TableCard";
+import TableGrid from "@/components/shared/TableView/TableGrid";
 import { useRestaurantFeatures } from "@/app/hooks/useRestaurantFeatures";
 
 import { useLanguage } from "@/context/LanguageContext";
@@ -35,6 +35,7 @@ export default function WaiterDashboard() {
   // Transfer State
   const [isTransferMode, setIsTransferMode] = useState(false);
   const [sourceTableForTransfer, setSourceTableForTransfer] = useState(null);
+  const [sortingMode, setSortingMode] = useState('priority'); // 'priority' | 'numeric'
 
   // Import Service Actions (Dynamically to avoid cycles if any)
   const { moveSession, mergeSessions } = require("@/services/waiterService");
@@ -227,7 +228,22 @@ export default function WaiterDashboard() {
           </div>
 
           {/* --- STATUS BAR (FILTER-LOOK) --- */}
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar items-center">
+             {/* Sort Toggle */}
+             <button 
+                onClick={() => setSortingMode(prev => prev === 'priority' ? 'numeric' : 'priority')}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold uppercase transition-all border ${
+                    sortingMode === 'priority' 
+                    ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/50' 
+                    : 'bg-[#252836] border-white/10 text-gray-400 hover:bg-white/5'
+                }`}
+             >
+                <FaLayerGroup />
+                {sortingMode === 'priority' ? "Smart Sort" : "123 Sort"}
+             </button>
+
+             <div className="w-px h-8 bg-white/10 mx-2"></div>
+
             {/* ALERT PILL */}
             {alertCount > 0 && (
               <div className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl shadow-lg shadow-red-900/50 animate-bounce">
@@ -258,31 +274,17 @@ export default function WaiterDashboard() {
       </div>
 
       {/* --- TABLE GRID --- */}
-      <div className={`p-4 transition-opacity ${loadingTransfer ? 'opacity-50 pointer-events-none' : ''}`}>
-        {tables.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 opacity-50">
-            <FaLayerGroup className="text-4xl mb-4 text-gray-600" />
-            <p className="text-gray-500">No tables found.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {tables.map((table) => {
-              const activeSession = sessions.find(
-                (s) => s.table_id === table.id
-              );
-              return (
-                <TableCard
-                  key={table.id}
-                  table={table}
-                  session={activeSession}
-                  onClick={handleTableClick}
-                  isTransferMode={isTransferMode}
-                  isSource={sourceTableForTransfer?.id === table.id}
-                />
-              );
-            })}
-          </div>
-        )}
+      <div className="p-4">
+          <TableGrid 
+              tables={tables}
+              sessions={sessions}
+              onTableClick={handleTableClick}
+              isTransferMode={isTransferMode}
+              sourceTableId={sourceTableForTransfer?.id}
+              loadingTransfer={loadingTransfer}
+              role="waiter"
+              sortingMode={sortingMode}
+          />
       </div>
 
       {/* --- OFFLINE ALERT --- */}

@@ -7,9 +7,10 @@ import {
   FaUtensils,
   FaCheckCircle,
   FaMugHot, // آیکون جدید برای حالت Dining
+  FaUsers
 } from "react-icons/fa";
 
-export default function TableCard({ table, session, onClick, isTransferMode, isSource }) {
+export default function TableCard({ table, session, onClick, isTransferMode, isSource, role = "waiter" }) {
   const cardStyle = useMemo(() => {
     // ---------------------------------------------------------
     // 0. TRANSFER MODE
@@ -81,7 +82,7 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
     );
 
     // ---------------------------------------------------------
-    // 2. ALERT (درخواست گارسون) - اولویت اول (قرمز)
+    // 2. ALERT (Requests)
     // ---------------------------------------------------------
     if (hasRequest) {
       return {
@@ -96,6 +97,28 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
         ),
         glow: "shadow-red-600/50",
       };
+    }
+
+    // ---------------------------------------------------------
+    // 3. ORANGE BLINKING Logic (Priority Attention)
+    // - Waiter: Pending Items (User Confirmed -> Needs Waiter)
+    // - Cashier: Confirmed Items (Waiter Confirmed -> Needs Kitchen/Cashier Awareness)
+    // ---------------------------------------------------------
+    const showOrangeBlink = role === 'cashier' 
+        ? confirmedCount > 0 
+        : pendingCount > 0;
+
+    if (showOrangeBlink) {
+         return {
+            type: "attention",
+            baseClasses:
+              "bg-orange-600 border-2 border-orange-400 animate-pulse shadow-xl shadow-orange-900/50",
+            numberColor: "text-white",
+            labelColor: "text-orange-50 font-bold uppercase tracking-wider",
+            labelText: role === 'cashier' ? "KITCHEN SENT" : "NEW ORDER",
+            icon: <FaUtensils className="text-white text-2xl" />,
+            glow: "shadow-orange-600/50",
+         };
     }
 
     // ---------------------------------------------------------
@@ -115,50 +138,24 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
       };
     }
 
-    // ---------------------------------------------------------
-    // 4. SENT TO KITCHEN (ارسال شده) - (نارنجی)
-    // شامل Pending و Confirmed (چون هر دو یعنی هنوز شف شروع نکرده)
-    // ---------------------------------------------------------
-    // ---------------------------------------------------------
-    // 4. NEW ORDER (سفارش جدید از سمت مشتری) - (نارنجی چشمک زن)
-    // ---------------------------------------------------------
-    if (pendingCount > 0) {
-      return {
-        type: "pending",
-        baseClasses:
-          "bg-orange-600 border-2 border-orange-400 animate-pulse shadow-xl shadow-orange-900/50",
-        numberColor: "text-white",
-        labelColor: "text-orange-50 font-bold uppercase tracking-wider",
-        labelText: "NEW ORDER",
-        icon: <FaUtensils className="text-white text-2xl" />,
-        glow: "shadow-orange-600/50",
-      };
+    // Fallback for "In Progress" states not covered by blink
+    if (pendingCount > 0 || confirmedCount > 0) {
+       return {
+            type: "active_process",
+            baseClasses:
+              "bg-orange-800/80 border-2 border-orange-700/50 shadow-lg",
+            numberColor: "text-orange-100",
+            labelColor: "text-orange-200 font-bold uppercase tracking-wider",
+            labelText: "WAITING",
+            icon: <FaUtensils className="text-orange-200 text-2xl" />,
+            glow: "",
+       };
     }
 
     // ---------------------------------------------------------
-    // 4.5 SENT TO KITCHEN (تایید شده توسط گارسون) - (نارنجی کمرنگ ثابت)
+    // 5. DINING (Served Only)
     // ---------------------------------------------------------
-    if (confirmedCount > 0) {
-      return {
-        type: "confirmed",
-        baseClasses:
-          "bg-orange-800/80 border-2 border-orange-700/50 shadow-lg",
-        numberColor: "text-orange-100",
-        labelColor: "text-orange-200 font-bold uppercase tracking-wider",
-        labelText: "WAITING FOR CHEF",
-        icon: <FaUtensils className="text-orange-200 text-2xl" />,
-        glow: "",
-      };
-    }
-
-    // ---------------------------------------------------------
-    // 5. DINING (فقط غذای سرو شده) - (سبز)
-    // ---------------------------------------------------------
-    // ---------------------------------------------------------
-    // 5. DINING (فقط غذای سرو شده) - (سبز)
-    // نمایش فقط وقتی که هیچ آیتم فعال دیگری (پخت/ارسال) وجود نداشته باشد
-    // ---------------------------------------------------------
-    if (servedCount > 0 && preparingCount === 0 && pendingCount === 0 && confirmedCount === 0) { 
+    if (servedCount > 0) {
       return {
         type: "dining",
         baseClasses: "bg-emerald-700 border-2 border-emerald-500/50 shadow-lg",
@@ -171,45 +168,53 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
     }
 
     // ---------------------------------------------------------
-    // 5. OCCUPIED (تازه نشسته) - (آبی)
-    // سشن بازه ولی هنوز هیچی سفارش ندادن (یا همش پاک شده)
+    // 6. OCCUPIED (Seated)
     // ---------------------------------------------------------
     return {
       type: "occupied",
       baseClasses: "bg-[#252836] border-2 border-blue-500/30",
       numberColor: "text-blue-100",
       labelColor: "text-blue-400 font-medium",
-      labelText: "Seated", // تغییر متن به Seated که منطقی‌تره
+      labelText: "Seated",
       icon: <FaUser className="text-blue-500 text-xl" />,
       glow: "",
     };
-  }, [session]);
+  }, [session, isTransferMode, isSource, role]);
 
   return (
     <div
       onClick={() => onClick(table, session)}
       className={`
-        relative aspect-square rounded-2xl flex flex-col items-center justify-between p-4 cursor-pointer 
+        relative aspect-square rounded-2xl flex flex-col items-center justify-between p-4 cursor-pointer
         transition-all duration-300 transform active:scale-95
         ${cardStyle.baseClasses} ${cardStyle.glow}
       `}
     >
-      {/* هدر کارت: آیکون وضعیت */}
+      {/* Header: Icon + Guest Count */}
       <div className="w-full flex justify-between items-start h-8">
         {cardStyle.icon && (
           <div className="bg-white/10 p-2 rounded-lg backdrop-blur-sm border border-white/5">
             {cardStyle.icon}
           </div>
         )}
-        {/* اگر در حالت Dining هستیم، تعداد آیتم‌ها رو ریز نشون بده */}
-        {cardStyle.type === "dining" && (
-          <span className="text-xs font-mono bg-emerald-900/50 px-2 py-1 rounded text-emerald-200 border border-emerald-500/30">
-            Paid: 0
-          </span>
+
+        {/* Guest Count Badge */}
+        {session && (
+            <div className="flex items-center gap-1 bg-black/40 px-2 py-1 rounded-full border border-white/10 text-white/80">
+                <FaUsers size={10} />
+                <span className="text-xs font-bold">
+                  {/* Calculate Guest Count from Unique Guest IDs in Orders */}
+                  {(() => {
+                      const items = session.order_items || [];
+                      const uniqueGuests = new Set(items.map(i => i.added_by_guest_id).filter(Boolean));
+                      return uniqueGuests.size || 1; // Default to 1 if no orders yet
+                  })()}
+                </span>
+            </div>
         )}
       </div>
 
-      {/* بدنه اصلی: شماره میز */}
+      {/* Body: Table Number */}
       <div className="flex-1 flex items-center justify-center">
         <span
           className={`text-5xl font-black tracking-tighter ${cardStyle.numberColor}`}
@@ -218,7 +223,7 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
         </span>
       </div>
 
-      {/* فوتر: متن وضعیت */}
+      {/* Footer: Status Label */}
       <div className="w-full text-center pb-1">
         <span className={`text-[10px] ${cardStyle.labelColor}`}>
           {cardStyle.labelText}

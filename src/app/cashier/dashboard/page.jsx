@@ -13,6 +13,8 @@ import OfflineAlert from "@/components/shared/OfflineAlert";
 import Loader from '@/components/ui/Loader'
 import { useRestaurantFeatures } from '@/app/hooks/useRestaurantFeatures';
 import { useLanguage } from '@/context/LanguageContext';
+import TableGrid from '@/components/shared/TableView/TableGrid';
+import { FaList, FaCube } from 'react-icons/fa';
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -20,6 +22,8 @@ export default function DashboardPage() {
   const { tables, sessions, loading, restaurantId, restaurant, refetch, handleCheckout, isConnected } = useRestaurantData()
   const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false)
+  const [viewMode, setViewMode] = useState('3d') // '3d' or 'grid'
+  const [sortingMode, setSortingMode] = useState('priority') 
   const [loadingTransfer, setLoadingTransfer] = useState(false)
   
   // Selection State
@@ -360,34 +364,58 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-gray-50">
+    <div className="relative w-full h-full overflow-hidden bg-[#1F1D2B]">
       
-      {/* 3D Viewport */}
-      <div className="absolute inset-0 z-0">
-        {isEditing ? (
-            <TableEditor 
-                tables={localTables} 
-                onTablesUpdate={handleUpdateTables}
-                selectedTableId={selectedTableId}
-                onSelectTable={setSelectedTableId}
-                floorType={floorStyle}
-            />
-        ) : (
-            <RestaurantMap 
-                tables={mergedTables} 
-                floorType={floorStyle}
-                onSelectTable={(id) => {
-                    if(!id) return;
-                    
-                    if (isTransferMode) {
-                        handleTableSelection(id);
-                        return;
-                    }
+      {/* 3D Viewport or Grid View */}
+      <div className="absolute inset-0 z-0 overflow-auto">
+        {viewMode === '3d' || isEditing ? (
+            isEditing ? (
+                <TableEditor 
+                    tables={localTables} 
+                    onTablesUpdate={handleUpdateTables}
+                    selectedTableId={selectedTableId}
+                    onSelectTable={setSelectedTableId}
+                    floorType={floorStyle}
+                />
+            ) : (
+                <div className="w-full h-full bg-[#1F1D2B]">
+                    <RestaurantMap 
+                        tables={mergedTables} 
+                        floorType={floorStyle}
+                        onSelectTable={(id) => {
+                            if(!id) return;
+                            
+                            if (isTransferMode) {
+                                handleTableSelection(id);
+                                return;
+                            }
 
-                    setSelectedTableId(id);
-                    setIsDrawerOpen(true);
-                }}
-            />
+                            setSelectedTableId(id);
+                            setIsDrawerOpen(true);
+                        }}
+                    />
+                </div>
+            )
+        ) : (
+            <div className="p-8 pt-24 h-full overflow-y-auto bg-[#1F1D2B]">
+                <TableGrid 
+                    tables={mergedTables}
+                    sessions={sessions}
+                    onTableClick={(table) => {
+                        if (isTransferMode) {
+                            handleTableSelection(table.id);
+                            return;
+                        }
+                        setSelectedTableId(table.id);
+                        setIsDrawerOpen(true);
+                    }}
+                    isTransferMode={isTransferMode}
+                    sourceTableId={sourceTableIdForTransfer}
+                    loadingTransfer={loadingTransfer}
+                    role="cashier"
+                    sortingMode={sortingMode}
+                />
+            </div>
         )}
       </div>
 
@@ -432,8 +460,8 @@ export default function DashboardPage() {
         {/* Header */}
         <header className="flex justify-between items-start pointer-events-auto">
           <div className="flex items-start flex-col gap-1">
-              <h1 className="text-2xl font-bold text-gray-800 drop-shadow-md">{t('floorManager')}</h1>
-              {isEditing && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded border border-blue-200 font-bold">{t('editMode')}</span>}
+              <h1 className="text-2xl font-bold tracking-wider uppercase text-white drop-shadow-md">{t('floorManager')}</h1>
+              {isEditing && <span className="text-xs bg-blue-500/20 text-blue-200 px-2 py-0.5 rounded border border-blue-500/30 font-bold">{t('editMode')}</span>}
           </div>
           
           <div className="flex items-center gap-4">
@@ -442,26 +470,46 @@ export default function DashboardPage() {
 
                {/* Stats */}
               {!isEditing && (
-                  <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-white/20 text-sm font-medium flex items-center gap-3">
+                <>
+                  <div className="bg-[#252836]/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-white/10 text-sm font-medium flex items-center gap-3 text-white">
                      <div className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
-                        <span className="text-gray-700">{isConnected ? t('systemOnline') : t('offline')}</span>
+                        <span className="text-gray-300">{isConnected ? t('systemOnline') : t('offline')}</span>
                      </div>
-                     <div className="w-px h-4 bg-gray-200"></div>
+                     <div className="w-px h-4 bg-white/10"></div>
                      <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
-                        <span className="text-gray-700">{mergedTables.filter(t => t.status !== 'free').length} {t('occupied')}</span>
+                        <span className="text-gray-300">{mergedTables.filter(t => t.status !== 'free').length} {t('occupied')}</span>
                      </div>
                   </div>
+
+                  <div className="flex gap-2">
+                    {/* Sorting Toggle (Only for Grid) */}
+                    {viewMode === 'grid' && (
+                         <button 
+                            onClick={() => setSortingMode(prev => prev === 'priority' ? 'numeric' : 'priority')}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold uppercase transition-all border  ${
+                                sortingMode === 'priority' 
+                                ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/50' 
+                                : 'bg-[#252836] border-white/10 text-gray-400 hover:bg-white/5'
+                            } cursor-pointer`}
+                         >
+                            <FaList />
+                            {sortingMode === 'priority' ? "Smart Sort" : "123 Sort"}
+                         </button>
+                    )}
+                  </div>
+                </>
               )}
 
               {/* Edit Controls */}
               <div className="flex gap-2">
-                  {isEditing ? (
+                  {viewMode === '3d' && (
+                    isEditing ? (
                       <div className="flex gap-2 animate-in slide-in-from-top-2">
                         <button 
                             onClick={handleAddTable}
-                            className="bg-white text-green-600 border border-green-100 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-green-50 transition-colors mr-2"
+                            className="bg-[#252836] text-green-400 border border-green-500/30 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-[#2d3042] hover:border-green-500 hover:text-green-300 transition-all mr-2 cursor-pointer"
                         >
                             <RiAddLine size={20} /> {t('addTable')}
                         </button>
@@ -470,7 +518,7 @@ export default function DashboardPage() {
                              <select
                                 value={floorStyle}
                                 onChange={handleFloorChange}
-                                className="bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors appearance-none pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 z-100"
+                                className="bg-[#252836] text-gray-200 border border-white/10 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-[#2d3042] hover:border-white/30 transition-all appearance-none pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 z-100"
                              >
                                 <option value="parquet">{t('woodParquet')}</option>
                                 <option value="concrete">{t('concrete')}</option>
@@ -485,7 +533,7 @@ export default function DashboardPage() {
 
                         <button 
                             onClick={handleResetLayout}
-                            className="bg-white text-red-600 border border-red-100 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-red-50 transition-colors mr-4"
+                            className="bg-[#252836] text-red-500 border border-red-500/30 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-[#2d3042] hover:border-red-500 hover:text-red-400 transition-all mr-4 cursor-pointer"
                         >
                             <RiRestartLine size={20} /> {t('resetSort')}
                         </button>
@@ -494,26 +542,48 @@ export default function DashboardPage() {
                             onClick={() => {
                                 setIsEditing(false)
                             }}
-                            className="bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors"
+                            className="bg-[#252836] text-gray-400 border border-white/10 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-[#2d3042] hover:text-white transition-all cursor-pointer"
                         >
                             <RiCloseLine size={20} /> {t('cancel')}
                         </button>
                         <button 
                             onClick={handleSaveLayout}
-                            className="bg-blue-600 text-white px-6 py-2 rounded-xl shadow-lg shadow-blue-500/30 font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors"
+                            className="bg-blue-600 text-white px-6 py-2 rounded-xl shadow-lg shadow-blue-500/30 font-bold flex items-center gap-2 hover:bg-blue-500 transition-all cursor-pointer"
                         >
                             <RiSave3Line size={20} /> {t('save')}
                         </button>
                       </div>
-                  ) : (
+                    ) : (
                       <button 
                         onClick={handleStartEdit}
-                        className="bg-white text-gray-800 border border-gray-200 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors"
+                        className="bg-[#252836] text-gray-200 border border-white/10 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-[#2d3042] hover:border-white/30 hover:text-white transition-all cursor-pointer"
                       >
                         <RiEdit2Line size={18} /> {t('editFloor')}
                       </button>
+                    )
                   )}
               </div>
+
+            {/* View Toggler (Moved to End for RTL usage) */}
+            {!isEditing && (
+                <div className="bg-[#252836]/90 backdrop-blur-md p-1 rounded-xl shadow-lg border border-white/10 flex gap-1">
+                    <button 
+                        onClick={() => setViewMode('3d')}
+                        className={`p-2 rounded-lg transition-all ${viewMode === '3d' ? 'bg-gray-700 text-white shadow-md' : 'text-gray-400 hover:bg-white/5'}`}
+                        title="3D View"
+                    >
+                        <FaCube size={16} />
+                    </button>
+                    <button 
+                        onClick={() => setViewMode('grid')}
+                        className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-gray-700 text-white shadow-md' : 'text-gray-400 hover:bg-white/5'}`}
+                        title="Grid View"
+                    >
+                        <FaList size={16} />
+                    </button>
+                </div>
+            )}
+
           </div>
         </header>
 
