@@ -8,6 +8,7 @@ import {
   submitDraftOrders,
 } from "@/services/orderService";
 import { useClientSession } from "./useClientSession";
+import { ORDER_STATUS } from "@/lib/constants";
 
 export const useCart = (tableNumberFromUrl, restaurantId) => {
   const [cartItems, setCartItems] = useState([]);
@@ -104,7 +105,7 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
 
     try {
       const existingItem = cartItems.find(
-        (item) => item.product_id === product.id && item.status === "draft"
+        (item) => item.product_id === product.id && item.status === ORDER_STATUS.DRAFT
       );
 
       // Optimistic Update Log
@@ -134,7 +135,7 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
             product_id: product.id,
             quantity: 1,
             unit_price_at_order: product.price,
-            status: "draft",
+            status: ORDER_STATUS.DRAFT,
             product: {
               title: product.title,
               price: product.price,
@@ -147,9 +148,8 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
           session_id: sessionId,
           product_id: product.id,
           quantity: 1,
-          unit_price_at_order: product.price,
           added_by_guest_id: guestId,
-          status: "draft",
+          status: ORDER_STATUS.DRAFT,
         });
       }
     } catch (error) {

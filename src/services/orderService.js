@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
+import { ORDER_STATUS } from "@/lib/constants";
 
 export async function getOrderItems(sessionId) {
   if (!sessionId) return [];
@@ -9,7 +10,7 @@ export async function getOrderItems(sessionId) {
     .from("order_items")
     .select(`*, product:products (title, price, image_url)`)
     .eq("session_id", sessionId)
-    .neq("status", "closed")
+    .neq("status", ORDER_STATUS.CLOSED)
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -74,9 +75,9 @@ export async function removeOrderItem(itemId) {
 export async function submitDraftOrders(sessionId) {
   const { error } = await supabase
     .from("order_items")
-    .update({ status: "pending" })
+    .update({ status: ORDER_STATUS.PENDING })
     .eq("session_id", sessionId)
-    .eq("status", "draft");
+    .eq("status", ORDER_STATUS.DRAFT);
 
   if (error) {
     console.error("Error submitting orders:", error);
@@ -152,7 +153,7 @@ export async function voidOrderItem(itemId, reason) {
     // 4. Cancel Item
     const { error } = await supabase
         .from("order_items")
-        .update({ status: "cancelled" })
+        .update({ status: ORDER_STATUS.CANCELLED })
         .eq("id", itemId);
 
     if (error) {
@@ -238,7 +239,7 @@ export async function getKitchenOrders(restaurantId) {
             )
         `)
         .eq("session.restaurant_id", restaurantId)
-        .in("status", ["confirmed", "preparing", "ready", "served"])
+        .in("status", ["confirmed", ORDER_STATUS.PREPARING, ORDER_STATUS.READY, ORDER_STATUS.SERVED])
         .order("created_at", { ascending: true });
 
     if (error) {
@@ -249,7 +250,7 @@ export async function getKitchenOrders(restaurantId) {
 }
 
 export async function updateOrderItemStatus(itemId, newStatus) {
-    const validStatuses = ["preparing", "ready", "served", "cancelled"];
+    const validStatuses = [ORDER_STATUS.PREPARING, ORDER_STATUS.READY, ORDER_STATUS.SERVED, ORDER_STATUS.CANCELLED];
     if (!validStatuses.includes(newStatus)) {
         throw new Error(`Invalid status: ${newStatus}`);
     }

@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { ORDER_STATUS, PAYMENT_METHOD, BILL_STATUS } from "@/lib/constants";
 
 export const cashierService = {
   /**
@@ -54,7 +55,7 @@ export const cashierService = {
         recorded_by: user?.id,
         paid_items: t.items?.map(i => ({
             id: i.id,
-            title: i.product?.title || "Unknown Item",
+            title: i.product?.title || "[DELETED PRODUCT]",
             quantity: i.quantity,
             price: i.unit_price_at_order ? parseFloat(i.unit_price_at_order) : (i.product?.price || 0)
         })) || []
@@ -78,7 +79,7 @@ export const cashierService = {
         .from("bills")
         .update({
             paid_amount: newPaidAmount,
-            status: isFullyPaid ? 'PAID' : 'UNPAID'
+            status: isFullyPaid ? BILL_STATUS.PAID : BILL_STATUS.UNPAID
         })
         .eq("id", bill.id);
 
@@ -88,7 +89,7 @@ export const cashierService = {
     if (isFullyPaid) {
         const { error: sessionError } = await supabase
           .from("sessions")
-          .update({ status: "closed" })
+          .update({ status: ORDER_STATUS.CLOSED })
           .eq("id", sessionId);
 
         if (sessionError) throw sessionError;
@@ -126,7 +127,7 @@ export const cashierService = {
         .from("order_items")
         .select("quantity, unit_price_at_order, status")
         .eq("session_id", bill.session_id)
-        .in("status", ["confirmed", "preparing", "ready", "served"]);
+        .in("status", [ORDER_STATUS.CONFIRMED, ORDER_STATUS.PREPARING, ORDER_STATUS.READY, ORDER_STATUS.SERVED]);
 
     if (itemsError) throw itemsError;
 
@@ -205,7 +206,7 @@ export const cashierService = {
       .from("order_items")
       .select("quantity, unit_price_at_order, status")
       .eq("session_id", sessionId)
-      .neq("status", "cancelled");
+      .neq("status", ORDER_STATUS.CANCELLED);
 
     if (itemsError) throw itemsError;
 
@@ -234,7 +235,7 @@ export const cashierService = {
             session_id: sessionId,
             total_amount: totalAmount,
             paid_amount: 0,
-            status: "UNPAID",
+            status: BILL_STATUS.UNPAID,
           })
           .select()
           .single();
