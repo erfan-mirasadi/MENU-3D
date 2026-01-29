@@ -274,7 +274,8 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                 await onCheckout(session.id, "SINGLE", { 
                     method: paymentMethod, 
                     amount: amountToPay,
-                    items: itemsToRecord
+                    items: itemsToRecord,
+                    isFullPayment: activeTab === 'FULL'
                 });
           }
           

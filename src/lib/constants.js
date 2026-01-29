@@ -26,3 +26,8 @@ export const BILL_STATUS = {
     PAID: 'PAID',
     UNPAID: 'UNPAID'
 };
+
+export const SESSION_STATUS = {
+    ACTIVE: 'ordering',
+    CLOSED: 'closed'
+};

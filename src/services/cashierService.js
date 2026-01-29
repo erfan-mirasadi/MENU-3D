@@ -13,36 +13,56 @@ export const cashierService = {
 
     let bill = await this.getOrCreateBill(sessionId);
 
-    // 3. Prepare Transactions
+    // 1. Get truly unpaid items (Source of Truth)
+    const availableItems = await this._fetchUnpaidItems(bill.id, sessionId);
+
     let transactionsToRecord = [];
     let paymentTotal = 0;
-
-    // Calc pseudo-remaining for validation logic only
-    // If bill just created, remaining is effectively totalAmount.
-    // If fetched, bill.remaining_amount *should* be there if generated column returns it.
-    // If not returned by insert/select immediately, fallback to calc.
+    
+    // Calc pseudo-remaining for validation logic
     const currentRemaining = bill.remaining_amount !== undefined 
          ? parseFloat(bill.remaining_amount) 
          : (parseFloat(bill.total_amount) - parseFloat(bill.paid_amount));
 
     if (type === 'SINGLE') {
-        const { method, amount, items } = data;
-        const amt = parseFloat(amount);
-        // Validation: Cannot pay more than remaining (with tolerance)
+        const { method, amount, items, isFullPayment } = data;
+        let amt = parseFloat(amount);
+        
+        // Resolve Items Logic
+        // This ensures 'paid_items' is never empty if there are unpaid items
+        // We use 'this._resolveItemsForPayment'
+        const allocatedItems = this._resolveItemsForPayment(amt, items, isFullPayment, availableItems);
+        
+        // Validation
         if (amt > currentRemaining + 0.5) { 
              throw new Error(`Payment amount (${amt}) exceeds remaining due (${currentRemaining})`);
         }
-        transactionsToRecord.push({ method, amount: amt, items });
+        transactionsToRecord.push({ method, amount: amt, items: allocatedItems });
         paymentTotal = amt;
     } 
     else if (type === 'SPLIT') {
-        const { payments } = data; 
-        paymentTotal = payments.reduce((acc, p) => acc + parseFloat(p.amount), 0);
+        const { payments } = data;
+        // Logic for Mixed/Split-by-Amount:
+        // We need to distribute available items across these payments so we don't double-attribute.
+        let runningAvailable = [...availableItems];
         
-        if (paymentTotal > currentRemaining + 0.5) {
-             throw new Error(`Total split payment (${paymentTotal}) exceeds remaining due (${currentRemaining})`);
+        for (const p of payments) {
+             const pAmt = parseFloat(p.amount);
+             // Resolve from CURRENT running available
+             const allocated = this._resolveItemsForPayment(pAmt, p.items, false, runningAvailable);
+             
+             transactionsToRecord.push({ method: p.method, amount: pAmt, items: allocated });
+             paymentTotal += pAmt;
+             
+             // Remove allocated from runningAvailable for the next pass
+             const allocatedIds = new Set(allocated.map(i => i.id));
+             runningAvailable = runningAvailable.filter(i => !allocatedIds.has(i.id));
         }
-        transactionsToRecord = payments.map(p => ({ method: p.method, amount: parseFloat(p.amount), items: p.items }));
+        
+        let splitTotal = payments.reduce((acc, p) => acc + parseFloat(p.amount), 0);
+        if (splitTotal > currentRemaining + 0.5) {
+             throw new Error(`Total split payment (${splitTotal}) exceeds remaining due (${currentRemaining})`);
+        }
     }
 
     // 4. Record Transactions
@@ -254,4 +274,89 @@ export const cashierService = {
 
     return bill;
   },
+
+
+  /**
+   * Helper: Fetches all valid order items that have NOT been paid for yet.
+   */
+  async _fetchUnpaidItems(billId, sessionId) {
+      // 1. Get already paid item IDs from transactions
+      const { data: pastTxs } = await supabase
+        .from("transactions")
+        .select("paid_items")
+        .eq("bill_id", billId);
+      
+      const paidIds = new Set();
+      pastTxs?.forEach(tx => {
+          if (Array.isArray(tx.paid_items)) {
+              tx.paid_items.forEach(pi => paidIds.add(pi.id));
+          }
+      });
+
+      // 2. Get all valid session items
+      const { data: allItems } = await supabase
+        .from("order_items")
+        .select(`*, product:products (title, price, image_url)`)
+        .eq("session_id", sessionId)
+        .in("status", [ORDER_STATUS.CONFIRMED, ORDER_STATUS.PREPARING, ORDER_STATUS.READY, ORDER_STATUS.SERVED])
+        .order('created_at', { ascending: true }); // FIFO order
+      
+      if (!allItems) return [];
+      
+      return allItems.filter(i => !paidIds.has(i.id));
+  },
+
+  /**
+   * Helper: Determines which items to attribute to a payment.
+   * Strategies:
+   * 1. Full Payment -> All available items.
+   * 2. Explicit Items -> The provided list.
+   * 3. Amount Based -> FIFO allocation from available items.
+   */
+  _resolveItemsForPayment(amount, explicitItems, isFull, availableItems) {
+      // Strategy 1: Full Payment
+      if (isFull) {
+          return [...availableItems];
+      }
+
+      // Strategy 2: Explicit Selection (Split by Item)
+      // We trust the frontend but theoretically should validate they are in availableItems.
+      // For now, we return them as is, or filter them from available if we strictly want to avoid double paying.
+      // Let's filter to be safe.
+      if (explicitItems && explicitItems.length > 0) {
+          const availableIds = new Set(availableItems.map(i => i.id));
+          return explicitItems.filter(i => availableIds.has(i.id));
+      }
+
+      // Strategy 3: FIFO Allocation (Split by Amount / Custom / Mixed)
+      // We attribute items until their value sums up roughly to the payment amount.
+      // We MUST return at least one item if available (to avoid empty JSON bug).
+      let allocated = [];
+      let runningTotal = 0;
+      
+      for (const item of availableItems) {
+          const price = item.unit_price_at_order ? parseFloat(item.unit_price_at_order) : (item.product?.price || 0);
+          allocated.push(item);
+          runningTotal += price;
+          
+          // Stop if we have covered the amount
+          if (runningTotal >= amount - 0.01) {
+              break;
+          }
+      }
+
+      // Fallback: If no items found but amount > 0, prevent empty array
+      if (allocated.length === 0 && amount > 0.01) {
+          allocated.push({
+              id: `fallback-${Date.now()}`,
+              title: "Unallocated Payment",
+              quantity: 1,
+              price: amount,
+              unit_price_at_order: amount,
+              product: { title: "Unallocated Payment", price: amount }
+          });
+      }
+
+      return allocated;
+  }
 }

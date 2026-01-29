@@ -81,7 +81,7 @@ export const RestaurantProvider = ({ children }) => {
   // 1b. Fetch All Data (Initial Setup)
   const fetchData = useCallback(async () => {
     try {
-      console.log("🔄 Fetching Data (Singleton Context)..."); 
+      // Fetching Data (Singleton Context)... 
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -124,7 +124,7 @@ export const RestaurantProvider = ({ children }) => {
   useEffect(() => {
     if (!restaurantId) return;
 
-     console.log("🔌 Context: Subscribing to Restaurant Channel...");
+     // Context: Subscribing to Restaurant Channel...
     const channel = supabase.channel(`restaurant-${restaurantId}`);
 
     const handleUpdate = () => {
@@ -175,7 +175,8 @@ export const RestaurantProvider = ({ children }) => {
         { 
              event: "*", // Listen to all changes (including DELETE)
              schema: "public", 
-             table: "order_items" 
+             table: "order_items",
+             filter: `restaurant_id=eq.${restaurantId}`
         },
         (payload) => {
              const currentSessions = sessionsRef.current;
@@ -194,7 +195,7 @@ export const RestaurantProvider = ({ children }) => {
       });
 
     return () => {
-       console.log("🧹 Context: Cleanup Unsubscribing");
+       // Context: Cleanup Unsubscribing
       setIsConnected(false);
       supabase.removeChannel(channel);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -248,7 +249,7 @@ export const RestaurantProvider = ({ children }) => {
         }
 
         // It changed (or first run)
-        console.log("Features:", newFeatures);
+        // Features changed or first run
         prevFeaturesRef.current = newFeatures;
         return newFeatures;
   }, [restaurant]);

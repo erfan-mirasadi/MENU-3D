@@ -1,12 +1,13 @@
 import { supabase } from "@/lib/supabase";
+import { ORDER_STATUS, SESSION_STATUS } from "@/lib/constants";
 
 // 1. Confirm Orders (Convert Pending -> Confirmed)
-export async function confirmOrderItems(sessionId, destinationStatus = "confirmed") {
+export async function confirmOrderItems(sessionId, destinationStatus = ORDER_STATUS.CONFIRMED) {
   const { data, error } = await supabase
     .from("order_items")
     .update({ status: destinationStatus })
     .eq("session_id", sessionId)
-    .eq("status", "pending")
+    .eq("status", ORDER_STATUS.PENDING)
     .select();
 
   if (error) throw error;
@@ -19,9 +20,9 @@ export async function confirmOrderItems(sessionId, destinationStatus = "confirme
 export async function startPreparingOrder(sessionId) {
   const { data, error } = await supabase
     .from("order_items")
-    .update({ status: "preparing" })
+    .update({ status: ORDER_STATUS.PREPARING })
     .eq("session_id", sessionId)
-    .eq("status", "confirmed")
+    .eq("status", ORDER_STATUS.CONFIRMED)
     .select();
 
   if (error) throw error;
@@ -33,11 +34,11 @@ export async function startPreparingOrder(sessionId) {
 export async function serveConfirmedOrders(sessionId) {
   const { data, error } = await supabase
     .from("order_items")
-    .update({ status: "served" })
+    .update({ status: ORDER_STATUS.SERVED })
     .eq("session_id", sessionId)
     // We update 'confirmed' items. 
     // If we also want to catch 'preparing' items (in case they got there somehow), we could use IN operator, but usually it's just confirmed.
-    .eq("status", "confirmed") 
+    .eq("status", ORDER_STATUS.CONFIRMED) 
     .select();
 
   if (error) throw error;
@@ -49,7 +50,7 @@ export async function closeTableSession(sessionId) {
   // Close the session
   const { error: sessionError } = await supabase
     .from("sessions")
-    .update({ status: "closed" })
+    .update({ status: SESSION_STATUS.CLOSED })
     .eq("id", sessionId);
 
   if (sessionError) throw sessionError;
@@ -127,7 +128,7 @@ export async function startTableSession(tableId, restaurantId) {
     .insert({
       table_id: tableId,
       restaurant_id: restaurantId,
-      status: "ordering", // or 'active'
+      status: SESSION_STATUS.ACTIVE, // or 'active'
     })
     .select()
     .single();
@@ -161,7 +162,7 @@ export const mergeSessions = async (sourceSessionId, targetSessionId) => {
   const { error: sessionError } = await supabase
     .from('sessions')
     .update({ 
-        status: 'closed', 
+        status: SESSION_STATUS.CLOSED, 
     })
     .eq('id', sourceSessionId);
     
