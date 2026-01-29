@@ -15,7 +15,7 @@ const OrderReportTable = ({ orders, loading, filter }) => {
 
     // Helper to format currency
     const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
+        return `${parseFloat(amount).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₺`;
     };
 
     const getStatusColor = (status) => {

@@ -64,7 +64,7 @@ const CategorySalesChart = ({ data, loading }) => {
                  // Use the original value from processedData
                  // seriesIndex corresponds to the index in processedData
                  const originalValue = processedData[seriesIndex] ? processedData[seriesIndex].value : 0;
-                return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(originalValue);
+                return `${parseFloat(originalValue).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₺`;
             }
         }
     }
@@ -102,7 +102,7 @@ const CategorySalesChart = ({ data, loading }) => {
                     <div>
                         <h4 className="text-white text-sm font-semibold">{item.name}</h4>
                         <p className="text-[#ABBBC2] text-xs">
-                            {loading ? "..." : new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(item.value)}
+                            {loading ? "..." : `${parseFloat(item.value).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₺`}
                         </p>
                     </div>
                 </div>

@@ -92,7 +92,7 @@ const ReportsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatsCard
                 title={t('totalRevenue')}
-                value={`₺${stats.revenue.value.toLocaleString()}`}
+                value={`${stats.revenue.value.toLocaleString()}₺`}
                 percentage={stats.revenue.trend != null ? stats.revenue.trend.toFixed(2) : null}
                 isPositive={stats.revenue.trend != null && stats.revenue.trend >= 0}
                 icon={RiMoneyDollarCircleLine}

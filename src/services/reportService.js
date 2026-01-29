@@ -401,7 +401,7 @@ export const reportService = {
          return {
             id: t.id,
             time: new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            billId: t.bills?.id || "N/A",
+            billId: t.bills?.id ? `${t.bills.id.slice(-6).toUpperCase()}` : "N/A",
             tableNo: t.bills?.session?.tables?.table_number || "-",
             amount: t.amount,
             method: t.method,
@@ -505,7 +505,8 @@ export const reportService = {
             unit_price_at_order,
             products (
                 title,
-                image_url
+                image_url,
+                original_price
             )
         `)
         .eq("session_id", sessionId)
@@ -519,7 +520,8 @@ export const reportService = {
           title: item.products?.title || "Unknown Item", // Return raw object
           image: item.products?.image_url,
           quantity: item.quantity,
-          price: parseFloat(item.unit_price_at_order) || 0
+          price: parseFloat(item.unit_price_at_order) || 0,
+          originalPrice: item.products?.original_price ? parseFloat(item.products.original_price) : null
       }));
 
       return {

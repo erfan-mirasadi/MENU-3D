@@ -47,7 +47,7 @@ export const FinancialTable = ({ data, loading }) => {
                         <td className="py-4 pl-4">{t.time}</td>
                         <td className="py-4">{t.billId}</td>
                         <td className="py-4">{t.tableNo}</td>
-                        <td className="py-4 font-bold text-white">₺{parseFloat(t.amount || 0).toFixed(2)}</td>
+                        <td className="py-4 font-bold text-white">{parseFloat(t.amount || 0).toFixed(2)}₺</td>
                         <td className="py-4">
                             <span className={`px-2 py-1 rounded text-xs ${t.method?.toLowerCase().includes('cash') ? 'bg-green-500/20 text-green-500' : 'bg-blue-500/20 text-blue-500'}`}>
                                 {t.method}
@@ -85,7 +85,7 @@ export const ProductMixTable = ({ data, loading }) => {
                         {content(item.name)}
                     </td>
                     <td className="py-4">{item.quantity}</td>
-                    <td className="py-4 font-bold text-[#EA7C69]">₺{item.revenue.toFixed(2)}</td>
+                    <td className="py-4 font-bold text-[#EA7C69]">{item.revenue.toFixed(2)}₺</td>
                 </tr>
             ))}
         </TableWrapper>
@@ -110,7 +110,7 @@ export const SecurityLogTable = ({ data, loading }) => {
                     </td>
                     <td className="py-4">{content(log.item)}</td>
                     <td className="py-4 text-[#ABBBC2] italic">"{log.reason}"</td>
-                    <td className="py-4 text-white">₺{parseFloat(log.value).toFixed(2)}</td>
+                    <td className="py-4 text-white">{parseFloat(log.value).toFixed(2)}₺</td>
                 </tr>
             ))}
         </TableWrapper>

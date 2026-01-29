@@ -83,7 +83,7 @@ const ReportsPage = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <StatsCard
           title={t('grossSales')}
-          value={`₺${stats.grossSales.value.toLocaleString()}`}
+          value={`${stats.grossSales.value.toLocaleString()}₺`}
           percentage={stats.grossSales.trend != null ? stats.grossSales.trend.toFixed(1) : null}
           isPositive={stats.grossSales.trend != null && stats.grossSales.trend >= 0}
           icon={RiMoneyDollarCircleLine}
@@ -91,7 +91,7 @@ const ReportsPage = () => {
         />
         <StatsCard
           title={t('netCash')}
-          value={`₺${stats.netCash.value.toLocaleString()}`}
+          value={`${stats.netCash.value.toLocaleString()}₺`}
           percentage={stats.netCash.trend != null ? stats.netCash.trend.toFixed(1) : null}
           isPositive={stats.netCash.trend != null && stats.netCash.trend >= 0}
           icon={RiWallet3Line}
@@ -99,7 +99,7 @@ const ReportsPage = () => {
         />
         <StatsCard
           title={t('netCard')}
-          value={`₺${stats.netCard.value.toLocaleString()}`}
+          value={`${stats.netCard.value.toLocaleString()}₺`}
           percentage={stats.netCard.trend != null ? stats.netCard.trend.toFixed(1) : null}
           isPositive={stats.netCard.trend != null && stats.netCard.trend >= 0}
           icon={RiBankCard2Line}
@@ -107,7 +107,7 @@ const ReportsPage = () => {
         />
         <StatsCard
           title={t('voidedValue')}
-          value={`₺${stats.voidedValue.value.toLocaleString()}`}
+          value={`${stats.voidedValue.value.toLocaleString()}₺`}
           percentage={stats.voidedValue.trend != null ? stats.voidedValue.trend.toFixed(1) : null}
           isPositive={stats.voidedValue.trend != null && stats.voidedValue.trend <= 0} // Less void is positive
           icon={RiDeleteBin5Line}
@@ -115,7 +115,7 @@ const ReportsPage = () => {
         />
         <StatsCard
           title={t('extraCharges')}
-          value={`₺${stats.extraCharges.value.toLocaleString()}`}
+          value={`${stats.extraCharges.value.toLocaleString()}₺`}
           percentage={stats.extraCharges.trend != null ? stats.extraCharges.trend.toFixed(1) : null}
           isPositive={stats.extraCharges.trend != null && stats.extraCharges.trend >= 0}
           icon={RiFundsBoxLine}
@@ -123,7 +123,7 @@ const ReportsPage = () => {
         />
         <StatsCard
           title={t('totalDiscounts')}
-          value={`₺${stats.discounts.value.toLocaleString()}`}
+          value={`${stats.discounts.value.toLocaleString()}₺`}
           percentage={stats.discounts.trend != null ? stats.discounts.trend.toFixed(1) : null}
           isPositive={stats.discounts.trend != null && stats.discounts.trend <= 0} // Less discounts is usually "better" for revenue, but context varies.
           // Let's assume less discount = better for revenue? Or maybe neutral.

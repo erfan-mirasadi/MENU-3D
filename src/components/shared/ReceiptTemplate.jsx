@@ -90,8 +90,8 @@ export default function ReceiptTemplate({
                         <span className="font-bold">{table?.table_number || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
-                        <span>Session:</span>
-                        <span>#{session?.id?.slice(0, 8) || '---'}</span>
+                        <span>Ref Code:</span>
+                        <span className="font-bold font-mono text-base">{session?.id?.slice(-4).toUpperCase() || '---'}</span>
                     </div>
                 </div>
 
@@ -116,7 +116,7 @@ export default function ReceiptTemplate({
                                 )}
                             </div>
                             <span className="w-16 text-right">
-                                ${(item.product?.price * item.quantity).toFixed(2)}
+                                {(item.product?.price * item.quantity).toFixed(2)}₺
                             </span>
                         </div>
                     ))}
@@ -126,7 +126,7 @@ export default function ReceiptTemplate({
                 <div className="border-t border-black pt-2 mb-6">
                     <div className="flex justify-between text-sm font-bold">
                         <span>TOTAL</span>
-                        <span>${total.toFixed(2)}</span>
+                        <span>{total.toFixed(2)}₺</span>
                     </div>
                     <div className="text-[10px] text-center mt-6">
                         Thank you for dining with us!
