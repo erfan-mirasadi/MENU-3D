@@ -83,6 +83,7 @@ export default function UIOverlay({
   isCartOpen,
   setIsCartOpen,
   session,
+  children, // Added children prop
 }) {
   const { content, t } = useLanguage();
   const { active } = useProgress();
@@ -400,6 +401,13 @@ export default function UIOverlay({
           })()}
         </div>
       </div>
+
+     {/* --- SERVICE BUTTONS / CHILDREN (Top Layer) --- */}
+     {!isCartOpen && (
+        <div className="absolute top-2 left-2 pointer-events-auto z-[60]">
+            {children}
+        </div>
+      )}
     </>
   );
 }

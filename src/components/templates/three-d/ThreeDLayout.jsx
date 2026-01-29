@@ -214,14 +214,14 @@ export default function ThreeDLayout({ restaurant, categories }) {
         /* --- CART STATE --- */
         isCartOpen={isCartOpen}
         setIsCartOpen={setIsCartOpen}
-      />
-      
-      {/* --- SERVICE BUTTONS --- */}
-      <ServiceButtons 
-        restaurantId={restaurant.id}
-        tableId={tableId} // Use resolved UUID
-        sessionId={sessionData?.id}
-      />
+      >
+
+          <ServiceButtons 
+            restaurantId={restaurant.id}
+            tableId={tableId} // Use resolved UUID
+            sessionId={sessionData?.id}
+          />
+      </UIOverlay>
     </div>
   );
 }

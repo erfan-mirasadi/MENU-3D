@@ -150,6 +150,8 @@ const DICTIONARY = {
     edit: "Edit",
     readyForPrep: "Ready for Prep (Waiter Confirmed)",
     sentToKitchen: "Sent to Kitchen",
+    callWaiter: "Call Waiter",
+    requestBill: "Request Bill",
   },
   tr: {
     addToCart: "Sepete Ekle",
@@ -290,6 +292,8 @@ const DICTIONARY = {
     edit: "Düzenle",
     readyForPrep: "Hazırlık İçin Hazır",
     sentToKitchen: "Mutfağa Gönderildi",
+    callWaiter: "Garson Çağır",
+    requestBill: "Hesap İste",
   },
   ru: {
     addToCart: "В корзину",
@@ -430,6 +434,8 @@ const DICTIONARY = {
     edit: "Изменить",
     readyForPrep: "Готово к готовке",
     sentToKitchen: "Отправлено на кухню",
+    callWaiter: "Позвать официанта",
+    requestBill: "Попросить счет",
   },
   fa: {
     addToCart: "افزودن به سبد",
@@ -570,6 +576,8 @@ const DICTIONARY = {
     edit: "ویرایش",
     readyForPrep: "آماده برای پخت",
     sentToKitchen: "ارسال شده به آشپزخانه",
+    callWaiter: "فراخوانی گارسون",
+    requestBill: "درخواست صورتحساب",
   },
   ar: {
     addToCart: "أضف للسلة",
@@ -710,6 +718,8 @@ const DICTIONARY = {
     edit: "تعديل",
     readyForPrep: "جاهز للتحضير",
     sentToKitchen: "أرسل للمطبخ",
+    callWaiter: "استدعاء النادل",
+    requestBill: "طلب الفاتورة",
   },
   de: {
     addToCart: "In den Warenkorb",
@@ -798,6 +808,8 @@ const DICTIONARY = {
     threeMonths: "3 Monate",
     year: "Jahr",
     // Waiter
+    callWaiter: "Kellner rufen",
+    requestBill: "Rechnung anfordern",
     floorOverview: "Saalübersicht",
     logout: "Abmelden",
     transferring: "Übertragen",
