@@ -1,4 +1,5 @@
 import { RiDeleteBin6Line, RiSave3Line } from "react-icons/ri";
+import Loader from "@/components/ui/Loader";
 
 export default function FormActions({
   onClose,
@@ -18,7 +19,7 @@ export default function FormActions({
           className="py-3 px-4 rounded-xl border border-red-500/50 text-red-500 hover:bg-red-500/10 transition font-medium active:scale-90 flex items-center justify-center gap-2"
         >
           {deleting ? (
-            "Deleting..."
+            <Loader variant="inline" className="w-5 h-5 text-red-500" />
           ) : (
             <>
               <RiDeleteBin6Line /> Delete Product
@@ -40,8 +41,8 @@ export default function FormActions({
         disabled={loading}
         className="flex-1 py-3 rounded-xl bg-primary text-white hover:bg-orange-600 transition font-bold shadow-lg shadow-primary/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-85 border-2 border-green-900"
       >
-        {loading ? (
-          "Saving..."
+          {loading ? (
+          <Loader variant="inline" className="w-5 h-5 text-white" />
         ) : (
           <>
             <RiSave3Line size={20} className="text-green-100" />{" "}

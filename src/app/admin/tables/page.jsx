@@ -6,7 +6,7 @@ import { getRestaurantByOwnerId } from "@/services/restaurantService";
 import TableCard from "@/app/admin/_components/tables/TableCard";
 import AddCard from "@/app/admin/_components/ui/AddCart";
 import QrSettingsPanel from "@/app/admin/_components/tables/QrSettingsPanel";
-import Loader from "@/app/admin/_components/ui/Loader";
+import Loader from "@/components/ui/Loader";
 import toast from "react-hot-toast";
 
 export default function TablesPage() {
@@ -100,13 +100,11 @@ export default function TablesPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <Loader />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-dark-900/50 backdrop-blur-sm">
+      <Loader />
+    </div>
+  );
 
   return (
     <div className="w-full">

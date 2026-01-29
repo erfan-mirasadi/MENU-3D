@@ -71,7 +71,11 @@ export default function FeatureSettings() {
     }
   };
 
-  if (!restaurant && initialLoading) return <div className="h-40 flex items-center justify-center"><Loader active={true} variant="inline" /></div>;
+  if (!restaurant && initialLoading) return (
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-dark-900/50 backdrop-blur-sm">
+      <Loader />
+    </div>
+  );
 
   return (
     <div className="bg-[#2d303e] rounded-2xl p-6 border border-gray-800">

@@ -7,6 +7,7 @@ import { RiLogoutBoxRLine } from "react-icons/ri";
 import GeneralForm from "@/app/admin/_components/settings/GeneralForm";
 import LanguageSettings from "@/app/admin/_components/settings/LanguageSettings";
 import FeatureSettings from "@/app/admin/_components/settings/FeatureSettings";
+import Loader from "@/components/ui/Loader";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -73,7 +74,7 @@ export default function SettingsPage() {
               className="w-full group relative flex items-center justify-center gap-3 py-5 rounded-2xl border border-red-500/30 bg-red-500/5 text-red-500 font-bold text-lg transition-all hover:bg-red-600 hover:text-white hover:shadow-xl hover:shadow-red-600/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
-                "Signing out..."
+                <Loader variant="inline" className="w-6 h-6 text-red-500" />
               ) : (
                 <>
                   <RiLogoutBoxRLine

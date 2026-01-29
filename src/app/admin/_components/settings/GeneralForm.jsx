@@ -7,6 +7,7 @@ import {
 } from "@/services/restaurantService";
 import toast from "react-hot-toast";
 import { RiCloseLine, RiUploadCloud2Line } from "react-icons/ri";
+import Loader from "@/components/ui/Loader";
 
 export default function GeneralForm() {
   const [loading, setLoading] = useState(true);
@@ -140,6 +141,8 @@ export default function GeneralForm() {
     setFormData(prev => ({ ...prev, [field]: "" }));
   };
 
+  const [saving, setSaving] = useState(false);
+
   const handleSave = async (e) => {
     e.preventDefault();
 
@@ -147,6 +150,8 @@ export default function GeneralForm() {
       toast.error("User not authenticated.");
       return;
     }
+
+    setSaving(true);
 
     const savePromise = new Promise(async (resolve, reject) => {
       const socialJson = {
@@ -174,10 +179,15 @@ export default function GeneralForm() {
       loading: "Updating restaurant info...",
       success: "Changes saved successfully!",
       error: "Error updating information.",
-    });
+    })
+    .finally(() => setSaving(false));
   };
 
-  if (loading) return <div className="text-white">Loading settings...</div>;
+  if (loading) return (
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-dark-900/50 backdrop-blur-sm">
+      <Loader />
+    </div>
+  );
 
   return (
     <form onSubmit={handleSave} className="space-y-8">
@@ -204,7 +214,7 @@ export default function GeneralForm() {
              ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-xs text-gray-500 gap-1">
                   {logoUploading ? (
-                    <span className="animate-spin">⌛</span>
+                    <Loader variant="inline" className="w-5 h-5 text-gray-500" />
                   ) : (
                     <>
                       <RiUploadCloud2Line className="text-xl" />
@@ -266,7 +276,7 @@ export default function GeneralForm() {
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-xs text-gray-500 gap-2">
                  {bgUploading ? (
-                    <span className="animate-spin text-xl">⌛</span>
+                    <Loader variant="inline" className="w-6 h-6 text-gray-500" />
                  ) : (
                     <>
                        <RiUploadCloud2Line className="text-2xl" />
@@ -400,9 +410,10 @@ export default function GeneralForm() {
       <div className="pt-4">
         <button
           type="submit"
-          className="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-600 transition shadow-lg shadow-primary/20 active:scale-95 border-2  border-gray-500"
+          disabled={saving}
+          className="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-600 transition shadow-lg shadow-primary/20 active:scale-95 border-2 border-gray-500 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          Save Changes
+          {saving ? <Loader variant="inline" className="w-5 h-5 text-white" /> : "Save Changes"}
         </button>
       </div>
     </form>

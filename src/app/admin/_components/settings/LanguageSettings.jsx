@@ -7,6 +7,7 @@ import {
 } from "@/services/restaurantService";
 import { RiCheckLine, RiGlobalLine } from "react-icons/ri";
 import toast from "react-hot-toast";
+import Loader from "@/components/ui/Loader";
 
 const AVAILABLE_LANGUAGES = [
   { code: "tr", name: "Türkçe", flag: "🇹🇷" },
@@ -70,11 +71,15 @@ export default function LanguageSettings() {
     }
   };
 
+  const [saving, setSaving] = useState(false);
+
   const handleSave = async () => {
     if (!userId) {
       toast.error("User not identified.");
       return;
     }
+
+    setSaving(true);
 
     const savePromise = new Promise(async (resolve, reject) => {
       try {
@@ -92,11 +97,15 @@ export default function LanguageSettings() {
       loading: "Saving language preferences...",
       success: "Settings updated successfully!",
       error: "Could not save settings.",
-    });
+    })
+    .finally(() => setSaving(false));
   };
 
-  if (loading)
-    return <div className="p-4 text-gray-400">Loading settings...</div>;
+  if (loading) return (
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-dark-900/50 backdrop-blur-sm">
+      <Loader />
+    </div>
+  );
 
   return (
     <div className="bg-dark-800 rounded-2xl p-6 border border-gray-800">
@@ -175,9 +184,10 @@ export default function LanguageSettings() {
       <div className="flex justify-end">
         <button
           onClick={handleSave}
-          className="text-white/80 px-6 py-2 rounded-lg font-bold border border-dark-500 transition active:scale-95"
+          disabled={saving}
+          className="text-white/80 px-6 py-2 rounded-lg font-bold border border-dark-500 transition active:scale-95 flex items-center gap-2 hover:bg-dark-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Save Language Settings
+          {saving ? <Loader variant="inline" className="w-5 h-5 text-white" /> : "Save Language Settings"}
         </button>
       </div>
     </div>

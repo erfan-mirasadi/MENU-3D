@@ -16,6 +16,7 @@ import {
   RiLock2Line,
 } from "react-icons/ri";
 import R2FileUploader from "./product-form/R2FileUploader";
+import Loader from "@/components/ui/Loader";
 
 export default function CategoryForm({
   onClose,
@@ -254,7 +255,7 @@ export default function CategoryForm({
           className="flex-1 py-3 rounded-xl bg-primary text-white hover:bg-orange-600 transition font-bold shadow-lg shadow-primary/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 border-2 border-green-900"
         >
           {loading ? (
-            "Saving..."
+            <Loader variant="inline" className="w-5 h-5 text-white" />
           ) : (
             <>
               <RiSave3Line size={20} /> {initialData ? "Update" : "Create"}
