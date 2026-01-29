@@ -264,13 +264,18 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                // We use 'SPLIT' type in backend for mixed/multi-method payments
                await onCheckout(session.id, "SPLIT", { payments });
           } else {
-               const extraData = splitMode === 'ITEMS' ? { items: Array.from(selectedItemIds) } : {};
-               
-               await onCheckout(session.id, "SINGLE", { 
-                   method: paymentMethod, 
-                   amount: amountToPay,
-                   ...extraData
-               });
+                let itemsToRecord = [];
+                if (activeTab === 'FULL') {
+                     itemsToRecord = itemsWithStatus.filter(i => !i.isPaid);
+                } else if (splitMode === 'ITEMS') {
+                     itemsToRecord = itemsWithStatus.filter(i => selectedItemIds.has(i.id));
+                }
+                
+                await onCheckout(session.id, "SINGLE", { 
+                    method: paymentMethod, 
+                    amount: amountToPay,
+                    items: itemsToRecord
+                });
           }
           
           // Success

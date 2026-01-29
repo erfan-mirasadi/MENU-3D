@@ -460,6 +460,7 @@ export const reportService = {
             created_at,
             amount,
             method,
+            paid_items,
             bills (
                 id,
                 session_id,
@@ -475,55 +476,6 @@ export const reportService = {
       
       if (txError || !transaction) throw txError || new Error("Transaction not found");
 
-      // Fetch Metadata from Activity Logs (WORKAROUND: transactions table has no metadata)
-      const { data: logData } = await supabase
-        .from("activity_logs")
-        .select("details")
-        .eq("action", "PAYMENT_METADATA")
-        .filter("details->>transaction_id", "eq", transactionId)
-        .maybeSingle();
-
-      const paidItemIds = logData?.details?.items || [];
-
-      const sessionId = transaction.bills?.session_id;
-      if (!sessionId) return { 
-          items: [], 
-          totalAmount: transaction.amount, 
-          method: transaction.method, 
-          time: new Date(transaction.created_at).toLocaleString(),
-          billTotal: 0,
-          adjustments: [],
-          sessionNote: null 
-      };
-
-      // 2. Fetch Order Items for this session
-      const { data: items, error: itemsError } = await supabase
-        .from("order_items")
-        .select(`
-            id,
-            quantity,
-            unit_price_at_order,
-            products (
-                title,
-                image_url,
-                original_price
-            )
-        `)
-        .eq("session_id", sessionId)
-        .neq("status", "cancelled");
-
-      if (itemsError) throw itemsError;
-
-      // 3. Format Items
-      const formattedItems = items.map(item => ({
-          id: item.id,
-          title: item.products?.title || "Unknown Item", // Return raw object
-          image: item.products?.image_url,
-          quantity: item.quantity,
-          price: parseFloat(item.unit_price_at_order) || 0,
-          originalPrice: item.products?.original_price ? parseFloat(item.products.original_price) : null
-      }));
-
       return {
           id: transaction.id,
           time: new Date(transaction.created_at).toLocaleString(),
@@ -532,8 +484,7 @@ export const reportService = {
           billTotal: transaction.bills?.total_amount || 0,
           adjustments: transaction.bills?.adjustments || [],
           sessionNote: transaction.bills?.sessions?.note || null,
-          paidItemIds: paidItemIds,
-          items: formattedItems
+          items: transaction.paid_items || []
       };
   },
 

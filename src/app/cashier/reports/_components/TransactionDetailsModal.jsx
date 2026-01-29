@@ -129,62 +129,44 @@ const TransactionDetailsModal = ({ transaction, onClose }) => {
                   </div>
               </div>
 
-              {/* Items List */}
+              {/* Items Table */}
               <div className="flex flex-col gap-3">
                   <h3 className="text-sm font-bold text-white uppercase tracking-wider border-b border-[#393C49] pb-2 flex justify-between">
-                      <span>{t('itemsInSession')}</span>
+                      <span>{t('transactionItems') || "Transaction Items"}</span>
                       {Math.abs(details.totalAmount - details.billTotal) > 1 && (
                           <span className="text-[#EA7C69] text-xs lowercase opacity-80">({t('partialPayment')})</span>
                       )}
                   </h3>
-                  <div className="flex flex-col gap-2">
-                    {details.items.length === 0 && <p className="text-[#ABBBC2] text-sm">{t('noItemsFound')}</p>}
-                    {details.items.map((item, i) => {
-                        // Check if this item likely corresponds to an ID in paidItemIds?
-                        const isRelevant = details.paidItemIds.length > 0 
-                            ? details.paidItemIds.includes(item.id) 
-                            : true; // If no metadata, show all
-                        
-                        return (
-                        <div key={i} className={`flex items-center gap-4 bg-[#252836]/50 p-2 rounded-lg transition-all ${
-                              isRelevant ? "hover:bg-[#252836] border border-transparent" : "opacity-30 grayscale"
-                            }`}>
-                            {/* Product Image */}
-                            <div className="w-12 h-12 relative rounded-md overflow-hidden bg-black/20 flex-shrink-0">
-                                {item.image ? (
-                                    <Image src={item.image} alt={content(item.title)} fill sizes="50px" className="object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-xs text-[#ABBBC2]">{t('noImg')}</div>
-                                )}
-                            </div>
-                            
-                            <div className="flex-1">
-                                <h4 className={`font-medium text-sm ${isRelevant ? 'text-white' : 'text-gray-500'}`}>{content(item.title)}</h4>
-                                <div className="flex items-center gap-2">
-                                  <p className="text-xs text-[#ABBBC2]">{t('qtyLabel')}: {item.quantity}</p>
-                                  {item.originalPrice && item.originalPrice > item.price && (
-                                      <span className="text-xs text-white/40 line-through decoration-white/40">
-                                          {item.originalPrice}₺
-                                      </span>
-                                  )}
-                                  <p className={`text-xs ${item.originalPrice > item.price ? 'text-[#EA7C69]' : 'text-[#ABBBC2]'}`}>
-                                      x {item.price}₺
-                                  </p>
-                                </div>
-                            </div>
-
-                            <div className={`flex flex-col items-end ${isRelevant ? 'text-white' : 'text-gray-500'}`}>
-                                {item.originalPrice && item.originalPrice > item.price && (
-                                    <span className="text-xs text-red-500 line-through decoration-red-500/50 mb-0.5">
-                                        {(item.quantity * item.originalPrice).toLocaleString()}₺
-                                    </span>
-                                )}
-                                <span className="font-bold text-sm text-white">
-                                    {(item.quantity * item.price).toLocaleString()}₺
-                                </span>
-                            </div>
-                        </div>
-                    )})}
+                  
+                  <div className="overflow-hidden rounded-lg border border-[#393C49]">
+                    <table className="w-full text-left text-sm text-gray-400">
+                        <thead className="bg-[#252836] text-xs uppercase font-bold text-gray-500">
+                            <tr>
+                                <th className="p-3">Item</th>
+                                <th className="p-3 text-center">Qty</th>
+                                <th className="p-3 text-right">Price</th>
+                                <th className="p-3 text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#393C49] bg-[#1F1D2B]">
+                            {details.items.length === 0 ? (
+                                <tr>
+                                    <td colSpan="4" className="p-6 text-center text-gray-500 italic">
+                                        {t('noItemDetails') || "No item details available"}
+                                    </td>
+                                </tr>
+                            ) : (
+                                details.items.map((item, i) => (
+                                    <tr key={i} className="hover:bg-[#252836]/50 transition-colors">
+                                        <td className="p-3 text-white font-medium">{content(item.title)}</td>
+                                        <td className="p-3 text-center">{item.quantity}</td>
+                                        <td className="p-3 text-right">{parseFloat(item.price || 0).toLocaleString()}₺</td>
+                                        <td className="p-3 text-right font-bold text-white">{(item.quantity * parseFloat(item.price || 0)).toLocaleString()}₺</td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                   </div>
               </div>
 

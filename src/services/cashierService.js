@@ -51,7 +51,13 @@ export const cashierService = {
         bill_id: bill.id,
         amount: t.amount,
         method: t.method, // 'CASH' or 'POS' or 'MIXED'(mapped)
-        recorded_by: user?.id
+        recorded_by: user?.id,
+        paid_items: t.items?.map(i => ({
+            id: i.id,
+            title: i.product?.title || "Unknown Item",
+            quantity: i.quantity,
+            price: i.unit_price_at_order ? parseFloat(i.unit_price_at_order) : (i.product?.price || 0)
+        })) || []
     }));
 
     const { data: insertedTxs, error: trxError } = await supabase
@@ -60,39 +66,6 @@ export const cashierService = {
       .select();
 
     if (trxError) throw trxError;
-
-    // 7. Store Item Metadata in Activity Logs (since transactions table has no metadata column)
-    // We match inserted logs with our source data by index (safe since insert order is preserved)
-    const logsToInsert = [];
-    insertedTxs.forEach((tx, index) => {
-        const sourceData = transactionsToRecord[index];
-        if (sourceData.items && sourceData.items.length > 0) {
-            logsToInsert.push({
-                restaurant_id: bill.restaurant_id || null, // Best effort if not available in bill obj, but service functions implies strict RLS context usually handles this or we need it. 
-                // Wait, bill object from select('*') might not have restaurant_id if RLS handles it implicitly? 
-                // Architecture says "Every function... MUST filter by restaurant_id".
-                // I will try to use user.audit logic or just rely on RLS if possible, but inserts usually need it?
-                // Actually `useRestaurantData` hook -> fetches everything.
-                // I'll skip restaurant_id if not present, hoping trigger fills it or it is optional? 
-                // Architecture: "activity_logs... link to restaurant".
-                // I'll assume current session/bill has it.
-                action: 'PAYMENT_METADATA',
-                resource: 'transactions', // Required field
-                resource_id: tx.id,       // Required field (linking to the transaction)
-                user_id: user?.id,
-                details: {
-                    transaction_id: tx.id, // Redundant but harmless, keeping for search
-                    items: sourceData.items
-                }
-            });
-        }
-    });
-
-    if (logsToInsert.length > 0) {
-        // We catch error here to not block payment if logging fails
-        const { error: logError } = await supabase.from('activity_logs').insert(logsToInsert);
-        if (logError) console.error("Failed to save payment metadata", logError);
-    }
 
     // 5. Update Bill Status
     // We only update paid_amount. remaining_amount is generated.
