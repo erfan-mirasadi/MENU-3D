@@ -15,6 +15,7 @@ import {
   RiDeleteBin6Line,
   RiLock2Line,
 } from "react-icons/ri";
+import R2FileUploader from "./product-form/R2FileUploader";
 
 export default function CategoryForm({
   onClose,
@@ -22,6 +23,7 @@ export default function CategoryForm({
   supportedLanguages,
   defaultLang,
   initialData,
+  restaurantSlug,
 }) {
   const [activeLang, setActiveLang] = useState(defaultLang);
   const [loading, setLoading] = useState(false);
@@ -208,30 +210,15 @@ export default function CategoryForm({
           <RiImageLine className="text-primary" /> Category Icon / Image
         </h3>
 
-        {/* Read-only warning if editing */}
-        {initialData && (
-          <div className="text-xs text-yellow-500 flex items-center gap-1 mb-2">
-            <RiLock2Line /> Image editing is currently disabled.
-          </div>
-        )}
-
-        <div className="relative group">
-          <RiImageLine className="absolute left-3 top-3.5 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Image URL (png/jpg)..."
-            value={formData.image_url}
-            onChange={(e) =>
-              setFormData({ ...formData, image_url: e.target.value })
-            }
-            readOnly={!!initialData}
-            className={`w-full bg-dark-800 border border-gray-700 rounded-xl p-3 pl-10 text-white focus:outline-none text-sm ${
-              initialData
-                ? "opacity-50 cursor-not-allowed"
-                : "focus:border-primary"
-            }`}
-          />
-        </div>
+        <R2FileUploader
+          label="Category Icon / Image (WEBP, JPG, PNG)"
+          accept="image/webp, image/jpeg, image/png"
+          maxSize={2}
+          value={formData.image_url}
+          onChange={(url) => setFormData({ ...formData, image_url: url })}
+          restaurantSlug={restaurantSlug}
+          subfolder="category"
+        />
       </div>
 
       {/* Actions */}

@@ -74,6 +74,7 @@ export default async function DashboardPage() {
         products={products}
         restaurantId={restaurant.id}
         supportedLanguages={restaurant.supported_languages}
+        restaurantSlug={restaurant.slug}
       />
     </div>
   );

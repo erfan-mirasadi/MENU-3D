@@ -12,6 +12,7 @@ export default function ProductsView({
   products,
   restaurantId,
   supportedLanguages,
+  restaurantSlug,
 }) {
   const [activeTab, setActiveTab] = useState("all");
 
@@ -116,6 +117,7 @@ export default function ProductsView({
           initialData={editingProduct}
           key={editingProduct ? editingProduct.id : "new-product"}
           activeCategory={activeTab}
+          restaurantSlug={restaurantSlug}
         />
       </SlidePanel>
 
@@ -132,6 +134,7 @@ export default function ProductsView({
           supportedLanguages={supportedLanguages || ["en"]}
           defaultLang={defaultLang}
           initialData={editingCategory}
+          restaurantSlug={restaurantSlug}
         />
       </SlidePanel>
     </div>

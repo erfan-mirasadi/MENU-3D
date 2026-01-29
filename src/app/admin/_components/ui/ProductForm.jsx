@@ -24,6 +24,7 @@ export default function ProductForm({
   defaultLang,
   initialData,
   activeCategory,
+  restaurantSlug,
 }) {
   const [activeLang, setActiveLang] = useState(defaultLang);
   const [loading, setLoading] = useState(false);
@@ -226,6 +227,7 @@ export default function ProductForm({
         formData={formData}
         setFormData={setFormData}
         isEditing={!!initialData}
+        restaurantSlug={restaurantSlug}
       />
 
       <FormActions

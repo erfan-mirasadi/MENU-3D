@@ -8,6 +8,10 @@ const nextConfig = {
         port: "",
         pathname: "/storage/v1/object/sign/**",
       },
+      {
+        protocol: "https",
+        hostname: "media.menu-3d.com",
+      },
     ],
   },
 
