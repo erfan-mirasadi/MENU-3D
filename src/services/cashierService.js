@@ -95,15 +95,21 @@ export const cashierService = {
     const newRemainingLocal = (parseFloat(bill.total_amount) || 0) - newPaidAmount; 
     const isFullyPaid = newRemainingLocal <= 0.5; // tolerance
 
-    const { error: updateError } = await supabase
+    const { data: updatedBill, error: updateError } = await supabase
         .from("bills")
         .update({
             paid_amount: newPaidAmount,
             status: isFullyPaid ? BILL_STATUS.PAID : BILL_STATUS.UNPAID
         })
-        .eq("id", bill.id);
+        .eq("id", bill.id)
+        .eq("paid_amount", bill.paid_amount) // Optimistic Lock
+        .select();
 
     if (updateError) throw updateError;
+    
+    if (!updatedBill || updatedBill.length === 0) {
+        throw new Error("Payment conflict detected: The bill was updated by another user. Please retry.");
+    }
 
     // 6. Close Session if Fully Paid
     if (isFullyPaid) {

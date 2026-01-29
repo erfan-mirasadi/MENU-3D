@@ -38,6 +38,7 @@ export async function addOrderItem(orderItem) {
 }
 
 export async function updateOrderItemQuantity(itemId, quantity) {
+  if (!itemId) throw new Error("Item ID is required");
   const { data, error } = await supabase
     .from("order_items")
     .update({ quantity })
@@ -58,6 +59,7 @@ export async function updateOrderItemQuantity(itemId, quantity) {
 }
 
 export async function removeOrderItem(itemId) {
+  if (!itemId) throw new Error("Item ID is required");
   const { error } = await supabase
     .from("order_items")
     .delete()
@@ -101,6 +103,7 @@ async function getClientIP() {
 }
 
 export async function voidOrderItem(itemId, reason) {
+    if (!itemId) throw new Error("Item ID is required");
     // 1. Get User ID (Assuming authenticated)
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -166,6 +169,7 @@ export async function voidOrderItem(itemId, reason) {
 
 // Secure Update Function
 export async function updateOrderItemSecurely(itemId, newQty, oldQty, reason) {
+    if (!itemId) throw new Error("Item ID is required");
     const { data: { user } } = await supabase.auth.getUser();
 
     // 1. If logic determines this is a "Void" (Reduction), Log it.
@@ -250,6 +254,7 @@ export async function getKitchenOrders(restaurantId) {
 }
 
 export async function updateOrderItemStatus(itemId, newStatus) {
+    if (!itemId) throw new Error("Item ID is required");
     const validStatuses = [ORDER_STATUS.PREPARING, ORDER_STATUS.READY, ORDER_STATUS.SERVED, ORDER_STATUS.CANCELLED];
     if (!validStatuses.includes(newStatus)) {
         throw new Error(`Invalid status: ${newStatus}`);

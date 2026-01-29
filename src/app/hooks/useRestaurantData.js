@@ -49,18 +49,24 @@ export const RestaurantProvider = ({ children }) => {
         // Fetch Tables
         const { data: tablesData } = await supabase
             .from("tables")
-            .select("*")
+            .select("id, restaurant_id, table_number, qr_token, layout_data") 
             .eq("restaurant_id", rId)
             .order("table_number", { ascending: true });
+        
+        // Flatten layout_data to top-level properties (x, y, width, etc.)
+        const formattedTables = (tablesData || []).map(table => ({
+            ...table,
+            ...(table.layout_data || {})
+        }));
 
-        setTables(tablesData || []);
+        setTables(formattedTables);
 
         // Fetch Sessions
         const { data: sessionsData, error } = await supabase
             .from("sessions")
             .select(`
-            *,
-            bills (*),
+            id, created_at, status, table_id, restaurant_id, note,
+            bills (id, total_amount, paid_amount, remaining_amount, status, adjustments),
             order_items (
                 id, status, quantity, unit_price_at_order, created_at, product_id, session_id, added_by_guest_id,
                 product:products ( title, price, image_url ) 
