@@ -243,7 +243,7 @@ export async function getKitchenOrders(restaurantId) {
             )
         `)
         .eq("session.restaurant_id", restaurantId)
-        .in("status", ["confirmed", ORDER_STATUS.PREPARING, ORDER_STATUS.READY, ORDER_STATUS.SERVED])
+        .in("status", [ORDER_STATUS.PREPARING, ORDER_STATUS.READY, ORDER_STATUS.SERVED])
         .order("created_at", { ascending: true });
 
     if (error) {

@@ -1,8 +1,11 @@
 "use client";
 import { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
+import { playNotificationSound } from "@/lib/sound";
 import { getUserProfile } from "@/services/userService";
 import { getRestaurantById } from "@/services/restaurantService";
+import toast from "react-hot-toast";
+import { RiNotification3Line, RiCheckDoubleLine } from "react-icons/ri";
 
 // --- CONTEXT DEFINITION ---
 const RestaurantContext = createContext(null);
@@ -21,6 +24,7 @@ export const RestaurantProvider = ({ children }) => {
   // Use a Ref to access the latest sessions inside the realtime callback without re-subscribing
   const sessionsRef = useRef(sessions);
   const timeoutRef = useRef(null);
+  const lastNotificationTimeRef = useRef(0); // [NEW] Debounce Ref
 
   // Keep Ref updated
   useEffect(() => {
@@ -66,6 +70,7 @@ export const RestaurantProvider = ({ children }) => {
             .from("sessions")
             .select(`
             id, created_at, status, table_id, restaurant_id, note,
+            tables (id, table_number),
             bills (id, total_amount, paid_amount, remaining_amount, status, adjustments),
             order_items (
                 id, status, quantity, unit_price_at_order, created_at, product_id, session_id, added_by_guest_id,
@@ -187,6 +192,107 @@ export const RestaurantProvider = ({ children }) => {
         (payload) => {
              const currentSessions = sessionsRef.current;
              const sessionId = payload.new?.session_id || payload.old?.session_id;
+
+             // [NEW] Notification Logic
+             if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+                const newStatus = payload.new?.status;
+                const pathname = window.location.pathname;
+                
+                // 1. Ignore Drafts Globally (Prevent "Leak")
+                if (newStatus === 'draft') return;
+
+                // 2. Strict Filter for Chef (Performance Optimization)
+                // User Request: Chef should only react when status is 'preparing' (or other kitchen statuses)
+                if (pathname.includes('/chef')) {
+                    const relevantKitchenStatuses = ['preparing', 'ready', 'served', 'cancelled'];
+                    if (!relevantKitchenStatuses.includes(newStatus)) {
+                        return; // Completely ignore this event for Chef
+                    }
+                }
+
+                console.log("🔔 Realtime Update:", payload); 
+
+                // 3. Conditions to Notify & Select Sound
+                let shouldPlay = false;
+                let soundParams = {}; // Default to standard sound
+
+                // A) Waiter: Pending (Draft -> Pending)
+                if (
+                    (pathname.includes('/waiter') || pathname.includes('/admin')) &&
+                    newStatus === 'pending'
+                ) {
+                    shouldPlay = true;
+                }
+
+                // B) Cashier Notification ONLY: Waiter Confirms Order (Pending -> Confirmed)
+                if (
+                    (pathname.includes('/cashier') || pathname.includes('/admin')) &&
+                    newStatus === 'confirmed'
+                ) {
+                     shouldPlay = true;
+                }
+
+                // C) Chef Notification: Order Status changes to Preparing
+                if (
+                    (pathname.includes('/chef') || pathname.includes('/admin')) &&
+                    newStatus === 'preparing'
+                ) {
+                     shouldPlay = true;
+                }
+
+                // D) Waiter/Cashier Notification: Order Served
+                // User Request: ONLY 'served' status, and use 'bell.mp3'
+                if (
+                    (pathname.includes('/waiter') || pathname.includes('/cashier') || pathname.includes('/admin')) && 
+                    newStatus === 'served'
+                ) {
+                    shouldPlay = true;
+                    soundParams = { sound: '/sounds/bell.mp3' };
+                }
+
+                // 5. Debounce Sound & Toasts (Batching)
+                const now = Date.now();
+                if (shouldPlay && (now - lastNotificationTimeRef.current > 2000)) {
+                    // Play specific sound if defined, otherwise default
+                    playNotificationSound(soundParams.sound);
+                    
+                    // --- TOAST LOGIC ---
+                    const getTableNumber = (sId) => {
+                         const session = sessionsRef.current.find(s => s.id === sId);
+                         return session?.tables?.table_number || "?";
+                    };
+                    
+                    const sessionID = payload.new?.session_id || payload.old?.session_id;
+                    const tableNum = getTableNumber(sessionID);
+
+                    // Chef Toast: New Order (Preparing)
+                    if ((pathname.includes('/chef') || pathname.includes('/admin')) && newStatus === 'preparing') {
+                        toast(`Kitchen Order: Table ${tableNum}`, {
+                             icon: <RiNotification3Line className="text-orange-500" />,
+                             duration: 5000,
+                             style: {
+                                 border: '1px solid #f97316',
+                                 background: '#fff7ed',
+                                 color: '#c2410c'
+                             }
+                        });
+                    }
+
+                    // Waiter/Cashier Toast: Order Served
+                    if ((pathname.includes('/waiter') || pathname.includes('/cashier') || pathname.includes('/admin')) && 
+                        newStatus === 'served') {
+                        
+                        // "Hazer mishe" -> Food Ready (mapped to served status)
+                        toast.success(`Table ${tableNum}: Food Ready!`, {
+                            icon: <RiCheckDoubleLine className="text-green-500" />,
+                            duration: 5000
+                        });
+                    }
+                    // -------------------------------------------------------
+
+                    lastNotificationTimeRef.current = now;
+                }
+             }
              
              const relevantSession = currentSessions.find(s => s.id === sessionId);
              if (relevantSession) handleUpdate();
