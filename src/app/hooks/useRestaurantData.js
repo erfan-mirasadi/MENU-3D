@@ -31,12 +31,25 @@ export const RestaurantProvider = ({ children }) => {
     sessionsRef.current = sessions;
   }, [sessions]);
 
-  // Auth Listener to trigger fetch on login/restore
+  // 1. Initial Session Check (Runs ONCE on mount)
+  useEffect(() => {
+      async function checkSession() {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+              console.log("� [Init] Session found, starting initial fetch...");
+              fetchData();
+          }
+      }
+      checkSession();
+  }, []);
+
+  // 2. Auth Listener (Only for Logout or unexpected state changes)
   useEffect(() => {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-              fetchData();
-          } else if (event === 'SIGNED_OUT') {
+          //console.log(` [Auth Listener] Event captured: ${event}`);
+          
+          if (event === 'SIGNED_OUT') {
+              console.log("👋 User Signed Out. Clearing Data.");
               setTables([]);
               setSessions([]);
               setRestaurant(null);
@@ -50,6 +63,8 @@ export const RestaurantProvider = ({ children }) => {
   // 1a. Fetch Operational Data (Tables & Sessions) - Efficient re-fetcher
   const fetchOperationalData = useCallback(async (rId) => {
     try {
+        console.log(`📡 [useRestaurantData] Fetching Operational Data for Restaurant ID: ${rId} ...`);
+        
         // Fetch Tables
         const { data: tablesData } = await supabase
             .from("tables")
@@ -81,8 +96,10 @@ export const RestaurantProvider = ({ children }) => {
             .eq("restaurant_id", rId)
             .neq("status", "closed");
 
-        if (error) console.error("Session fetch error:", error);
+        if (error) console.error("❌ Session fetch error:", error);
 
+        console.log(`✅ [useRestaurantData] Data Loaded. Tables: ${formattedTables.length}, Sessions: ${sessionsData?.length || 0}`);
+        
         setSessions(sessionsData || []);
     } catch (error) {
         console.error("Error fetching operational data:", error);
@@ -141,6 +158,7 @@ export const RestaurantProvider = ({ children }) => {
     const handleUpdate = () => {
        if (timeoutRef.current) clearTimeout(timeoutRef.current);
        timeoutRef.current = setTimeout(() => {
+           console.log("⏱️ Debounce Trigger: Fetching Data...");
            fetchOperationalData(restaurantId);
        }, 500); // 500ms debounce
     };
@@ -198,10 +216,10 @@ export const RestaurantProvider = ({ children }) => {
                 const newStatus = payload.new?.status;
                 const pathname = window.location.pathname;
                 
-                // 1. Ignore Drafts Globally (Prevent "Leak")
+                // Ignore Drafts Globally (Prevent "Leak")
                 if (newStatus === 'draft') return;
 
-                // 2. Strict Filter for Chef (Performance Optimization)
+                // Strict Filter for Chef (Performance Optimization)
                 // User Request: Chef should only react when status is 'preparing' (or other kitchen statuses)
                 if (pathname.includes('/chef')) {
                     const relevantKitchenStatuses = ['preparing', 'ready', 'served', 'cancelled'];
@@ -210,13 +228,35 @@ export const RestaurantProvider = ({ children }) => {
                     }
                 }
 
-                console.log("🔔 Realtime Update:", payload); 
+                // Client App Filter: Only listen to updates for the CURRENT Table
+                const isStaff = pathname.includes('/chef') || pathname.includes('/waiter') || pathname.includes('/cashier') || pathname.includes('/admin');
+                
+                if (!isStaff) {
+                    // Try to find the session to see which table it belongs to
+                    const eventSession = currentSessions.find(s => s.id === sessionId);
+                    
+                    if (eventSession) {
+                        // Check if the URL contains this session's table ID
+                        // This is a robust way to ensure we are looking at the right table page
+                        // URL pattern: /slug/tableId
+                        const tableId = eventSession.table_id;
+                         
+                        // If the URL doesn't contain the tableId, we ignore this update
+                        // (User is viewing Table A, but update is for Table B)
+                        if (!pathname.includes(tableId)) {
+                             console.log(`🔇 [Filtered] Realtime Update for Table ${tableId} (User on different table)`);
+                             return; 
+                        }
+                    }
+                }
 
-                // 3. Conditions to Notify & Select Sound
+                console.log("🔔 [Realtime] Processing Update:", { event: payload.eventType, table: payload.table, status: newStatus }); 
+
+                // Conditions to Notify & Select Sound
                 let shouldPlay = false;
                 let soundParams = {}; // Default to standard sound
 
-                // A) Waiter: Pending (Draft -> Pending)
+                // Waiter: Pending (Draft -> Pending)
                 if (
                     (pathname.includes('/waiter') || pathname.includes('/admin')) &&
                     newStatus === 'pending'
@@ -250,21 +290,18 @@ export const RestaurantProvider = ({ children }) => {
                     soundParams = { sound: '/sounds/bell.mp3' };
                 }
 
-                // 5. Debounce Sound & Toasts (Batching)
+                // Debounce Sound & Toasts (Batching)
                 const now = Date.now();
                 if (shouldPlay && (now - lastNotificationTimeRef.current > 2000)) {
                     // Play specific sound if defined, otherwise default
                     playNotificationSound(soundParams.sound);
-                    
                     // --- TOAST LOGIC ---
                     const getTableNumber = (sId) => {
                          const session = sessionsRef.current.find(s => s.id === sId);
                          return session?.tables?.table_number || "?";
                     };
-                    
                     const sessionID = payload.new?.session_id || payload.old?.session_id;
-                    const tableNum = getTableNumber(sessionID);
-
+                    const tableNum = getTableNumber(sessionID)
                     // Chef Toast: New Order (Preparing)
                     if ((pathname.includes('/chef') || pathname.includes('/admin')) && newStatus === 'preparing') {
                         toast(`Kitchen Order: Table ${tableNum}`, {
@@ -277,19 +314,15 @@ export const RestaurantProvider = ({ children }) => {
                              }
                         });
                     }
-
                     // Waiter/Cashier Toast: Order Served
                     if ((pathname.includes('/waiter') || pathname.includes('/cashier') || pathname.includes('/admin')) && 
                         newStatus === 'served') {
-                        
                         // "Hazer mishe" -> Food Ready (mapped to served status)
                         toast.success(`Table ${tableNum}: Food Ready!`, {
                             icon: <RiCheckDoubleLine className="text-green-500" />,
                             duration: 5000
                         });
                     }
-                    // -------------------------------------------------------
-
                     lastNotificationTimeRef.current = now;
                 }
              }

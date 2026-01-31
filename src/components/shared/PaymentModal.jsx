@@ -10,8 +10,6 @@ import {
     RiCalculatorLine,
     RiUser3Line,
     RiFileList3Line,
-    RiCheckboxCircleFill,
-    RiCheckboxBlankCircleLine,
     RiAddLine,
     RiSubtractLine,
     RiArrowDownLine,
@@ -117,12 +115,33 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
               runningPaid -= itemTotal;
               return { ...item, isPaid: true };
           }
-          // Partial payment for an item logic could be complex, for now we treat as unpaid if not fully covered
-          // Or we could track "partially paid" item? Too complex for this UI probably.
-          // Let's stick to "Whole items paid" heuristic.
           return { ...item, isPaid: false };
       });
   }, [orderItems, paidAmount]);
+
+  // Grouping Logic for UI Display
+  const groupedItems = useMemo(() => {
+      return Object.values(itemsWithStatus.reduce((acc, item) => {
+          const key = item.product?.id || item.product_id;
+          
+          // We group by Product AND isPaid status.
+          const groupKey = `${key}-${item.isPaid}`;
+          
+          if (!acc[groupKey]) {
+             acc[groupKey] = {
+                 ...item,
+                 quantity: 0,
+                 ids: [],
+                 originalItems: []
+             }
+          }
+
+          acc[groupKey].quantity += item.quantity;
+          acc[groupKey].ids.push(item.id);
+          acc[groupKey].originalItems.push(item);
+          return acc;
+      }, {}));
+  }, [itemsWithStatus]);
 
   // Scroll Check Function
   const checkScroll = () => {
@@ -134,6 +153,12 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
       const isAtBottom = Math.ceil(scrollTop + clientHeight) >= scrollHeight - 10;
       setShowScrollIndicator(canScroll && !isAtBottom);
   };
+  
+  useEffect(() => {
+      if(isOpen) {
+          console.log("[PaymentModal] Opened. Session:", session?.id, "Bill:", bill?.id, "Remaining:", remainingTotal);
+      }
+  }, [isOpen, session, bill, remainingTotal]);
 
   useEffect(() => {
       if (isOpen) {
@@ -188,10 +213,6 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
           }
 
           // Check if selecting all items matches roughly remaining
-          // If sum is greater than remaining, cap it. But adjustments might push it over if they are extra charges?
-          // Actually, if we select charges, we SHOULD pay for them.
-          // BUT, we shouldn't pay more than the *Bill's* remaining total?
-          // If remainingTotal accounts for adjustments, then yes, cap it.
           if (sum > remainingTotal + 0.1) return remainingTotal; 
           return Math.max(0, sum); // Ensure no negative payment
       }
@@ -214,13 +235,19 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
       }
   }, [selectedItemIds, activeTab, splitMode]);
 
-  const toggleItemSelection = (id) => {
-      const item = itemsWithStatus.find(i => i.id === id);
-      if (item && item.isPaid) return; // Cannot toggle paid items
+  const toggleItemSelection = (group) => {
+      if (group.isPaid) return; // Cannot toggle paid items
 
       const next = new Set(selectedItemIds);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const allSelected = group.ids.every(id => next.has(id));
+
+      if (allSelected) {
+          // Deselect all in group
+          group.ids.forEach(id => next.delete(id));
+      } else {
+          // Select all in group
+          group.ids.forEach(id => next.add(id));
+      }
       setSelectedItemIds(next);
   };
 
@@ -278,6 +305,8 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                     isFullPayment: activeTab === 'FULL'
                 });
           }
+          
+          console.log(`[PaymentModal] Invoke Checkout. Session=${session.id}, Amount=${amountToPay}, Method=${paymentMethod}`);
           
           // Success
           toast.success("Payment Recorded");
@@ -346,14 +375,16 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                 onScroll={checkScroll}
                 className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 scroll-smooth"
             >
-                 {itemsWithStatus.map(item => {
-                     const isSelected = selectedItemIds.has(item.id);
+                 {groupedItems.map(item => { // Use groupedItems
+                     // Visual Selection: if ALL IDs in group are selected? Or ANY?
+                     // Let's say ALL for consistent UI behavior (toggle selects all).
+                     const isSelected = item.ids.length > 0 && item.ids.every(id => selectedItemIds.has(id));
                      const isPaid = item.isPaid;
                      const price = item.quantity * Number(item.unit_price_at_order);
                      return (
                          <div 
-                            key={item.id} 
-                            onClick={() => toggleItemSelection(item.id)}
+                            key={`${item.product?.id || item.product_id || 'unknown'}-${isPaid}`} // Stable key for group
+                            onClick={() => toggleItemSelection(item)} // Pass group item
                             className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group ${
                                 isPaid 
                                 ? "bg-[#252836]/50 border-transparent opacity-50 cursor-not-allowed" 

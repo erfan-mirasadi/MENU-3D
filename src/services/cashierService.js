@@ -12,6 +12,7 @@ export const cashierService = {
     if (!sessionId) throw new Error("Session ID is required");
 
     let bill = await this.getOrCreateBill(sessionId);
+    console.log(`[CashierService] Processing Payment for Session: ${sessionId}, Bill ID: ${bill.id}`);
 
     // 1. Get truly unpaid items (Source of Truth)
     const availableItems = await this._fetchUnpaidItems(bill.id, sessionId);
@@ -37,6 +38,7 @@ export const cashierService = {
         if (amt > currentRemaining + 0.5) { 
              throw new Error(`Payment amount (${amt}) exceeds remaining due (${currentRemaining})`);
         }
+        console.log(`[CashierService] Recording SINGLE Transaction: Amount=${amt}, Method=${method}, Items=${allocatedItems.length}`);
         transactionsToRecord.push({ method, amount: amt, items: allocatedItems });
         paymentTotal = amt;
     } 
@@ -81,6 +83,8 @@ export const cashierService = {
         })) || []
     }));
 
+    console.log(`[CashierService] Inserting ${dbTransactions.length} transaction records into DB...`);
+
     const { data: insertedTxs, error: trxError } = await supabase
       .from("transactions")
       .insert(dbTransactions)
@@ -104,6 +108,8 @@ export const cashierService = {
         .eq("id", bill.id)
         .eq("paid_amount", bill.paid_amount) // Optimistic Lock
         .select();
+
+    console.log(`[CashierService] Bill Updated: NewPaid=${newPaidAmount}, FullyPaid=${isFullyPaid}`);
 
     if (updateError) throw updateError;
     
@@ -219,6 +225,7 @@ export const cashierService = {
     if (updateError) throw updateError;
 
     // 3. Trigger Recalculation
+    console.log(`[CashierService] Adjustment Added. Triggering recalculation for Bill ${billId}`);
     return await this.calculateBillTotal(billId);
   },
 

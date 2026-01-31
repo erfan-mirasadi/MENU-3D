@@ -20,23 +20,71 @@ export default function PendingOrderList({
     
     if (items.length === 0) return null;
 
+    // Group Items Logic
+    const groupedItems = Object.values(items.reduce((acc, item) => {
+        const key = item.product_id || item.product?.id;
+        if (!acc[key]) {
+            acc[key] = { ...item, quantity: 0, ids: [], originalItems: [] };
+        }
+        acc[key].quantity += item.quantity;
+        acc[key].ids.push(item.id);
+        acc[key].originalItems.push(item);
+        return acc;
+    }, {}));
+
+    const handleGroupUpdate = (itemId, newTotal) => {
+        const group = groupedItems.find(g => g.id === itemId);
+        if (!group) return;
+
+        const currentTotal = group.quantity;
+        const diff = newTotal - currentTotal;
+        if (diff === 0) return;
+
+        if (diff > 0) {
+            // Increase: Add to the first item
+            const firstItem = group.originalItems[0];
+            onUpdateQty(firstItem.id, firstItem.quantity + diff);
+        } else {
+            // Decrease: Reduce from items or delete them
+            let remainingToRemove = Math.abs(diff);
+            for (const item of group.originalItems) {
+                if (remainingToRemove <= 0) break;
+
+                if (item.quantity > remainingToRemove) {
+                    onUpdateQty(item.id, item.quantity - remainingToRemove);
+                    remainingToRemove = 0;
+                } else {
+                    onDelete(item.id);
+                    remainingToRemove -= item.quantity;
+                }
+            }
+        }
+    };
+
+    const handleGroupDelete = (itemId) => {
+        const group = groupedItems.find(g => g.id === itemId);
+        if (group) {
+            group.ids.forEach(id => onDelete(id));
+        }
+    };
+
     // WAITER VIEW
     if (role === 'waiter') {
         return (
             <OrderSection
                 title={t('newOrders')}
-                count={items.length}
+                count={groupedItems.length}
                 accentColor="orange"
                 icon={<FaClock />}
             >
                 <div className="space-y-3">
-                    {items.map((item) => (
+                    {groupedItems.map((item) => (
                         <SwipeableOrderItem
                             key={item.id}
                             item={item}
                             isPending={true}
-                            onUpdateQty={onUpdateQty}
-                            onDelete={onDelete}
+                            onUpdateQty={handleGroupUpdate}
+                            onDelete={handleGroupDelete}
                         />
                     ))}
                     <FeatureGuard feature="ordering_enabled">
@@ -71,13 +119,19 @@ export default function PendingOrderList({
         return (
             <OrderSection
                 title={t('newOrderCashier')}
-                count={items.length}
+                count={groupedItems.length}
                 accentColor="blue"
                 icon={<FaClock />}
             >
                 <div className="space-y-3 opacity-95">
-                    {items.map(item => (
-                        <SwipeableOrderItem key={item.id} item={item} isPending={true} onUpdateQty={onUpdateQty} onDelete={onDelete} />
+                    {groupedItems.map(item => (
+                        <SwipeableOrderItem 
+                            key={item.id} 
+                            item={item} 
+                            isPending={true} 
+                            onUpdateQty={handleGroupUpdate} 
+                            onDelete={handleGroupDelete} 
+                        />
                     ))}
                     <button
                         onClick={onConfirm}

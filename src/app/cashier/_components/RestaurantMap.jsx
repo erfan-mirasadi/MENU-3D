@@ -47,7 +47,7 @@ function CustomerAvatar({ position, color }) {
 
 function TableBox({ id, position, width = 2.2, depth = 2.2, tableNumber, status, isEditing, onSelect, isSelected, session, active_orders, features }) {
   const [hovered, setHovered] = useState(false)
-  useCursor(hovered, 'pointer', 'auto')
+  useCursor(hovered, 'pointer', 'grab') 
   const materialRef = useRef()
   
   // Guest Count Logic (Active Orders based)
@@ -165,9 +165,6 @@ function TableBox({ id, position, width = 2.2, depth = 2.2, tableNumber, status,
             [0, 0.25, -depth / 2 - offset]   // Top
         ]
         
-        // Take as many slots as there are guests (up to 4)
-        // If more than 4, we might need more slots or just cap it visually. 
-        // User said "namayan beshe", implying showing them as they appear.
         return slots.slice(0, Math.min(activeGuestCount, 4)).map((pos) => ({
             pos,
             color: '#2d303e' // Brand Accent Color
@@ -261,24 +258,52 @@ function SceneContent({ tables, isEditing, onSelectTable, features }) {
     )
 }
 
+// Constraint Logic Hook
+function MapBoundaries({ controlsRef }) {
+    useFrame(() => {
+        if (controlsRef.current) {
+            const controls = controlsRef.current
+            const camera = controls.object
+            const target = controls.target
+            const LIMIT = 30
+
+            // Clamp Target (Center of rotation)
+            const clampedX = Math.max(-LIMIT, Math.min(LIMIT, target.x))
+            const clampedZ = Math.max(-LIMIT, Math.min(LIMIT, target.z))
+
+            const deltaX = clampedX - target.x
+            const deltaZ = clampedZ - target.z
+
+            // If out of bounds, push camera and target back together
+            if (deltaX !== 0 || deltaZ !== 0) {
+                target.x = clampedX
+                target.z = clampedZ
+                camera.position.x += deltaX
+                camera.position.z += deltaZ
+            }
+        }
+    })
+    return null
+}
+
 export default function RestaurantMap({ tables, isEditing = false, onSelectTable = () => {}, floorType = 'terrazzo' }) {
   const floorColor = getFloorColor(floorType)
   const controlsRef = useRef()
   const { features } = useRestaurantFeatures()
 
   return (
-    <Canvas shadows dpr={[1, 2]}>
-      {/* 1. Environment */}
+    <Canvas shadows dpr={[1, 2]} className="active:cursor-grabbing">
       <color attach="background" args={[floorColor]} />
       <ambientLight intensity={0.7} />
       <directionalLight position={[10, 20, 10]} intensity={1.2} castShadow />
       <Environment preset="warehouse" />
 
-      {/* 2. Shared Perspective Camera */}
+      {/* Shared Perspective Camera */}
       <MapCamera />
       
       <MapControls 
         ref={controlsRef}
+        makeDefault
         enableRotate={false}
         enableZoom={true}
         minDistance={70} // Minimum zoom (closest)
@@ -286,39 +311,18 @@ export default function RestaurantMap({ tables, isEditing = false, onSelectTable
         maxPolarAngle={Math.PI / 2.2} // Prevent going below ground
         dampingFactor={0.05}
         enabled={!isEditing} 
-        onChange={(e) => {
-            if (controlsRef.current) {
-                const controls = controlsRef.current
-                const camera = controls.object
-                const target = controls.target
-                const LIMIT = 30
-
-                const clampedX = Math.max(-LIMIT, Math.min(LIMIT, target.x))
-                const clampedZ = Math.max(-LIMIT, Math.min(LIMIT, target.z))
-
-                // Calculate the difference (how much we were "pushed back")
-                const deltaX = clampedX - target.x
-                const deltaZ = clampedZ - target.z
-
-                // If we hit the wall, apply the same offset to the camera
-                // This preserves the distance/angle between camera and target
-                if (deltaX !== 0 || deltaZ !== 0) {
-                    target.x = clampedX
-                    target.z = clampedZ
-                    camera.position.x += deltaX
-                    camera.position.z += deltaZ
-                }
-            }
-        }}
       />
 
-      {/* 3. Render Tables */}
+      {/* Render Tables */}
       <SceneContent tables={tables} isEditing={isEditing} onSelectTable={onSelectTable} features={features} />
 
-      {/* 4. Shared Floor */}
+      {/* Boundaries Enforcer */}
+      <MapBoundaries controlsRef={controlsRef} />
+
+      {/* Shared Floor */}
       <MapFloor textureType={floorType} />
       
-      {/* 5. Grid (Subtle) */}
+      {/* Grid (Subtle) */}
       <gridHelper args={[1000, 50, '#e5e7eb', '#e5e7eb']} position={[0, -0.38, 0]} />
     </Canvas>
   )

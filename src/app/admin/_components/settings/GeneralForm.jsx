@@ -2,16 +2,13 @@
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
-import {
-  getRestaurantByOwnerId,
-} from "@/services/restaurantService";
+import { useRestaurantData } from "@/app/hooks/useRestaurantData"; 
 import toast from "react-hot-toast";
 import { RiCloseLine, RiUploadCloud2Line } from "react-icons/ri";
 import Loader from "@/components/ui/Loader";
 
 export default function GeneralForm() {
-  const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState(null);
+  const { restaurant, loading: contextLoading, refetch } = useRestaurantData(); 
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -30,41 +27,18 @@ export default function GeneralForm() {
   const bgInputRef = useRef(null);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) {
-          setLoading(false);
-          return;
-        }
-
-        setUserId(user.id);
-
-        const restaurant = await getRestaurantByOwnerId(user.id);
-
-        if (restaurant) {
-          setFormData({
-            name: restaurant.name || "",
-            slug: restaurant.slug || "",
-            wifi_pass: restaurant.wifi_pass || "",
-            instagram: restaurant.social_links?.instagram || "",
-            website: restaurant.social_links?.website || "",
-            logo: restaurant.logo || "",
-            bg_image: restaurant.bg_image || "",
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching general info:", error);
-        toast.error("Failed to load restaurant info.");
-      } finally {
-        setLoading(false);
-      }
+    if (restaurant) {
+      setFormData({
+        name: restaurant.name || "",
+        slug: restaurant.slug || "",
+        wifi_pass: restaurant.wifi_pass || "",
+        instagram: restaurant.social_links?.instagram || "",
+        website: restaurant.social_links?.website || "",
+        logo: restaurant.logo || "",
+        bg_image: restaurant.bg_image || "",
+      });
     }
-    fetchData();
-  }, []);
+  }, [restaurant]);
 
   const handleUpload = async (file, field) => {
     // 1. Validate
@@ -146,7 +120,7 @@ export default function GeneralForm() {
   const handleSave = async (e) => {
     e.preventDefault();
 
-    if (!userId) {
+    if (!restaurant?.owner_id) {
       toast.error("User not authenticated.");
       return;
     }
@@ -169,7 +143,7 @@ export default function GeneralForm() {
           logo: formData.logo,
           bg_image: formData.bg_image,
         })
-        .eq("owner_id", userId);
+        .eq("owner_id", restaurant?.owner_id);
 
       if (error) reject(error);
       else resolve();
@@ -180,10 +154,13 @@ export default function GeneralForm() {
       success: "Changes saved successfully!",
       error: "Error updating information.",
     })
+    .then(() => {
+        refetch(restaurant.id); // Update global context
+    })
     .finally(() => setSaving(false));
   };
 
-  if (loading) return (
+  if (contextLoading) return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-dark-900/50 backdrop-blur-sm">
       <Loader />
     </div>

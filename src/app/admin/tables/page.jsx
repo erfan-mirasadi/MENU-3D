@@ -1,8 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { createTable, deleteTable, getTables } from "@/services/tableService";
-import { getRestaurantByOwnerId } from "@/services/restaurantService";
+import { useState } from "react";
+import { useRestaurantData } from "@/app/hooks/useRestaurantData"; // [NEW]
+import { createTable, deleteTable } from "@/services/tableService"; // Removed getTables
 import TableCard from "@/app/admin/_components/tables/TableCard";
 import AddCard from "@/app/admin/_components/ui/AddCart";
 import QrSettingsPanel from "@/app/admin/_components/tables/QrSettingsPanel";
@@ -10,47 +9,15 @@ import Loader from "@/components/ui/Loader";
 import toast from "react-hot-toast";
 
 export default function TablesPage() {
-  const [tables, setTables] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { tables, loading, restaurant, refetch } = useRestaurantData(); // [FIX] Use Context
   const [adding, setAdding] = useState(false);
-  const [restaurantId, setRestaurantId] = useState(null);
-  const [restaurantSlug, setRestaurantSlug] = useState("");
   
   // QR Code Settings State
   const [color1, setColor1] = useState("#4f46e5");
   const [color2, setColor2] = useState("#ec4899");
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      // Get User & Restaurant ID
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) return;
-      const restaurant = await getRestaurantByOwnerId(user.id);
-      
-      if (restaurant) {
-        setRestaurantId(restaurant.id);
-        setRestaurantSlug(restaurant.slug);
-        const fetchedTables = await getTables(restaurant.id);
-        setTables(fetchedTables);
-      }
-    } catch (error) {
-      console.error("Error loading tables:", error);
-      toast.error("Error loading tables");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleAddTable = async () => {
-    if (!restaurantId) {
+    if (!restaurant?.id) {
         toast.error("Restaurant not found");
         return;
     }
@@ -70,17 +37,15 @@ export default function TablesPage() {
       const nextNum = maxNum + 1;
       const nextTableNumber = `T-${String(nextNum).padStart(2, '0')}`;
       const token = `token-${nextTableNumber.toLowerCase()}-${Date.now().toString(36)}`; // Simple unique token
-
-      // 2. Create Table
-      const newTable = await createTable({
-          restaurant_id: restaurantId,
+      await createTable({
+          restaurant_id: restaurant.id,
           table_number: nextTableNumber,
           qr_token: token
       });
 
-      // 3. Update State
-      setTables([...tables, newTable]);
+      // Update State via Refetch (Context)
       toast.success(`Table ${nextTableNumber} added!`);
+      refetch(restaurant.id); // Refresh global data
 
     } catch (error) {
       console.error(error);
@@ -93,8 +58,8 @@ export default function TablesPage() {
   const handleDeleteTable = async (id) => {
     try {
         await deleteTable(id);
-        setTables(tables.filter(t => t.id !== id));
         toast.success("Table deleted successfully");
+        refetch(restaurant?.id); // Refresh global data
     } catch (error) {
         // error handled in service
     }
@@ -102,7 +67,7 @@ export default function TablesPage() {
 
   if (loading) return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-dark-900/50 backdrop-blur-sm">
-      <Loader />
+      <Loader active={true} />
     </div>
   );
 
@@ -136,7 +101,7 @@ export default function TablesPage() {
             table={table} 
             onDelete={handleDeleteTable}
             qrSettings={{ color1, color2 }}
-            slug={restaurantSlug}
+            slug={restaurant?.slug}
           />
         ))}
       </div>

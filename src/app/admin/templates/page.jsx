@@ -1,8 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { useRestaurantData } from "@/app/hooks/useRestaurantData"; // [NEW]
 import {
-  getRestaurantByOwnerId,
   updateRestaurant,
 } from "@/services/restaurantService";
 import toast from "react-hot-toast";
@@ -43,33 +42,16 @@ const TEMPLATES = [
 ];
 
 export default function TemplatesPage() {
+  const { restaurant, loading: contextLoading, refetch } = useRestaurantData(); // [FIX] Use Context
   const [activeTemplate, setActiveTemplate] = useState("modern");
-  const [loading, setLoading] = useState(true);
   const [activatingId, setActivatingId] = useState(null);
-  const [userId, setUserId] = useState(null);
-
+  
+  // Sync state from context
   useEffect(() => {
-    async function initData() {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) return;
-
-        setUserId(user.id);
-        const restaurant = await getRestaurantByOwnerId(user.id);
-
-        if (restaurant) {
-          setActiveTemplate(restaurant.template_style);
-        }
-      } catch (error) {
-        console.error("Error init templates:", error);
-      } finally {
-        setLoading(false);
-      }
+    if (restaurant?.template_style) {
+        setActiveTemplate(restaurant.template_style);
     }
-    initData();
-  }, []);
+  }, [restaurant]);
 
   const handleSelectTemplate = async (templateStyle) => {
     if (templateStyle === activeTemplate) return;
@@ -77,9 +59,10 @@ export default function TemplatesPage() {
     setActivatingId(templateStyle);
 
     try {
-      await updateRestaurant(userId, { template_style: templateStyle });
+      await updateRestaurant(restaurant?.owner_id, { template_style: templateStyle }); // Use ID from context
       setActiveTemplate(templateStyle);
       toast.success("Template updated successfully!");
+      refetch(restaurant?.id);
     } catch (error) {
       toast.error("Failed to change template.");
     }
@@ -87,7 +70,7 @@ export default function TemplatesPage() {
     setActivatingId(null);
   };
 
-  if (loading) {
+  if (contextLoading) {
     return (
       <div className="absolute inset-0 z-50 flex items-center justify-center bg-dark-900/50 backdrop-blur-sm">
         <Loader />
