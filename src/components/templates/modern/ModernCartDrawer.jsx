@@ -64,6 +64,7 @@ function SwipeableItem({ item, onRemove, t, content }) {
             src={item.product?.image_url}
             alt={content(item.product?.title)}
             fill
+            sizes="120px"
             className="object-cover"
           />
         </div>
@@ -257,6 +258,7 @@ export default function ModernCartDrawer({
                           src={item.product?.image_url}
                           alt={content(item.product?.title)}
                           fill
+                          sizes="50px"
                           className="object-cover"
                         />
                       </div>

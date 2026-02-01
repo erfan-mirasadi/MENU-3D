@@ -4,7 +4,7 @@ import StatsCard from "../analytics/_components/StatsCard"; // reused
 import SegmentedControl from "../_components/SegmentedControl";
 import { FinancialTable, ProductMixTable, SecurityLogTable } from "./_components/ReportTables";
 import { reportService } from "@/services/reportService";
-import { RiMoneyDollarCircleLine, RiBankCard2Line, RiDeleteBin5Line, RiWallet3Line, RiDiscountPercentLine, RiFundsBoxLine } from "react-icons/ri";
+import { RiMoneyDollarCircleLine, RiBankCard2Line, RiDeleteBin5Line, RiWallet3Line, RiDiscountPercentLine, RiFundsBoxLine, RiSearchLine } from "react-icons/ri";
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 
@@ -13,6 +13,9 @@ const ReportsPage = () => {
   const [filter, setFilter] = useState("Today");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("financial");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const safeSearch = (text, query) => text?.toString().toLowerCase().includes(query.toLowerCase());
 
   const [stats, setStats] = useState({
       grossSales: { value: 0, trend: 0 },
@@ -133,8 +136,8 @@ const ReportsPage = () => {
         />
       </div>
 
-      {/* Tabs */}
-      <div className="mb-6">
+      {/* Tabs & Search */}
+      <div className="mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <SegmentedControl
             options={[
                 { label: t('transactionalReport'), value: "financial" },
@@ -145,13 +148,61 @@ const ReportsPage = () => {
             onChange={setActiveTab}
             className="w-full md:w-fit"
           />
+
+          {/* Search Input */}
+          <div className="relative w-full md:w-auto">
+            <RiSearchLine className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input 
+                type="text" 
+                placeholder={t('search') || "Search..."} 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 bg-[#252836] border border-[#393C49] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#EA7C69] w-full md:w-64"
+            />
+          </div>
       </div>
 
       {/* Tables Content */}
       <div className="min-h-[300px]">
-          {activeTab === 'financial' && <FinancialTable data={financialData} loading={loading} />}
-          {activeTab === 'product' && <ProductMixTable data={productMixData} loading={loading} />}
-          {activeTab === 'security' && <SecurityLogTable data={securityData} loading={loading} />}
+          {activeTab === 'financial' && (
+            <FinancialTable 
+                data={financialData.filter(item => 
+                    !searchQuery || 
+                    safeSearch(item.billId, searchQuery) ||
+                    safeSearch(item.tableNo, searchQuery) ||
+                    safeSearch(item.staff, searchQuery) ||
+                    safeSearch(item.method, searchQuery) ||
+                    safeSearch(item.amount, searchQuery) ||
+                    safeSearch(item.time, searchQuery)
+                )} 
+                loading={loading} 
+            />
+          )}
+          {activeTab === 'product' && (
+            <ProductMixTable 
+                data={productMixData.filter(item => 
+                    !searchQuery || 
+                    safeSearch(item.name, searchQuery) ||
+                    safeSearch(item.quantity, searchQuery) ||
+                    safeSearch(item.revenue, searchQuery)
+                )} 
+                loading={loading} 
+            />
+          )}
+          {activeTab === 'security' && (
+            <SecurityLogTable 
+                data={securityData.filter(item => 
+                    !searchQuery || 
+                    safeSearch(item.staff, searchQuery) ||
+                    safeSearch(item.action, searchQuery) ||
+                    safeSearch(item.item, searchQuery) ||
+                    safeSearch(item.reason, searchQuery) ||
+                    safeSearch(item.time, searchQuery) ||
+                    safeSearch(item.value, searchQuery)
+                )} 
+                loading={loading} 
+            />
+          )}
       </div>
 
     </div>

@@ -77,7 +77,7 @@ export default function DashboardPage() {
            const requests = activeSession.service_requests || []
            
            // 1. Bill/Service Request (Red)
-           const hasPaymentRequest = requests.some(r => r.status === 'pending') 
+           const hasPaymentRequest = requests.some(r => r.status === 'pending' && r.request_type === 'bill') 
            
            // 2. Counts
            const pendingCount = items.filter(i => i.status === 'pending').length
