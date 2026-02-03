@@ -161,6 +161,7 @@ import Loader from '@/components/ui/Loader'
             <div className={`
                 flex flex-col bg-white rounded-2xl overflow-hidden shadow-xl border-2 transition-all duration-300
                 ${hasPending ? 'border-orange-500 shadow-orange-100' : 'border-yellow-400 shadow-yellow-100'}
+                ${loading ? 'opacity-70 pointer-events-none' : ''}
             `}>
                 {/* Header */}
                 <div className={`
