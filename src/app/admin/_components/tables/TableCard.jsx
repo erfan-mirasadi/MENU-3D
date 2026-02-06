@@ -5,9 +5,14 @@ import { RiDeleteBin6Line, RiQrCodeLine, RiCloseLine, RiDownloadLine } from "rea
 import QrCodeGenerator from "./QrCodeGenerator";
 import { createPortal } from "react-dom";
 
-export default function TableCard({ table, onDelete, qrSettings, slug }) {
+export default function TableCard({ table, onDelete, qrSettings, slug, restaurantLogo }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showQr, setShowQr] = useState(false);
+  const [downloadTrigger, setDownloadTrigger] = useState(0); // [NEW] Simple counter trigger
+
+  const handleDownload = () => {
+      setDownloadTrigger(prev => prev + 1);
+  };
 
   const handleDelete = async () => {
     if (!confirm(`Are you sure you want to delete ${table.table_number}?`)) return;
@@ -20,7 +25,7 @@ export default function TableCard({ table, onDelete, qrSettings, slug }) {
     }
   };
 
-  const fullUrl = `https://menu-app-psi-five.vercel.app/${slug || 'demo'}/${table.table_number}`;
+  const fullUrl = `https://menu-3d.com/${slug || 'demo'}/${table.table_number}`;
 
   return (
     <>
@@ -71,24 +76,33 @@ export default function TableCard({ table, onDelete, qrSettings, slug }) {
                 
                 <h3 className="text-xl font-bold text-white">Table {table.table_number}</h3>
                 
-                <div className="bg-white p-4 rounded-xl">
+                {/* QR Code Container - Transparent */}
+                <div className="p-4 rounded-xl">
                     <QrCodeGenerator 
                         url={fullUrl}
                         width={250}
                         height={250}
                         color1={qrSettings?.color1}
                         color2={qrSettings?.color2}
+                        logo={restaurantLogo}
+                        resolution={10} // 2500x2500px for print quality
+                        downloadTrigger={downloadTrigger} // [NEW]
+                        fileName={`qr-table-${table.table_number}`} // [NEW]
                     />
                 </div>
                 
-                <p className="text-xs text-gray-500 text-center break-all">
+                <p className="text-xs text-start text-gray-500 break-all bg-dark-800 p-2 rounded-lg border border-gray-800 w-full font-mono">
                     {fullUrl}
                 </p>
 
-                 {/* Download hint: right click to save (simple solution for now) */}
-                 <p className="text-xs text-primary/80 flex items-center gap-1">
-                    <RiDownloadLine /> Right click image to save
-                 </p>
+                 {/* Download Button */}
+                 <button 
+                    onClick={handleDownload}
+                    className="w-full bg-accent hover:bg-accent-hover text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20 active:scale-95 cursor-pointer"
+                 >
+                    <RiDownloadLine size={20} />
+                    Download PNG
+                 </button>
             </div>
         </div>,
         document.body

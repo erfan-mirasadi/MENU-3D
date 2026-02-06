@@ -2,7 +2,7 @@
 import QrCodeGenerator from "./QrCodeGenerator";
 import { RiInputMethodLine, RiPaletteLine } from "react-icons/ri";
 
-export default function QrSettingsPanel({ color1, setColor1, color2, setColor2 }) {
+export default function QrSettingsPanel({ color1, setColor1, color2, setColor2, restaurantLogo, slug }) {
   return (
     <div className="bg-dark-800/50 rounded-2xl p-6 border border-gray-800 mb-8 flex flex-col md:flex-row items-center gap-8">
       
@@ -51,11 +51,12 @@ export default function QrSettingsPanel({ color1, setColor1, color2, setColor2 }
       <div className="flex flex-col items-center gap-3">
         <span className="text-xs text-gray-500 font-semibold uppercase tracking-widest">Live Preview</span>
         <QrCodeGenerator 
-            url="https://menu-app-psi-five.vercel.app/" 
+            url={`https://menu-3d.com/${slug || 'demo'}`}
             width={180} 
             height={180} 
             color1={color1} 
             color2={color2} 
+            logo={restaurantLogo}
         />
       </div>
     </div>

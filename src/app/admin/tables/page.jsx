@@ -13,8 +13,8 @@ export default function TablesPage() {
   const [adding, setAdding] = useState(false);
   
   // QR Code Settings State
-  const [color1, setColor1] = useState("#4f46e5");
-  const [color2, setColor2] = useState("#ec4899");
+  const [color1, setColor1] = useState("#ea7c69");
+  const [color2, setColor2] = useState("#252836");
 
   const handleAddTable = async () => {
     if (!restaurant?.id) {
@@ -81,8 +81,10 @@ export default function TablesPage() {
       <QrSettingsPanel 
         color1={color1} 
         setColor1={setColor1} 
-        color2={color2} 
+        color2={color2}
         setColor2={setColor2} 
+        restaurantLogo={restaurant?.logo}
+        slug={restaurant?.slug}
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 gap-y-10">
@@ -102,6 +104,7 @@ export default function TablesPage() {
             onDelete={handleDeleteTable}
             qrSettings={{ color1, color2 }}
             slug={restaurant?.slug}
+            restaurantLogo={restaurant?.logo}
           />
         ))}
       </div>

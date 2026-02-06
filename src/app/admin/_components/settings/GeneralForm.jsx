@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
-import { supabase } from "@/lib/supabase";
 import { useRestaurantData } from "@/app/hooks/useRestaurantData"; 
+import { updateRestaurantImage, updateRestaurant } from "@/services/restaurantService";
 import toast from "react-hot-toast";
 import { RiCloseLine, RiUploadCloud2Line } from "react-icons/ri";
 import Loader from "@/components/ui/Loader";
@@ -84,10 +84,19 @@ export default function GeneralForm() {
       xhr.open("PUT", uploadUrl, true);
       xhr.setRequestHeader("Content-Type", file.type);
       
-      xhr.onload = () => {
+      xhr.onload = async () => {
         if (xhr.status === 200) {
           setFormData(prev => ({ ...prev, [field]: publicUrl }));
-          toast.success("Image uploaded!");
+          
+          //Auto-update Supabase immediately via Service
+          try {
+             await updateRestaurantImage(restaurant?.owner_id, field, publicUrl);
+             toast.success("Image uploaded and saved!");
+             refetch(restaurant.id); // Refresh global context
+          } catch (error) {
+             toast.error("Uploaded but failed to save to database");
+          }
+
         } else {
           toast.error("Upload failed.");
         }
@@ -127,26 +136,18 @@ export default function GeneralForm() {
 
     setSaving(true);
 
-    const savePromise = new Promise(async (resolve, reject) => {
-      const socialJson = {
-        instagram: formData.instagram,
-        website: formData.website,
-      };
+    const socialJson = {
+      instagram: formData.instagram,
+      website: formData.website,
+    };
 
-      const { error } = await supabase
-        .from("restaurants")
-        .update({
-          name: formData.name,
-          slug: formData.slug,
-          wifi_pass: formData.wifi_pass,
-          social_links: socialJson,
-          logo: formData.logo,
-          bg_image: formData.bg_image,
-        })
-        .eq("owner_id", restaurant?.owner_id);
-
-      if (error) reject(error);
-      else resolve();
+    const savePromise = updateRestaurant(restaurant?.owner_id, {
+        name: formData.name,
+        slug: formData.slug,
+        wifi_pass: formData.wifi_pass,
+        social_links: socialJson,
+        logo: formData.logo,
+        bg_image: formData.bg_image,
     });
 
     toast.promise(savePromise, {

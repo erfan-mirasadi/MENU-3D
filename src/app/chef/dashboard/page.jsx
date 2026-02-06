@@ -126,16 +126,16 @@ export default function ChefDashboard() {
 
     // Bulk Serve Action
     const handleServeAll = async (ordersToServe) => {
-        // Waiting for API ensures the ticket stays visible with spinner until actually done.
+        // Optimistic Update
         const ids = ordersToServe.map(o => o.id)
-        
+        setOrders(prev => prev.map(o => 
+            ids.includes(o.id) ? { ...o, status: 'served' } : o
+        ))
+
         try {
             // Update all in parallel
             await Promise.all(ids.map(id => updateOrderItemStatus(id, 'served')))
             toast.success("Ticket Served!")
-            
-            // Manual local update after success (if realtime is slow)
-            setOrders(prev => prev.filter(o => !ids.includes(o.id)))
         } catch (err) {
             toast.error("Bulk action failed")
             getKitchenOrders(restaurantId).then(setOrders)

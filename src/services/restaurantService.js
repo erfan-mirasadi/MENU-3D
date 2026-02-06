@@ -78,3 +78,20 @@ export async function updateRestaurant(ownerId, restaurantData) {
 
   return data;
 }
+// [NEW] Specialized update for Images (auto-save)
+export async function updateRestaurantImage(ownerId, field, url) {
+  const { data, error } = await supabase
+    .from("restaurants")
+    .update({ [field]: url })
+    .eq("owner_id", ownerId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error(`Error updating restaurant ${field}:`, error);
+    // Toast should be handled by caller or here - user prefers toast unified
+    throw error;
+  }
+
+  return data;
+}
