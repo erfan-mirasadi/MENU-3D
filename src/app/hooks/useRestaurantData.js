@@ -24,7 +24,7 @@ export const RestaurantProvider = ({ children }) => {
   // Use a Ref to access the latest sessions inside the realtime callback without re-subscribing
   const sessionsRef = useRef(sessions);
   const timeoutRef = useRef(null);
-  const lastNotificationTimeRef = useRef(0); // [NEW] Debounce Ref
+  const lastNotificationTimeRef = useRef(0);
 
   // Keep Ref updated
   useEffect(() => {
@@ -62,6 +62,9 @@ export const RestaurantProvider = ({ children }) => {
 
   // 1a. Fetch Operational Data (Tables & Sessions) - Efficient re-fetcher
   const fetchOperationalData = useCallback(async (rId) => {
+    // Disable Fetch for Admin
+    if (window.location.pathname.includes('/admin')) return;
+
     try {
         console.log(`📡 [useRestaurantData] Fetching Operational Data for Restaurant ID: ${rId} ...`);
         
@@ -156,6 +159,9 @@ export const RestaurantProvider = ({ children }) => {
     const channel = supabase.channel(`restaurant-${restaurantId}`);
 
     const handleUpdate = () => {
+       // Disable Realtime for Admin
+       if (window.location.pathname.includes('/admin')) return;
+
        if (timeoutRef.current) clearTimeout(timeoutRef.current);
        timeoutRef.current = setTimeout(() => {
            console.log("⏱️ Debounce Trigger: Fetching Data...");
@@ -208,6 +214,9 @@ export const RestaurantProvider = ({ children }) => {
              filter: `restaurant_id=eq.${restaurantId}`
         },
         (payload) => {
+             // Disable Realtime for Admin
+             if (window.location.pathname.includes('/admin')) return;
+
              const currentSessions = sessionsRef.current;
              const sessionId = payload.new?.session_id || payload.old?.session_id;
 
@@ -229,7 +238,7 @@ export const RestaurantProvider = ({ children }) => {
                 }
 
                 // Client App Filter: Only listen to updates for the CURRENT Table
-                const isStaff = pathname.includes('/chef') || pathname.includes('/waiter') || pathname.includes('/cashier') || pathname.includes('/admin');
+                const isStaff = pathname.includes('/chef') || pathname.includes('/waiter') || pathname.includes('/cashier');
                 
                 if (!isStaff) {
                     // Try to find the session to see which table it belongs to
@@ -258,7 +267,7 @@ export const RestaurantProvider = ({ children }) => {
 
                 // Waiter: Pending (Draft -> Pending)
                 if (
-                    (pathname.includes('/waiter') || pathname.includes('/admin')) &&
+                    pathname.includes('/waiter') &&
                     newStatus === 'pending'
                 ) {
                     shouldPlay = true;
@@ -266,7 +275,7 @@ export const RestaurantProvider = ({ children }) => {
 
                 // B) Cashier Notification ONLY: Waiter Confirms Order (Pending -> Confirmed)
                 if (
-                    (pathname.includes('/cashier') || pathname.includes('/admin')) &&
+                    pathname.includes('/cashier') &&
                     newStatus === 'confirmed'
                 ) {
                      shouldPlay = true;
@@ -274,7 +283,7 @@ export const RestaurantProvider = ({ children }) => {
 
                 // C) Chef Notification: Order Status changes to Preparing
                 if (
-                    (pathname.includes('/chef') || pathname.includes('/admin')) &&
+                    pathname.includes('/chef') &&
                     newStatus === 'preparing'
                 ) {
                      shouldPlay = true;
@@ -283,7 +292,7 @@ export const RestaurantProvider = ({ children }) => {
                 // D) Waiter/Cashier Notification: Order Served
                 // User Request: ONLY 'served' status, and use 'bell.mp3'
                 if (
-                    (pathname.includes('/waiter') || pathname.includes('/cashier') || pathname.includes('/admin')) && 
+                    (pathname.includes('/waiter') || pathname.includes('/cashier')) && 
                     newStatus === 'served'
                 ) {
                     shouldPlay = true;
@@ -303,7 +312,7 @@ export const RestaurantProvider = ({ children }) => {
                     const sessionID = payload.new?.session_id || payload.old?.session_id;
                     const tableNum = getTableNumber(sessionID)
                     // Chef Toast: New Order (Preparing)
-                    if ((pathname.includes('/chef') || pathname.includes('/admin')) && newStatus === 'preparing') {
+                    if (pathname.includes('/chef') && newStatus === 'preparing') {
                         toast(`Kitchen Order: Table ${tableNum}`, {
                              icon: <RiNotification3Line className="text-orange-500" />,
                              duration: 5000,
@@ -315,7 +324,7 @@ export const RestaurantProvider = ({ children }) => {
                         });
                     }
                     // Waiter/Cashier Toast: Order Served
-                    if ((pathname.includes('/waiter') || pathname.includes('/cashier') || pathname.includes('/admin')) && 
+                    if ((pathname.includes('/waiter') || pathname.includes('/cashier')) && 
                         newStatus === 'served') {
                         // "Hazer mishe" -> Food Ready (mapped to served status)
                         toast.success(`Table ${tableNum}: Food Ready!`, {

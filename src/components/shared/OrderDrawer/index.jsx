@@ -121,49 +121,105 @@ export default function OrderDrawer({
                             />
 
                             {/* 2. Confirmed Items (Cashier specific usually) */}
-                            <ConfirmedOrderList
-                                items={confirmedItems}
-                                role={role}
-                                loading={loading}
-                                loadingOp={loadingOp}
-                                onUpdateQty={actions.onUpdateQty}
-                                onDelete={actions.onDeleteItem}
-                                onStartPreparing={actions.handleStartPreparing}
-                            />
+                            {isBatchEditing === 'confirmed' ? (
+                                <ActiveOrderList
+                                    items={[]}
+                                    role={role}
+                                    isBatchEditing={true}
+                                    batchItems={batchItems}
+                                    loading={loading}
+                                    loadingOp={loadingOp}
+                                    onEditOrder={() => {}}
+                                    onCancelEdit={actions.handleCancelBatchEdit}
+                                    onSaveEdit={actions.handleExecuteBatch}
+                                    onUpdateBatchQty={(id, qty) => setters.setBatchItems(p => p.map(i => i.id === id ? {...i, quantity: qty} : i))}
+                                    onDeleteBatchItem={(id) => setters.setBatchItems(p => p.filter(i => i.id !== id))}
+                                    onUpdateQty={() => {}}
+                                    onDelete={() => {}}
+                                />
+                            ) : (
+                                <ConfirmedOrderList
+                                    items={confirmedItems}
+                                    role={role}
+                                    loading={loading}
+                                    loadingOp={loadingOp}
+                                    onUpdateQty={actions.onUpdateQty}
+                                    onDelete={actions.onDeleteItem}
+                                    onStartPreparing={actions.handleStartPreparing}
+                                    onEditOrder={!isBatchEditing ? () => actions.handleStartBatchEdit('confirmed') : undefined}
+                                    isBatchEditing={false} 
+                                />
+                            )}
 
                             {/* 3.1. In Kitchen Items (Yellow) */}
-                            <ActiveOrderList
-                                items={activeItems.filter(i => i.status !== 'served')}
-                                role={role}
-                                isBatchEditing={isBatchEditing}
-                                batchItems={batchItems}
-                                loading={loading}
-                                loadingOp={loadingOp}
-                                onEditOrder={actions.handleStartBatchEdit}
-                                onCancelEdit={actions.handleCancelBatchEdit}
-                                onSaveEdit={actions.handleExecuteBatch}
-                                onUpdateBatchQty={(id, qty) => setters.setBatchItems(p => p.map(i => i.id === id ? {...i, quantity: qty} : i))}
-                                onDeleteBatchItem={(id) => setters.setBatchItems(p => p.filter(i => i.id !== id))}
-                                onUpdateQty={actions.onUpdateQty}
-                                onDelete={actions.onDeleteItem}
-                            />
+                            {isBatchEditing === 'kitchen' ? (
+                                <ActiveOrderList
+                                    items={[]}
+                                    role={role}
+                                    isBatchEditing={true}
+                                    batchItems={batchItems}
+                                    loading={loading}
+                                    loadingOp={loadingOp}
+                                    onEditOrder={() => {}}
+                                    onCancelEdit={actions.handleCancelBatchEdit}
+                                    onSaveEdit={actions.handleExecuteBatch}
+                                    onUpdateBatchQty={(id, qty) => setters.setBatchItems(p => p.map(i => i.id === id ? {...i, quantity: qty} : i))}
+                                    onDeleteBatchItem={(id) => setters.setBatchItems(p => p.filter(i => i.id !== id))}
+                                    onUpdateQty={() => {}}
+                                    onDelete={() => {}}
+                                />
+                            ) : (
+                                <ActiveOrderList
+                                    items={activeItems.filter(i => i.status !== 'served')}
+                                    role={role}
+                                    isBatchEditing={false}
+                                    batchItems={[]}
+                                    loading={loading}
+                                    loadingOp={loadingOp}
+                                    onEditOrder={!isBatchEditing ? () => actions.handleStartBatchEdit('kitchen') : undefined}
+                                    onCancelEdit={() => {}}
+                                    onSaveEdit={() => {}}
+                                    onUpdateBatchQty={() => {}}
+                                    onDeleteBatchItem={() => {}}
+                                    onUpdateQty={actions.onUpdateQty}
+                                    onDelete={actions.onDeleteItem}
+                                />
+                            )}
 
                             {/* 3.2. Served Items (Green) */}
-                            <ActiveOrderList
-                                items={activeItems.filter(i => i.status === 'served')}
-                                role={role}
-                                isBatchEditing={false} 
-                                batchItems={[]}
-                                loading={loading}
-                                loadingOp={loadingOp}
-                                onEditOrder={() => {}} 
-                                onCancelEdit={() => {}} 
-                                onSaveEdit={() => {}} 
-                                onUpdateBatchQty={() => {}}
-                                onDeleteBatchItem={() => {}}
-                                onUpdateQty={actions.onUpdateQty}
-                                onDelete={actions.onDeleteItem}
-                            />
+                            {isBatchEditing === 'served' ? (
+                                <ActiveOrderList
+                                    items={[]}
+                                    role={role}
+                                    isBatchEditing={true}
+                                    batchItems={batchItems}
+                                    loading={loading}
+                                    loadingOp={loadingOp}
+                                    onEditOrder={() => {}}
+                                    onCancelEdit={actions.handleCancelBatchEdit}
+                                    onSaveEdit={actions.handleExecuteBatch}
+                                    onUpdateBatchQty={(id, qty) => setters.setBatchItems(p => p.map(i => i.id === id ? {...i, quantity: qty} : i))}
+                                    onDeleteBatchItem={(id) => setters.setBatchItems(p => p.filter(i => i.id !== id))}
+                                    onUpdateQty={() => {}}
+                                    onDelete={() => {}}
+                                />
+                            ) : (
+                                <ActiveOrderList
+                                    items={activeItems.filter(i => i.status === 'served')}
+                                    role={role}
+                                    isBatchEditing={false} 
+                                    batchItems={[]}
+                                    loading={loading}
+                                    loadingOp={loadingOp}
+                                    onEditOrder={!isBatchEditing ? () => actions.handleStartBatchEdit('served') : undefined}
+                                    onCancelEdit={() => {}} 
+                                    onSaveEdit={() => {}} 
+                                    onUpdateBatchQty={() => {}}
+                                    onDeleteBatchItem={() => {}}
+                                    onUpdateQty={actions.onUpdateQty}
+                                    onDelete={actions.onDeleteItem}
+                                />
+                            )}
                         </>
                     )}
                 </div>

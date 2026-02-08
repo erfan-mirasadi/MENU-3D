@@ -42,7 +42,7 @@ const TEMPLATES = [
 ];
 
 export default function TemplatesPage() {
-  const { restaurant, loading: contextLoading, refetch } = useRestaurantData(); // [FIX] Use Context
+  const { restaurant, loading: contextLoading, refetch } = useRestaurantData();
   const [activeTemplate, setActiveTemplate] = useState("modern");
   const [activatingId, setActivatingId] = useState(null);
   

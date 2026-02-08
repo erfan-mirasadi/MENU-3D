@@ -21,8 +21,8 @@ export default function ActiveOrderList({
 }) {
     const { t } = useLanguage();
 
-    if (items.length === 0) return null;
-
+    if (items.length === 0 && !isBatchEditing) return null;
+    
     // Unified View
     // GROUPING LOGIC: Aggregate items by product_id
     const groupedItems = Object.values(items.reduce((acc, item) => {
@@ -41,20 +41,23 @@ export default function ActiveOrderList({
         return acc;
     }, {}));
 
-    // Check if ALL items are served
-    const allServed = items.every(i => i.status === 'served');
+    // Check if ALL items are served (only meaningful if not editing)
+    const allServed = items.length > 0 && items.every(i => i.status === 'served');
 
     const getTitle = () => {
+        if (isBatchEditing) return t('editingOrders') || "Editing Orders";
         if (allServed) return t('served');
         return t('inKitchen');
     };
 
     const getIcon = () => {
+        if (isBatchEditing) return <FaPen />;
         if (allServed) return <FaCheckDouble />;
         return <FaFire />;
     };
 
     const getAccentColor = () => {
+        if (isBatchEditing) return "orange";
         if (allServed) return "green";
         return "yellow";
     };
@@ -66,7 +69,7 @@ export default function ActiveOrderList({
             accentColor={getAccentColor()}
             icon={getIcon()}
             action={
-            !isBatchEditing && (
+            !isBatchEditing && onEditOrder && (
                 <button 
                     onClick={onEditOrder} 
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
@@ -91,7 +94,7 @@ export default function ActiveOrderList({
                             onUpdateQty={onUpdateBatchQty}
                             onDelete={onDeleteBatchItem}
                             allowIncrease={false}
-                            showReadyBadge={!allServed}
+                            showReadyBadge={false}
                         />
                     ))}
                 </div>

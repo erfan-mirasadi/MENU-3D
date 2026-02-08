@@ -525,9 +525,16 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
     } 
   };
 
-  // Batch Logic (Only for Active Items in DB)
-  const handleStartBatchEdit = () => {
-      const active = sessionItems.filter(i => ["preparing", "served", "confirmed"].includes(i.status)); 
+  // Batch Logic (Scoped)
+  const handleStartBatchEdit = (scope) => {
+      // scope: 'confirmed' | 'kitchen' | 'served'
+      let relevantStatus = [];
+      if (scope === 'served') relevantStatus = ['served'];
+      else if (scope === 'kitchen') relevantStatus = ['preparing', 'ready'];
+      else if (scope === 'confirmed') relevantStatus = ['confirmed'];
+      else return; 
+
+      const active = sessionItems.filter(i => relevantStatus.includes(i.status)); 
       
       const groupedBatch = Object.values(active.reduce((acc, item) => {
         const key = item.product_id || item.product?.id;
@@ -545,24 +552,29 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
       }, {}));
 
       setBatchItems(groupedBatch);
-      setIsBatchEditing(true);
+      setIsBatchEditing(scope);
   };
 
   const handleCancelBatchEdit = () => {
-      setIsBatchEditing(false);
+      setIsBatchEditing(null);
       setBatchItems([]);
   };
 
   const handleExecuteBatch = () => {
-        // ... (Logic unchanged for calculating void, skipping for brevity)
-        // We need to compare "New Grouped Totals" vs "Old Real Items"
-        const originalActive = sessionItems.filter(i => ["preparing", "served", "confirmed"].includes(i.status));
+        // Determine Original Active based on CURRENT SCOPE
+        let relevantStatus = [];
+        if (isBatchEditing === 'served') relevantStatus = ['served'];
+        else if (isBatchEditing === 'kitchen') relevantStatus = ['preparing', 'ready'];
+        else if (isBatchEditing === 'confirmed') relevantStatus = ['confirmed'];
+        
+        const originalActive = sessionItems.filter(i => relevantStatus.includes(i.status));
       
+        // ... (Logic unchanged for calculating void, but scoped to originalActive)
         let needsVoid = false;
 
         // Check 1: Did any group qty decrease?
         for (const batchItem of batchItems) {
-            // Find total existing quantity for this product
+            // Find total existing quantity for this product WITHIN SCOPE
             const originalTotal = originalActive
                 .filter(o => (o.product_id || o.product?.id) === (batchItem.product_id || batchItem.product?.id))
                 .reduce((sum, i) => sum + i.quantity, 0);
@@ -592,12 +604,18 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
   const executeBatchUpdate = async (voidReason) => {
       setLoadingOp('BATCH_UPDATE');
       try {
-          const originalActive = sessionItems.filter(i => ["preparing", "served", "confirmed"].includes(i.status));
+          // Re-determine scope for execution
+          let relevantStatus = [];
+          if (isBatchEditing === 'served') relevantStatus = ['served'];
+          else if (isBatchEditing === 'kitchen') relevantStatus = ['preparing', 'ready'];
+          else if (isBatchEditing === 'confirmed') relevantStatus = ['confirmed'];
+
+          const originalActive = sessionItems.filter(i => relevantStatus.includes(i.status));
           const updates = [];
           
           // 1. Handle Updates/Reductions
           for (const batchItem of batchItems) {
-               // Get all original rows for this product
+               // Get all original rows for this product WITHIN SCOPE
                const originalRows = originalActive.filter(o => (o.product_id || o.product?.id) === (batchItem.product_id || batchItem.product?.id));
                const currentTotal = originalRows.reduce((sum, i) => sum + i.quantity, 0);
                const targetTotal = batchItem.quantity;
@@ -607,8 +625,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
                if (targetTotal < currentTotal) {
                    let amountToRemove = currentTotal - targetTotal;
                    
-                   // Sort by quantity desc to remove big chunks first, or asc to remove small scraps?
-                   // Usually remove latest created? Let's sort created_at desc.
+                   // Sort by quantity desc 
                    originalRows.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
                    for (const row of originalRows) {
@@ -624,8 +641,6 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
                        }
                    }
                } 
-               // NOTE: Increase logic is disabled in UI "allowIncrease={false}", so we only handle reduction/deletion.
-               // If we enabled increase, we'd update the latest row or add new.
           }
 
           // 2. Handle Complete Removals
@@ -648,7 +663,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
           toast.error("Update Failed: " + e.message);
       } finally {
           setLoadingOp(null);
-          setIsBatchEditing(false);
+          setIsBatchEditing(null);
           setIsVoidModalOpen(false);
           setItemToVoid(null);
       }

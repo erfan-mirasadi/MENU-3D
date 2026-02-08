@@ -77,15 +77,29 @@ export default function ConfirmedOrderList({
                 count={groupedItems.length}
                 accentColor="yellow"
                 icon={<FaFire />}
+                action={
+                    !isBatchEditing && onEditOrder && (
+                        <button
+                            onClick={onEditOrder}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+                                role === 'waiter'
+                                    ? "bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20"
+                                    : "bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20"
+                            }`}
+                        >
+                            <FaPen /> {t('edit')}
+                        </button>
+                    )
+                }
              >
                 <div className="space-y-3">
                     {groupedItems.map(item => (
-                        <SwipeableOrderItem 
-                            key={item.id} 
-                            item={item} 
-                            isPending={false} 
-                            onUpdateQty={handleGroupUpdate} 
-                            onDelete={handleGroupDelete} 
+                        <SwipeableOrderItem
+                            key={item.id}
+                            item={item}
+                            isPending={false}
+                            onUpdateQty={handleGroupUpdate}
+                            onDelete={handleGroupDelete}
                         />
                     ))}
                     <button
