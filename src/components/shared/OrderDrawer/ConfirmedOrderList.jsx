@@ -1,4 +1,4 @@
-import { FaFire, FaCheck, FaPaperPlane } from "react-icons/fa";
+import { FaFire, FaCheck, FaPaperPlane, FaPen } from "react-icons/fa";
 import OrderSection from "./OrderSection";
 import SwipeableOrderItem from "./SwipeableOrderItem";
 import Loader from "@/components/ui/Loader";
@@ -12,7 +12,9 @@ export default function ConfirmedOrderList({
     loadingOp,
     onUpdateQty, 
     onDelete, 
-    onStartPreparing 
+    onStartPreparing,
+    onEditOrder,
+    isBatchEditing 
 }) {
     const { features } = useRestaurantFeatures();
     const { t } = useLanguage();
@@ -118,7 +120,7 @@ export default function ConfirmedOrderList({
                         ) : (
                             <>
                                 {features.kitchen ? (
-                                    <><FaPaperPlane className="text-xl" /> {t('sendToKitchen') || "Send to Kitchen"}</>
+                                    <><FaPaperPlane className="text-xl" /> {t('sendToKitchen')}</>
                                 ) : (
                                     <><FaCheck className="text-xl" /> {t('markServed')}</>
                                 )}
@@ -129,22 +131,5 @@ export default function ConfirmedOrderList({
              </OrderSection>
         );
     }
-
-    // WAITER VIEW (Read-only / Sent)
-    // Waiter usually sees confirmed combined with served if we want.
-    // But per original code: "For Waiter: Includes Confirmed and Served".
-    // So usually Waiter doesn't see a separate "Confirmed" block unless we split it.
-    // The original code concatened confirmed + active for waiter.
-    // Let's defer to ActiveOrderList for waiter if we want to merge them, OR handle it here if we want to change UI.
-    // Original Code: 
-    // confirmedItems.concat(activeItems).length > 0 && ( ... OrderSection title="Sent to Kitchen" ... )
-    
-    // So ConfirmedOrderList might not be used for Waiter if we stick to exact original UI.
-    // But refactoring allows us to be cleaner. separate might be better?
-    // User asked to clean up.
-    // Let's keep it separate if meaningful, or combine them in ActiveOrderList for waiter.
-    // For now, let's say Waiter passes confirmed items to ActiveOrderList if they want them merged.
-    // Or we can return null here for waiter and let parent handle merging.
-    
     return null;
 }

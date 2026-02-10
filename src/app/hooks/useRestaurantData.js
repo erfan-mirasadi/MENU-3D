@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef, us
 import { supabase } from "@/lib/supabase";
 import { playNotificationSound } from "@/lib/sound";
 import { getUserProfile } from "@/services/userService";
-import { getRestaurantById } from "@/services/restaurantService";
+import { getRestaurantById, getRestaurantByOwnerId } from "@/services/restaurantService";
 import toast from "react-hot-toast";
 import { RiNotification3Line, RiCheckDoubleLine } from "react-icons/ri";
 
@@ -62,18 +62,20 @@ export const RestaurantProvider = ({ children }) => {
 
   // 1a. Fetch Operational Data (Tables & Sessions) - Efficient re-fetcher
   const fetchOperationalData = useCallback(async (rId) => {
-    // Disable Fetch for Admin
-    if (window.location.pathname.includes('/admin')) return;
+
 
     try {
         console.log(`📡 [useRestaurantData] Fetching Operational Data for Restaurant ID: ${rId} ...`);
         
         // Fetch Tables
-        const { data: tablesData } = await supabase
+        const { data: tablesData, error: tablesError } = await supabase
             .from("tables")
             .select("id, restaurant_id, table_number, qr_token, layout_data") 
             .eq("restaurant_id", rId)
             .order("table_number", { ascending: true });
+
+        if (tablesError) console.error("❌ Table Fetch Error:", tablesError);
+        console.log("📊 Raw Tables Data:", tablesData);
         
         // Flatten layout_data to top-level properties (x, y, width, etc.)
         const formattedTables = (tablesData || []).map(table => ({
@@ -128,11 +130,21 @@ export const RestaurantProvider = ({ children }) => {
         if (rId) {
             const restaurantData = await getRestaurantById(rId);
             setRestaurant(restaurantData);
+        } else {
+            // Fallback: Check if user owns a restaurant directly
+            const ownedRestaurant = await getRestaurantByOwnerId(user.id);
+            if (ownedRestaurant) {
+                rId = ownedRestaurant.id;
+                setRestaurantId(rId);
+                setRestaurant(ownedRestaurant);
+            }
         }
       }
 
       if (!rId) {
-          console.error("❌ No restaurant ID found");
+          if (!window.location.pathname.includes('/onboarding')) {
+              console.error("❌ No restaurant ID found");
+          }
           return;
       }
 
@@ -155,7 +167,10 @@ export const RestaurantProvider = ({ children }) => {
   useEffect(() => {
     if (!restaurantId) return;
 
-     // Context: Subscribing to Restaurant Channel...
+    // [OPTIMIZATION] Disable Realtime for Admin Panel
+    // Admin pages (Dashboard, Tables, etc.) do not need live order updates.
+    // They rely on manual refetching (swr-style) or page reloads.
+    if (window.location.pathname.includes('/admin')) return;
     const channel = supabase.channel(`restaurant-${restaurantId}`);
 
     const handleUpdate = () => {
@@ -211,7 +226,7 @@ export const RestaurantProvider = ({ children }) => {
              event: "*", // Listen to all changes (including DELETE)
              schema: "public", 
              table: "order_items",
-             filter: `restaurant_id=eq.${restaurantId}`
+          filter: `restaurant_id=eq.${restaurantId}`
         },
         (payload) => {
              // Disable Realtime for Admin

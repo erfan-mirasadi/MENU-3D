@@ -6,7 +6,7 @@ export async function getRestaurantBySlug(slug) {
     .from("restaurants")
     .select("*")
     .eq("slug", slug)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error("Error fetching restaurant:", error);
@@ -21,7 +21,7 @@ export async function getRestaurantByOwnerId(ownerId) {
     .from("restaurants")
     .select("*")
     .eq("owner_id", ownerId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error("Error fetching restaurant:", error);
@@ -36,7 +36,7 @@ export async function getRestaurantById(id) {
     .from("restaurants")
     .select("*")
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error("Error fetching restaurant by ID:", error);

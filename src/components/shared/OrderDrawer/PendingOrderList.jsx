@@ -146,7 +146,7 @@ export default function PendingOrderList({
                             <Loader active={true} variant="inline" className="h-6 w-6" />
                         ) : (
                             <>
-                                <FaCheck className="text-xl" /> {features.kitchen ? t('sendKitchen') : t('markServed')}
+                                <FaCheck className="text-xl" /> {features.kitchen ? t('sendToKitchen') : t('markServed')}
                             </>
                         )}
                     </button>

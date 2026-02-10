@@ -38,6 +38,9 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
   const [itemToVoid, setItemToVoid] = useState(null);
   const [isBatchEditing, setIsBatchEditing] = useState(false);
   const [batchItems, setBatchItems] = useState([]);
+  
+  // State 3: Confirmed Edits (Local Quantity Adjustments for Confirmed Items)
+  const [confirmedEdits, setConfirmedEdits] = useState({});
 
   // Sync with Realtime Session Data
   useEffect(() => {
@@ -79,10 +82,17 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
       }
   }, [session?.id, loadingOp]);
 
-  // Combine Session + Drafts
+  // Combine Session + Drafts + Confirmed Edits
   useEffect(() => {
-      setLocalItems([...sessionItems, ...draftItems]);
-  }, [sessionItems, draftItems]);
+      // Apply confirmed edits to session items locally
+      const itemsWithEdits = sessionItems.map(item => {
+          if ((item.status === 'confirmed' || item.status === 'pending') && confirmedEdits[item.id] !== undefined) {
+              return { ...item, quantity: confirmedEdits[item.id] };
+          }
+          return item;
+      });
+      setLocalItems([...itemsWithEdits, ...draftItems]);
+  }, [sessionItems, draftItems, confirmedEdits]);
 
   // Derived Lists
   const pendingItems = localItems.filter((i) => i.status === "pending");
@@ -230,6 +240,27 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
           return;
       }
 
+      // Check if it's a Confirmed OR Pending item (Batch Edit)
+      const isBatchable = sessionItems.some(i => i.id === itemId && (i.status === 'confirmed' || i.status === 'pending'));
+      if (isBatchable) {
+          if (newQty < 1) {
+             // If qty is 0, we can either:
+             // A) Treat as delete immediately (call onDeleteItem)
+             // B) Batch validity 0 (implies delete on flush)
+             // Current UI logic often calls onDelete for 0. Let's stick to calling onDeleteItem for 0.
+             onDeleteItem(itemId);
+             // Also clear any edit in progress for it to avoid ghosts
+             setConfirmedEdits(prev => {
+                 const next = { ...prev };
+                 delete next[itemId];
+                 return next;
+             });
+          } else {
+             setConfirmedEdits(prev => ({ ...prev, [itemId]: newQty }));
+          }
+          return;
+      }
+
       if(newQty < 1) return; 
       try { await updateOrderItem(itemId, { quantity: newQty }); } catch(e){}
   };
@@ -260,6 +291,18 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
     }
 
     setLoadingOp('CONFIRM_ORDER');
+    
+    // 0. Flush Pending/Confirmed Edits first
+    const editKeys = Object.keys(confirmedEdits);
+    if (editKeys.length > 0) {
+        const promises = editKeys.map(id => {
+            const qty = confirmedEdits[id];
+            return updateOrderItem(id, { quantity: qty });
+        });
+        await Promise.all(promises);
+        setConfirmedEdits({});
+    }
+
     const currentDrafts = [...draftItems]; // Capture drafts for optimistic update
 
     try {
@@ -345,6 +388,26 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
   const handleStartPreparing = async () => {
       setLoadingOp('PREPARE_ORDER');
       try {
+          // 0. Flush Confirmed Edits
+          const editKeys = Object.keys(confirmedEdits);
+          if (editKeys.length > 0) {
+              // Flush updates to server
+              const promises = editKeys.map(id => {
+                  const qty = confirmedEdits[id];
+                  return updateOrderItemSecurely(id, qty, qty, "Quantity Update before Kitchen"); 
+                  // Using secure update or just standard update? 
+                  // Standard updateOrderItem is imported from waiterService. updateOrderItemSecurely is from orderService.
+                  // Let's use updateOrderItem from waiterService as it matches onUpdateQty original logic.
+                  // But wait, original onUpdateQty used updateOrderItem (waiterService).
+                  // Let's stick to that.
+                  // Actually, better use Promise.all waiting.
+                  return updateOrderItem(id, { quantity: qty });
+              });
+              
+              await Promise.all(promises);
+              setConfirmedEdits({});
+          }
+
           if (features.kitchen) {
                // Standard Flow: Confirmed -> Preparing
               await startPreparingOrder(session.id);
@@ -533,8 +596,9 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
       else if (scope === 'kitchen') relevantStatus = ['preparing', 'ready'];
       else if (scope === 'confirmed') relevantStatus = ['confirmed'];
       else return; 
-
-      const active = sessionItems.filter(i => relevantStatus.includes(i.status)); 
+      
+      // Use localItems to include local edits!
+      const active = localItems.filter(i => relevantStatus.includes(i.status)); 
       
       const groupedBatch = Object.values(active.reduce((acc, item) => {
         const key = item.product_id || item.product?.id;
