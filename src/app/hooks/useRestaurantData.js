@@ -161,7 +161,7 @@ export const RestaurantProvider = ({ children }) => {
   // 2. Initial Fetch
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, []);
 
   // 3. Setup Realtime Listener (High-Performance Version)
   useEffect(() => {
@@ -369,7 +369,7 @@ export const RestaurantProvider = ({ children }) => {
       supabase.removeChannel(channel);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [restaurantId, fetchData, fetchOperationalData]); // Dependencies: only external IDs and stable fetch function
+  }, [restaurantId, fetchOperationalData]); // Dependencies: only external IDs and stable fetch function
 
   // 4. Checkout Logic
   const handleCheckout = async (sessionId, type, data) => {
