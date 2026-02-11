@@ -7,7 +7,7 @@ import FeatureGuard from "@/components/shared/FeatureGuard";
 import { updateSessionNote } from "@/services/sessionService";
 
 import { useDrag } from "@use-gesture/react";
-import { MdDeleteOutline, MdAdd, MdRemove } from "react-icons/md";
+import { MdDeleteOutline, MdAdd, MdRemove, MdOutlineMessage } from "react-icons/md";
 
 function SwipeableItem({ item, onRemove, t, content }) {
   const [x, setX] = useState(0);
@@ -224,14 +224,15 @@ export default function ModernCartDrawer({
 
               {/* --- NOTE SECTION (Always visible if session exists) --- */}
               {session && (
-               <div className="pt-4 border-t border-white/5 mx-1">
-                 <label className="text-white/40 text-[10px] font-bold uppercase tracking-wider mb-2 block">
-                   Chef Instructions / Special Requests
+               <div className="pt-6 border-t border-white/10 mx-1">
+                 <label className="text-[#ea7c69] text-xs font-bold uppercase tracking-widest mb-3 block flex items-center gap-2">
+                   <MdOutlineMessage size={18} />
+                   {t("orderNote")}
                  </label>
                  <textarea
-                   className="w-full bg-black/20 border border-white/5 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-[#ea7c69]/50 placeholder:text-white/20 resize-none transition-colors"
+                   className="w-full bg-[#252836] border border-white/20 rounded-xl p-4 text-white text-base focus:outline-none focus:border-[#ea7c69] focus:ring-1 focus:ring-[#ea7c69] placeholder:text-white/30 resize-none transition-all shadow-inner"
                    rows={3}
-                   placeholder="Allergies, extra spicy, etc..."
+                   placeholder={t("notePlaceholder") || "Allergies, extra spicy, etc..."}
                    value={note}
                    onChange={(e) => setNote(e.target.value)}
                  />
@@ -319,7 +320,7 @@ export default function ModernCartDrawer({
                  }}
                  className="w-full bg-white/10 hover:bg-white/20 text-white h-14 rounded-2xl font-bold text-lg active:scale-95 transition-all"
                >
-                 Save Note
+                 {t("save")}
                </button>
                ) : (
                 <div className="w-full h-14 rounded-2xl border border-white/10 flex items-center justify-center text-gray-500 text-sm font-medium cursor-not-allowed">

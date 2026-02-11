@@ -39,15 +39,15 @@ export default function ServiceButtons({ restaurantId, tableId, sessionId }) {
       );
 
       if (error) {
-        toast.error("Failed to send request. Please try again.");
+        toast.error(t('failedToSend'));
       } else {
-        const msg = type === 'bill' ? t('requestBill') + " Sent!" : t('callWaiter') + " Sent!";
+        const msg = type === 'bill' ? t('billSent') : t('waiterSent');
         toast.success(msg);
         setConfirming(null); // Close after success
       }
     } catch (err) {
       console.error("Request failed", err);
-      toast.error("Something went wrong.");
+      toast.error(t('somethingWentWrong'));
     } finally {
       setLoading(null);
     }

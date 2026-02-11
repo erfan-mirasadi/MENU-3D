@@ -524,7 +524,7 @@ export default function DashboardPage() {
                         <>
                              <div className="flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-yellow-400"></span>
-                                <span className="text-yellow-200">{mergedTables.filter(t => t.status === 'preparing').length} Kitchen</span>
+                                <span className="text-yellow-200">{mergedTables.filter(t => t.status === 'preparing').length} {t('kitchenStatus')}</span>
                              </div>
                              <div className="w-px h-4 bg-white/10"></div>
                         </>
@@ -571,7 +571,7 @@ export default function DashboardPage() {
                             } cursor-pointer`}
                          >
                             <FaList />
-                            {sortingMode === 'priority' ? "Smart Sort" : "123 Sort"}
+                            {sortingMode === 'priority' ? t('smartSort') : t('numericSort')}
                          </button>
                     )}
                   </div>

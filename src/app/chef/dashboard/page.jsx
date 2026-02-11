@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
+import { RiMenuFoldLine, RiMenuUnfoldLine } from 'react-icons/ri'
 import { supabase } from '@/lib/supabase'
 import { getKitchenOrders, updateOrderItemStatus } from '@/services/orderService'
 import { useRestaurantData } from '@/app/hooks/useRestaurantData'
@@ -15,6 +16,7 @@ import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 export default function ChefDashboard() {
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const { restaurantId } = useRestaurantData()
     const { t } = useLanguage();
 
@@ -167,16 +169,31 @@ export default function ChefDashboard() {
     return (
         <div className="min-h-screen bg-dark-900 flex overflow-hidden">
             {/* Left Sidebar: Summary */}
-            <KitchenSummaryBar orders={orders} />
+            <KitchenSummaryBar 
+                orders={orders} 
+                isOpen={isSidebarOpen} 
+                onClose={() => setIsSidebarOpen(false)}
+            />
 
             {/* Main Content */}
-            <main className="flex-1 p-6 overflow-y-auto h-screen">
-                <header className="flex justify-between items-center mb-8">
-                    <div>
-                    <h1 className="text-4xl font-black text-text-light tracking-tight">{t('kitchenDisplay')}</h1>
-                    <p className="text-text-dim mt-2 font-medium">
-                        {groupedTickets.length} {t('activeTickets')} • {orders.length} {t('items')}
-                    </p>
+            <main className="flex-1 p-4 md:p-6 overflow-y-auto h-screen relative">
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <div className="flex items-center gap-3">
+                        {/* Mobile Sidebar Toggle */}
+                        <button 
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="md:hidden p-2 text-white bg-dark-800 rounded-lg shadow-md border border-dark-700 active:scale-95 transition-transform"
+                        >
+                            <RiMenuUnfoldLine size={24} />
+                        </button>
+                        <div>
+                            <h1 className="text-2xl md:text-4xl font-black text-text-light tracking-tight flex items-center gap-2">
+                                {t('kitchenDisplay')}
+                            </h1>
+                            <p className="text-text-dim mt-1 font-medium text-sm md:text-base">
+                                {groupedTickets.length} {t('activeTickets')} • {orders.length} {t('items')}
+                            </p>
+                        </div>
                     </div>
                     
                     <div className="flex items-center gap-4">

@@ -1,10 +1,12 @@
 "use client";
 import dynamic from "next/dynamic";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Dynamically import Chart to avoid SSR issues
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const CategorySalesChart = ({ data, loading }) => {
+    const { t } = useLanguage();
     // Data expected: Array of { name: "Foods", value: 1250.00 }
     
     // Sort by value descending
@@ -73,7 +75,7 @@ const CategorySalesChart = ({ data, loading }) => {
   return (
     <div className="bg-[#1F1D2B] p-6 rounded-lg flex flex-col">
        <div className="flex justify-between items-center mb-6">
-         <h2 className="text-white text-lg font-bold">Sales by Category</h2>
+         <h2 className="text-white text-lg font-bold">{t('salesByCategory')}</h2>
       </div>
 
       <div className="flex items-center justify-center gap-8 flex-1">
@@ -84,7 +86,7 @@ const CategorySalesChart = ({ data, loading }) => {
             ) : hasData ? (
                  <Chart options={options} series={series} type="radialBar" height={220} width={220} style={{ position: 'absolute', top: '-30px', left: '-30px' }} />
             ) : (
-                <div className="text-[#ABBBC2] text-xs">No Data</div>
+                <div className="text-[#ABBBC2] text-xs">{t('noItemsFound') || "No Data"}</div>
             )}
          </div>
 

@@ -29,7 +29,9 @@ export default function ThreeDLayout({ restaurant, categories }) {
   // --- STATE ---
   const [activeCatId, setActiveCatId] = useState(categories[0]?.id);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  // Start loading immediately (true) so the user sees the loader first thing.
+  // The useEffect below will turn it off if there are no products.
+  const [isLoading, setIsLoading] = useState(true);
   const [currentBlobUrl, setCurrentBlobUrl] = useState(null); // Local blob URL from FoodItem
   const [isCartOpen, setIsCartOpen] = useState(false); // Helper state for preventing interactions
 

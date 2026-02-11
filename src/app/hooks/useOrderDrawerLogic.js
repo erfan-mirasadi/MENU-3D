@@ -12,9 +12,11 @@ import {
 } from "@/services/waiterService";
 import { voidOrderItem, updateOrderItemSecurely } from "@/services/orderService";
 import { useRestaurantFeatures } from "./useRestaurantFeatures";
+import { useLanguage } from "@/context/LanguageContext";
 
 export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter", onCloseDrawer, onRefetch) => {
   const { features } = useRestaurantFeatures();
+  const { t } = useLanguage();
   const [loadingOp, setLoadingOp] = useState(null); // 'START_SESSION', 'CLOSE_TABLE', etc.
   
   // State 1: Local Drafts (New additions not yet sent to DB)
@@ -110,10 +112,10 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
     setLoadingOp('START_SESSION');
     try {
       await startTableSession(table.id, table.restaurant_id);
-      toast.success("Table Started! 🟢");
+      toast.success(t('tableStarted'));
       // Intentionally keep loadingOp='START_SESSION' until realtime prop comes in (handled by useEffect above)
     } catch (error) { 
-      toast.error("Failed to start"); 
+      toast.error(t('failedToStart')); 
       setLoadingOp(null);
     } 
   };
@@ -182,7 +184,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
     };
 
     setDraftItems(prev => [...prev, newItem]);
-    toast.success("Added to Order", { icon: '📝', duration: 1000 });
+    toast.success(t('addedToOrder'), { icon: '📝', duration: 1000 });
   };
 
   const handleMenuRemove = async (product) => {
@@ -277,7 +279,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
 
       if (item.status === 'pending') {
           setSessionItems(prev => prev.filter(i => i.id !== itemId));
-          try { await deleteOrderItem(itemId); toast.success("Removed"); } catch(e){}
+          try { await deleteOrderItem(itemId); toast.success(t('removedFromOrder')); } catch(e){}
       } else {
           setItemToVoid(item);
           setIsVoidModalOpen(true);
@@ -286,7 +288,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
 
   const handleConfirmOrder = async () => {
     if (draftItems.length === 0 && sessionItems.filter(i => i.status === 'pending').length === 0) {
-        toast("Nothing to send");
+        toast(t('nothingToSend'));
         return;
     }
 
@@ -371,14 +373,14 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
         }, 5000);
 
         if (targetStatus === 'confirmed') {
-            toast.success("Sent to Cashier for Approval! ⏳");
+            toast.success(t('sentToCashier'));
         } else if (targetStatus === 'preparing') {
-            toast.success("Sent Directly to Kitchen! 👨‍🍳");
+            toast.success(t('sentToKitchen'));
         } else {
-             toast.success("Orders Served! ✅");
+             toast.success(t('ordersServed'));
         }
     } catch (error) { 
-        toast.error("Failed to confirm");
+        toast.error(t('failedToConfirm'));
         console.error(error);
         setLoadingOp(null); // Clear on error
     } 
@@ -423,7 +425,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
               });
 
               setOptimisticLock({ targetStatus: 'preparing', count: totalCount > 0 ? 1 : 0 });
-              toast.success("Started Preparing! 🍳", { icon: '👨‍🍳' });
+              toast.success(t('startPreparing'), { icon: '👨‍🍳' });
 
           } else {
               // No Kitchen Flow: Confirmed -> Served (Directly)
@@ -440,7 +442,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
               });
 
               setOptimisticLock({ targetStatus: 'served', count: totalCount > 0 ? 1 : 0 });
-              toast.success("Orders Served! ✅");
+              toast.success(t('ordersServed'));
           }
 
           setTimeout(() => {
@@ -475,7 +477,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
       setLoadingOp('VOID_ITEM');
       try {
            await voidOrderItem(itemToVoid.id, reason);
-           toast.success("Item Voided");
+           toast.success(t('itemVoided'));
            setSessionItems(prev => prev.filter(i => i.id !== itemToVoid.id));
       } catch(e) { toast.error(e.message); }
       finally { setLoadingOp(null); }
@@ -491,7 +493,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
           const promises = active.map(i => voidOrderItem(i.id, reason || "Table Force Closed"));
           await Promise.all(promises);
           await closeTableSession(session.id);
-          toast.success("Table Closed & Orders Voided");
+          toast.success(t('tableClosedVoided'));
           setIsVoidModalOpen(false);
           setItemToVoid(null);
           if (onCloseDrawer) onCloseDrawer();
@@ -543,7 +545,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
             });
             setOptimisticLock({ targetStatus: 'preparing', count: totalCount > 0 ? totalCount : 0 });
 
-            toast.success("Sent to Kitchen! 👨‍🍳");
+            toast.success(t('sentToKitchen'));
 
         } else {
             // No Kitchen: Confirm -> Served directly
@@ -569,7 +571,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
             });
              setOptimisticLock({ targetStatus: 'served', count: totalCount > 0 ? totalCount : 0 });
 
-             toast.success("Orders Served! ✅");
+             toast.success(t('ordersServed'));
         }
         
         // Timeout Logic shared
@@ -722,9 +724,9 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
           }
 
           await Promise.all(updates);
-          toast.success("Order Updated");
+          toast.success(t('orderUpdated'));
       } catch (e) {
-          toast.error("Update Failed: " + e.message);
+          toast.error(t('failedToUpdate') + ": " + e.message);
       } finally {
           setLoadingOp(null);
           setIsBatchEditing(null);
@@ -742,7 +744,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
                     setIsPaymentModalOpen(false);
                     return true; 
                 } else {
-                    toast.error("Checkout Failed: " + (res?.error?.message || "Unknown"));
+                    toast.error(t('checkoutFailed') + ": " + (res?.error?.message || "Unknown"));
                     return false;
                 }
             } else {

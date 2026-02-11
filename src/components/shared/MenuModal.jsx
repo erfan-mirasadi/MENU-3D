@@ -7,6 +7,7 @@ import { getCategories } from "@/services/categoryService";
 import SmartMedia from "@/components/ui/SmartMedia";
 import Loader from "@/components/ui/Loader";
 import toast from "react-hot-toast";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function MenuModal({
   isOpen,
@@ -21,6 +22,7 @@ export default function MenuModal({
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const { t } = useLanguage();
 
   // Fetch Logic
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function MenuModal({
           }
         } catch (error) {
           console.error(error);
-          toast.error("Menu load failed");
+          toast.error(t('menuLoadFailed'));
         } finally {
           setLoading(false);
         }

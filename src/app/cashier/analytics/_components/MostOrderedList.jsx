@@ -3,12 +3,12 @@ import { useLanguage } from "@/context/LanguageContext";
 
 const MostOrderedList = ({ items, loading, filter }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const { content } = useLanguage();
+  const { t, content } = useLanguage();
 
   return (
     <div className="bg-[#252836] p-6 rounded-lg">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-white text-lg font-bold">Most Ordered</h2>
+        <h2 className="text-white text-lg font-bold">{t('mostOrdered')}</h2>
 
       </div>
 
@@ -24,7 +24,7 @@ const MostOrderedList = ({ items, loading, filter }) => {
                 </div>
             ))
         ) : items.length === 0 ? (
-             <p className="text-[#ABBBC2] text-sm text-center py-4">No top items yet.</p>
+             <p className="text-[#ABBBC2] text-sm text-center py-4">{t('noItemsFound')}</p>
         ) : (
             items.slice(0, isExpanded ? 15 : 3).map((item, index) => (
             <div key={index} className="flex items-start gap-4">
@@ -39,7 +39,7 @@ const MostOrderedList = ({ items, loading, filter }) => {
                 <h4 className="text-white text-sm font-medium mb-1 leading-snug line-clamp-2">
                     {content(item.name)}
                 </h4>
-                <p className="text-[#ABBBC2] text-xs">{item.count} dishes ordered</p>
+                <p className="text-[#ABBBC2] text-xs">{item.count} {t('dishesOrdered')}</p>
                 </div>
             </div>
             ))
@@ -49,7 +49,7 @@ const MostOrderedList = ({ items, loading, filter }) => {
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full mt-8 py-3 rounded-lg border border-[#EA7C69] text-[#EA7C69] text-sm font-bold hover:bg-[#EA7C69]/10 transition-colors cursor-pointer"
        >
-        {isExpanded ? "View Less" : "View All"}
+        {isExpanded ? t('viewLess') : t('viewAll')}
       </button>
     </div>
   );

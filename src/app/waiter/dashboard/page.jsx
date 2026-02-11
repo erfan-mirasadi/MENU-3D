@@ -24,7 +24,7 @@ export default function WaiterDashboard() {
   const router = useRouter(); // Added router
 
   const handleLogout = async () => {
-    if (confirm(t('logout') + "?")) {
+    if (confirm(t('logoutConfirm'))) {
       await supabase.auth.signOut();
       router.push("/login");
     }
@@ -77,7 +77,7 @@ export default function WaiterDashboard() {
      // 1. Get Source Session
      const sourceSession = sessions.find(s => s.table_id === sourceTableForTransfer.id);
      if (!sourceSession) {
-         toast.error("Source table has no active session!");
+         toast.error(t('sourceNoSession'));
          handleCancelTransfer();
          return;
      }
@@ -95,7 +95,7 @@ export default function WaiterDashboard() {
              toast.success(t('mergeSuccess'));
          } catch(err) {
              console.error(err);
-             toast.error("Merge failed");
+             toast.error(t('mergeFailed'));
          }
      } else {
          if(!confirm(`Move Table ${sourceTableForTransfer.table_number} to Table ${targetTable.table_number}?`)) return;
@@ -106,7 +106,7 @@ export default function WaiterDashboard() {
              toast.success(t('moveSuccess'));
          } catch(err) {
              console.error(err);
-             toast.error("Move failed");
+             toast.error(t('moveFailed'));
          }
      }
 
@@ -119,7 +119,7 @@ export default function WaiterDashboard() {
     // INTERCEPT IF IN TRANSFER MODE
     if (isTransferMode) {
         if (table.id === sourceTableForTransfer?.id) {
-             toast.error("Cannot transfer to self!");
+             toast.error(t('cannotTransferSelf'));
              return;
         }
         handleTransferAction(table);
@@ -137,7 +137,7 @@ export default function WaiterDashboard() {
                 // Resolve all sequentially (Directly to 'resolved')
                 await Promise.all(pendingRequests.map(req => serviceRequestService.resolveRequest(req.id)));
                 
-                toast.success("Request Cleared");
+                toast.success(t('requestCleared'));
                 
                 // FORCE REFRESH to update UI immediately
                 refetch(); 
@@ -180,7 +180,7 @@ export default function WaiterDashboard() {
       <div className="flex items-center justify-center h-screen bg-[#1F1D2B]">
         <div className="text-center space-y-4">
           <div className="w-16 h-16 border-4 border-[#ea7c69] border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-gray-400 font-mono text-sm">LOADING FLOOR...</p>
+          <p className="text-gray-400 font-mono text-sm">{t('loadingFloor')}</p>
         </div>
       </div>
     );
@@ -190,8 +190,8 @@ export default function WaiterDashboard() {
     return (
       <div className="flex h-screen items-center justify-center bg-[#1F1D2B] text-white">
         <div className="text-center space-y-4">
-          <h1 className="text-3xl font-bold text-gray-500">Waiter App Disabled</h1>
-          <p className="text-gray-400">This module is currently turned off.</p>
+          <h1 className="text-3xl font-bold text-gray-500">{t('waiterDisabled')}</h1>
+          <p className="text-gray-400">{t('moduleOff')}</p>
         </div>
       </div>
     );
@@ -228,9 +228,9 @@ export default function WaiterDashboard() {
                <div className="flex items-center gap-2">
                    <div className="w-2 h-8 bg-[#ea7c69] rounded-full flex-shrink-0"></div>
                    <div>
-                       <h1 className="md:hidden text-base font-bold text-white leading-tight">Floor Overview</h1>
+                       <h1 className="md:hidden text-base font-bold text-white leading-tight">{t('floorOverview')}</h1>
                        <p className="text-xs text-gray-400 font-medium">
-                        {tables.length} Active Tables
+                        {tables.length} {t('activeTables')}
                        </p>
                    </div>
                </div>
@@ -257,7 +257,7 @@ export default function WaiterDashboard() {
                         }`}
                      >
                         <FaLayerGroup />
-                        {sortingMode === 'priority' ? "Smart" : "123"}
+                        {sortingMode === 'priority' ? t('smartSort') : t('numericSort')}
                      </button>
                     
                      {/* Live Status */}
@@ -290,7 +290,7 @@ export default function WaiterDashboard() {
                     }`}
                  >
                     <FaLayerGroup />
-                    {sortingMode === 'priority' ? "Smart Sort" : "Numeric Sort"}
+                    {sortingMode === 'priority' ? t('smartSort') : t('numericSort')}
                  </button>
 
             </div>

@@ -17,10 +17,14 @@ import {
 } from "react-icons/ri";
 import toast from "react-hot-toast";
 import { useMountTransition } from "@/app/hooks/useMountTransition";
+import { useLanguage } from "@/context/LanguageContext";
 import { cashierService } from "@/services/cashierService";
-
+import { useRestaurantData } from "@/app/hooks/useRestaurantData";
+import React from 'react';
 
 const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
+  const { t, language } = useLanguage();
+  const { restaurant } = useRestaurantData();
   /* ... (existing state) */
   const [activeTab, setActiveTab] = useState("FULL"); 
   const [processing, setProcessing] = useState(false);
@@ -40,7 +44,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
 
   const handleAddAdjustment = async () => {
     if (!adjData.title || !adjData.amount) {
-        toast.error("Please fill all fields");
+        toast.error(t("fillAllFields"));
         return;
     }
     setAdjLoading(true);
@@ -61,7 +65,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
             amount: parseFloat(adjData.amount)
         });
         
-        toast.success("Adjustment Added");
+        toast.success(t("adjAdded"));
         setShowAdjModal(false);
         setAdjData({ title: '', amount: '', type: 'charge' });
         
@@ -270,7 +274,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
 
   const handleConfirm = async () => {
       if (!canSubmit) {
-          toast.error(isOverPaying ? "Amount exceeds remaining due" : "Invalid Payment Amount");
+          toast.error(isOverPaying ? t("amountExceeds") : t("invalidAmount"));
           return;
       }
       setProcessing(true);
@@ -280,7 +284,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                const c = parseFloat(mixedCash) || 0;
                const p = parseFloat(mixedCard) || 0;
                if (Math.abs((c + p) - amountToPay) > 0.1) {
-                   toast.error("Mixed amounts must equal Amount to Pay");
+                   toast.error(t("mixedMismatch"));
                    setProcessing(false);
                    return;
                }
@@ -309,7 +313,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
           console.log(`[PaymentModal] Invoke Checkout. Session=${session.id}, Amount=${amountToPay}, Method=${paymentMethod}`);
           
           // Success
-          toast.success("Payment Recorded");
+          toast.success(t("paymentRecorded"));
           // Optionally close modal or reset state if session not closed
           if (amountToPay >= remainingTotal - 0.1) {
               // Full payment done
@@ -326,7 +330,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
 
       } catch (err) {
           console.error(err);
-          toast.error(err.message || "Payment Failed");
+          toast.error(err.message || t("paymentFailed"));
       } finally {
           setProcessing(false);
       }
@@ -362,11 +366,11 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
         <div className="w-full md:w-[450px] flex flex-col border-r border-[#252836] bg-[#1F1D2B] relative">
             <div className="p-6 border-b border-[#252836] bg-[#252836]/50">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <RiFileList3Line className="text-[#ea7c69]"/> Order Details
+                    <RiFileList3Line className="text-[#ea7c69]"/> {t("orderDetails")}
                 </h2>
                 <div className="flex justify-between text-sm text-gray-400 mt-2">
-                    <span>Table #{session?.table?.table_number}</span>
-                    <span>{orderItems.length} Items</span>
+                    <span>{t("table")} #{session?.table?.table_number}</span>
+                    <span>{orderItems.length} {t("items")}</span>
                 </div>
             </div>
 
@@ -381,6 +385,13 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                      const isSelected = item.ids.length > 0 && item.ids.every(id => selectedItemIds.has(id));
                      const isPaid = item.isPaid;
                      const price = item.quantity * Number(item.unit_price_at_order);
+                     
+                     // Dynamic Title Logic
+                     const fallbackLang = restaurant?.default_language || 'en';
+                     const title = typeof item.product?.title === 'object'
+                        ? (item.product.title?.[language] || item.product.title?.[fallbackLang] || "Unknown Item")
+                        : (item.product?.title || "Unknown Item");
+
                      return (
                          <div 
                             key={`${item.product?.id || item.product_id || 'unknown'}-${isPaid}`} // Stable key for group
@@ -414,7 +425,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                              </div>
 
                              <div className="flex-1 min-w-0">
-                                 <p className={`font-medium text-sm truncate ${isPaid ? "text-gray-500 line-through" : "text-white"}`}>{item.product?.title?.en || "Unknown"}</p>
+                                 <p className={`font-medium text-sm truncate ${isPaid ? "text-gray-500 line-through" : "text-white"}`}>{title}</p>
                                  <p className="text-gray-400 text-xs">{item.quantity}x</p>
                              </div>
 
@@ -422,7 +433,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                                 <span className={`font-bold text-sm ${isPaid ? "text-gray-500" : "text-white"}`}>
                                     {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(price)}
                                 </span>
-                                {isPaid && <span className="block text-[10px] text-green-500 font-bold uppercase">Paid</span>}
+                                {isPaid && <span className="block text-[10px] text-green-500 font-bold uppercase">{t("paid")}</span>}
                              </div>
                          </div>
                      )
@@ -431,7 +442,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                  {/* ADJUSTMENTS SECTION */}
                  {bill?.adjustments?.length > 0 && (
                      <div className="mt-4 pt-4 border-t border-[#252836]">
-                         <h3 className="text-xs font-bold text-gray-400 uppercase mb-2">Adjustments</h3>
+                         <h3 className="text-xs font-bold text-gray-400 uppercase mb-2">{t("adjustments")}</h3>
                          {bill.adjustments.map((adj, idx) => (
                              <div key={idx} className="flex justify-between items-center py-1 px-2 hover:bg-white/5 rounded">
                                  <span className="text-gray-300 text-sm">{adj.title}</span>
@@ -447,7 +458,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                     onClick={() => setShowAdjModal(true)}
                     className="mt-4 w-full py-3 border-2 border-dashed border-[#ea7c69]/30 text-[#ea7c69] rounded-xl text-sm font-bold hover:bg-[#ea7c69]/10 transition-colors flex items-center justify-center gap-2"
                  >
-                     <RiDiscountPercentLine size={18} /> Add Discount / Charge
+                     <RiDiscountPercentLine size={18} /> {t("addAdjustment")}
                  </button>
 
             </div>
@@ -457,7 +468,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
             <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
                 <div onClick={e => e.stopPropagation()} className="bg-[#1F1D2B] w-full max-w-sm rounded-2xl border border-[#393C49] shadow-2xl overflow-hidden">
                     <div className="p-4 border-b border-[#252836] flex justify-between items-center bg-[#252836]/50">
-                        <h3 className="text-white font-bold">Add Adjustment</h3>
+                        <h3 className="text-white font-bold">{t("addAdjTitle")}</h3>
                         <button onClick={() => setShowAdjModal(false)} className="text-gray-400 hover:text-white"><RiCloseLine size={24}/></button>
                     </div>
                     <div className="p-6 space-y-4">
@@ -468,22 +479,22 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                                 onClick={() => setAdjData({...adjData, type: 'charge'})}
                                 className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${adjData.type === 'charge' ? 'bg-red-500/20 text-red-500 shadow-sm' : 'text-gray-400 hover:text-white'}`}
                             >
-                                + Extra Charge
+                                + {t("extraCharge")}
                             </button>
                             <button 
                                 onClick={() => setAdjData({...adjData, type: 'discount'})}
                                 className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${adjData.type === 'discount' ? 'bg-green-500/20 text-green-500 shadow-sm' : 'text-gray-400 hover:text-white'}`}
                             >
-                                - Discount
+                                - {t("discount")}
                             </button>
                         </div>
 
                         {/* Title */}
                         <div>
-                            <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">Description</label>
+                            <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">{t("description")}</label>
                             <input 
                                 type="text"
-                                placeholder={adjData.type === 'charge' ? "e.g. Service Fee" : "e.g. Happy Hour"}
+                                placeholder={adjData.type === 'charge' ? t("descPlaceholder") : t("descPlaceholder")}
                                 value={adjData.title}
                                 onChange={e => setAdjData({...adjData, title: e.target.value})}
                                 property="off"
@@ -493,7 +504,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
 
                         {/* Amount */}
                         <div>
-                            <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">Amount ({adjData.type === 'charge' ? 'Charge' : 'Discount'})</label>
+                            <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">{t("amountLabel")} ({adjData.type === 'charge' ? t("extraCharge") : t("discount")})</label>
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₺</span>
                                 <input 
@@ -512,7 +523,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                             className="w-full bg-[#ea7c69] hover:bg-[#d96a56] text-white py-3 rounded-xl font-bold shadow-lg shadow-[#ea7c69]/20 transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
                         >
                             {adjLoading ? <RiLoader4Line className="animate-spin"/> : <RiCheckLine />}
-                            Apply Adjustment
+                            {t("applyAdjustment")}
                         </button>
                     </div>
                 </div>
@@ -533,11 +544,11 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
 
             <div className="p-6 bg-[#252836] border-t border-[#1F1D2B]">
                 <div className="flex justify-between text-gray-400 text-sm mb-1">
-                    <span>Paid</span>
+                    <span>{t("paid")}</span>
                     <span className="text-green-500">{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(paidAmount)}</span>
                 </div>
                 <div className="flex justify-between text-white font-bold text-lg">
-                    <span>Remaining Due</span>
+                    <span>{t("remainingDue")}</span>
                     <span className="text-[#ea7c69]">{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(remainingTotal)}</span>
                 </div>
             </div>
@@ -555,13 +566,13 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                     onClick={() => { setActiveTab("FULL"); setSplitMode("PEOPLE"); setSplitCount(1); setSelectedItemIds(new Set()); setPaymentMethod('CASH'); }}
                     className={`pb-4 font-bold text-sm tracking-wide transition-all border-b-2 flex items-center gap-2 ${activeTab === "FULL" ? "border-[#ea7c69] text-[#ea7c69]" : "border-transparent text-gray-500 hover:text-gray-300"}`}
                 >
-                    <RiWallet3Line size={18} /> FULL PAYMENT
+                    <RiWallet3Line size={18} /> {t("fullPayment")}
                 </button>
                 <button 
                     onClick={() => { setActiveTab("SPLIT"); }}
                     className={`pb-4 font-bold text-sm tracking-wide transition-all border-b-2 flex items-center gap-2 ${activeTab === "SPLIT" ? "border-[#ea7c69] text-[#ea7c69]" : "border-transparent text-gray-500 hover:text-gray-300"}`}
                 >
-                    <RiPieChartLine size={18} /> SPLIT / PARTIAL
+                    <RiPieChartLine size={18} /> {t("splitPayment")}
                 </button>
             </div>
 
@@ -569,22 +580,22 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                 
                 {activeTab === "SPLIT" && (
                     <div className="mb-6 animate-in fade-in slide-in-from-top-4">
-                        <label className="text-gray-400 text-xs font-bold uppercase mb-3 block">Split Mode</label>
+                        <label className="text-gray-400 text-xs font-bold uppercase mb-3 block">{t("splitMode")}</label>
                         <div className="flex gap-3 mb-6">
                              <button onClick={() => setSplitMode("PEOPLE")} className={`flex-1 py-3 px-2 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${splitMode === "PEOPLE" ? "bg-[#ea7c69] text-white border-[#ea7c69] shadow-lg shadow-[#ea7c69]/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
-                                 <RiUser3Line /> By People
+                                 <RiUser3Line /> {t("byPeople")}
                              </button>
                              <button onClick={() => setSplitMode("ITEMS")} className={`flex-1 py-3 px-2 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${splitMode === "ITEMS" ? "bg-[#ea7c69] text-white border-[#ea7c69] shadow-lg shadow-[#ea7c69]/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
-                                 <RiFileList3Line /> By Items
+                                 <RiFileList3Line /> {t("byItems")}
                              </button>
                              <button onClick={() => setSplitMode("CUSTOM")} className={`flex-1 py-3 px-2 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${splitMode === "CUSTOM" ? "bg-[#ea7c69] text-white border-[#ea7c69] shadow-lg shadow-[#ea7c69]/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
-                                 <RiCalculatorLine /> Custom
+                                 <RiCalculatorLine /> {t("custom")}
                              </button>
                         </div>
 
                         {splitMode === "PEOPLE" && (
                             <div className="bg-[#252836] p-4 rounded-xl flex items-center justify-between border border-[#393C49]">
-                                <span className="text-gray-300 font-medium">Split Count</span>
+                                <span className="text-gray-300 font-medium">{t("splitCount")}</span>
                                 <div className="flex items-center gap-4 bg-[#1F1D2B] rounded-lg p-1 border border-[#393C49]">
                                     <button onClick={() => setSplitCount(Math.max(1, splitCount - 1))} className="w-10 h-10 flex items-center justify-center text-white hover:bg-gray-700 rounded-md transition-colors shadow-sm"><RiSubtractLine /></button>
                                     <span className="text-white font-bold w-6 text-center text-lg">{splitCount}</span>
@@ -595,8 +606,8 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
 
                         {splitMode === "ITEMS" && (
                             <div className="text-center bg-[#252836] p-4 rounded-xl border border-[#393C49]">
-                                <p className="text-gray-300 text-sm font-medium">Select items from the list on the left to calculate total.</p>
-                                <p className="text-[#ea7c69] text-xs mt-1 font-bold">{selectedItemIds.size} items selected</p>
+                                <p className="text-gray-300 text-sm font-medium">{t("selectItemsHint")}</p>
+                                <p className="text-[#ea7c69] text-xs mt-1 font-bold">{selectedItemIds.size} {t("itemsSelected")}</p>
                             </div>
                         )}
 
@@ -619,32 +630,32 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                 {/* AMOUNT DISPLAY */}
                 <div className="flex flex-col items-center justify-center mb-8 p-6 bg-[#252836] rounded-2xl border border-[#2D303E] shadow-inner relative overflow-hidden group">
                     <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-[#ea7c69] to-transparent opacity-50"></div>
-                    <span className="text-gray-400 text-xs font-bold uppercase mb-2 tracking-widest">Amount to Pay Now</span>
+                    <span className="text-gray-400 text-xs font-bold uppercase mb-2 tracking-widest">{t("payNow")}</span>
                     <span className="text-5xl font-bold text-white tracking-tight flex items-baseline gap-1">
                         <span className="text-2xl text-gray-500">₺</span>
                         {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amountToPay)}
                     </span>
                     {activeTab === "SPLIT" && splitMode === "PEOPLE" && splitCount > 1 && (
                         <span className="text-[#ea7c69] text-xs font-bold mt-2 bg-[#ea7c69]/10 px-3 py-1 rounded-full border border-[#ea7c69]/20">
-                            {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(remainingTotal)} ÷ {splitCount} people
+                            {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(remainingTotal)} ÷ {splitCount} {t("people") || "people"}
                         </span>
                     )}
                 </div>
 
                 {/* PAYMENT METHOD SELECTION */}
-                <label className="text-gray-400 text-xs font-bold uppercase mb-3 block px-1">Select Payment Method</label>
+                <label className="text-gray-400 text-xs font-bold uppercase mb-3 block px-1">{t("selectPaymentMethod")}</label>
                 <div className="grid grid-cols-3 gap-3 mb-6">
                     <button onClick={() => setPaymentMethod("CASH")} className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${paymentMethod === "CASH" ? "border-green-500 bg-green-500/10 text-white shadow-[0_0_15px_rgba(34,197,94,0.2)]" : "border-[#393C49] text-gray-400 hover:border-gray-500 hover:bg-[#2D303E]"}`}>
                         <RiMoneyDollarBoxLine size={28} className={paymentMethod === "CASH" ? "text-green-400" : ""} /> 
-                        <span className="text-xs font-bold tracking-wide">CASH</span>
+                        <span className="text-xs font-bold tracking-wide">{t("cash")}</span>
                     </button>
                     <button onClick={() => setPaymentMethod("POS")} className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${paymentMethod === "POS" ? "border-blue-500 bg-blue-500/10 text-white shadow-[0_0_15px_rgba(59,130,246,0.2)]" : "border-[#393C49] text-gray-400 hover:border-gray-500 hover:bg-[#2D303E]"}`}>
                         <RiBankCardLine size={28} className={paymentMethod === "POS" ? "text-blue-400" : ""} /> 
-                        <span className="text-xs font-bold tracking-wide">CARD</span>
+                        <span className="text-xs font-bold tracking-wide">{t("card")}</span>
                     </button>
                     <button onClick={() => setPaymentMethod("MIXED")} className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${paymentMethod === "MIXED" ? "border-[#ea7c69] bg-[#ea7c69]/10 text-white shadow-[0_0_15px_rgba(234,124,105,0.2)]" : "border-[#393C49] text-gray-400 hover:border-gray-500 hover:bg-[#2D303E]"}`}>
                         <RiPieChartLine size={28} className={paymentMethod === "MIXED" ? "text-[#ea7c69]" : ""} /> 
-                        <span className="text-xs font-bold tracking-wide">MIXED</span>
+                        <span className="text-xs font-bold tracking-wide">{t("mixed")}</span>
                     </button>
                 </div>
 
@@ -652,11 +663,11 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                 {paymentMethod === "MIXED" && (
                     <div className="grid grid-cols-2 gap-4 mb-6 animate-in fade-in slide-in-from-top-2 p-4 bg-[#252836] rounded-xl border border-[#393C49]">
                         <div className="relative">
-                            <label className="text-[10px] uppercase font-bold text-gray-400 mb-1 block">Cash Portion</label>
+                            <label className="text-[10px] uppercase font-bold text-gray-400 mb-1 block">{t("cashPortion")}</label>
                             <input type="number" value={mixedCash} onChange={e => setMixedCash(e.target.value)} className="w-full bg-[#1F1D2B] rounded-lg p-3 text-white font-bold border border-[#393C49] focus:border-green-500 outline-none transition-colors" placeholder="0.00" />
                         </div>
                         <div className="relative">
-                            <label className="text-[10px] uppercase font-bold text-gray-400 mb-1 flex justify-between items-center"><span>Card Portion</span> <span onClick={fillMixedCard} className="text-blue-500 cursor-pointer hover:text-blue-400 text-xs">Autofill Remainder</span></label>
+                            <label className="text-[10px] uppercase font-bold text-gray-400 mb-1 flex justify-between items-center"><span>{t("cardPortion")}</span> <span onClick={fillMixedCard} className="text-blue-500 cursor-pointer hover:text-blue-400 text-xs">{t("autofill")}</span></label>
                             <input type="number" value={mixedCard} onChange={e => setMixedCard(e.target.value)} className="w-full bg-[#1F1D2B] rounded-lg p-3 text-white font-bold border border-[#393C49] focus:border-blue-500 outline-none transition-colors" placeholder="0.00" />
                         </div>
                     </div>
@@ -669,11 +680,11 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                 >
                     {processing ? (
                         <>
-                            <RiLoader4Line className="animate-spin" size={24} /> Processing...
+                            <RiLoader4Line className="animate-spin" size={24} /> {t("processing") || "PROCESSING..."}
                         </>
                     ) : (
                         <>
-                            <RiCheckLine size={24} /> Confirm Payment
+                            <RiCheckLine size={24} /> {t("confirmPayment")}
                         </>
                     )}
                 </button>

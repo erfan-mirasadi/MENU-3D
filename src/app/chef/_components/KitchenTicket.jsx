@@ -3,9 +3,13 @@ import { useState } from 'react'
 import KitchenTimer from './KitchenTimer'
 import { RiRestaurantLine, RiCheckboxCircleLine, RiCheckDoubleLine, RiTimeLine, RiAlertFill } from 'react-icons/ri'
 import Loader from '@/components/ui/Loader'
+import { useLanguage } from '@/context/LanguageContext'
+import { useRestaurantData } from '@/app/hooks/useRestaurantData'
 
     // Single Item Row Component
     function TicketItem({ item, onUpdateStatus }) {
+        const { language } = useLanguage()
+        const { restaurant } = useRestaurantData()
         const [loading, setLoading] = useState(false)
 
         const isPending = item.status === 'pending' || item.status === 'confirmed'
@@ -33,8 +37,9 @@ import Loader from '@/components/ui/Loader'
         // Localized Title Helper
         const getTitle = (product) => {
             if (!product?.title) return "Unknown Item"
+            const fallbackLang = restaurant?.default_language || "Unknown Item";
             if (typeof product.title === 'object') {
-                return product.title.en || product.title.ru || product.title.tr || "Unknown Item"
+                return product.title[language] || product.title[fallbackLang] || "Unknown Item"
             }
             return product.title
         }
@@ -105,6 +110,7 @@ import Loader from '@/components/ui/Loader'
     }
 
     export default function KitchenTicket({ session, orders, onUpdateStatus, onServeAll }) {
+        const { t } = useLanguage()
         const [loading, setLoading] = useState(false)
 
         // Handle Bulk Action Loading Locally
@@ -219,7 +225,7 @@ import Loader from '@/components/ui/Loader'
                 >
                     {loading ? <Loader variant="inline" /> : (
                         <>
-                            <span>ALL PREPARED</span>
+                            <span>{t("allPrepared")}</span>
                             <RiCheckDoubleLine size={20} />
                         </>
                     )}

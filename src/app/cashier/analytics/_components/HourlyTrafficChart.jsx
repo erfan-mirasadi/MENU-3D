@@ -2,15 +2,17 @@
 import React from "react";
 import dynamic from "next/dynamic";
 import { RiTimeLine } from "react-icons/ri";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Dynamically import Chart to avoid SSR issues
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const HourlyTrafficChart = ({ data, loading, filter }) => {
+    const { t } = useLanguage();
     // Data expected: Array of 24 integers (count per hour)
     
     const series = [{
-        name: 'Orders',
+        name: t('orders'),
         data: data
     }];
 
@@ -67,7 +69,7 @@ const HourlyTrafficChart = ({ data, loading, filter }) => {
             theme: 'dark',
             y: {
                 formatter: function (val) {
-                    return val + " orders"
+                    return val + " " + t('orders')
                 }
             }
         }
@@ -78,10 +80,10 @@ const HourlyTrafficChart = ({ data, loading, filter }) => {
        <div className="flex justify-between items-center mb-4">
         <h2 className="text-white text-lg font-bold flex items-center gap-2">
             <RiTimeLine className="text-[#EA7C69]" />
-            Hourly Traffic
+            {t('hourlyTraffic')}
         </h2>
         <span className="text-xs text-[#ABBBC2]">
-            {filter === "Today" ? "Today" : `Peak Hours (${filter})`}
+            {filter === "Today" ? t('today') : `${t('peakHours')} (${filter})`}
         </span>
       </div>
 

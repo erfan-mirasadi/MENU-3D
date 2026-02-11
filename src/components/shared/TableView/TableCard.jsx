@@ -10,8 +10,10 @@ import {
   FaFileInvoiceDollar,
   FaUsers
 } from "react-icons/fa";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function TableCard({ table, session, onClick, isTransferMode, isSource, role = "waiter", isLoading = false }) {
+  const { t } = useLanguage();
   const cardStyle = useMemo(() => {
     // ---------------------------------------------------------
     // 0. TRANSFER MODE
@@ -23,7 +25,7 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
                 baseClasses: "bg-black/60 border-2 border-gray-600 grayscale opacity-50 cursor-not-allowed",
                 numberColor: "text-gray-500",
                 labelColor: "text-gray-500",
-                labelText: "Source",
+                labelText: t('statusSource'),
                 icon: null,
                 glow: ""
             };
@@ -36,7 +38,7 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
                 baseClasses: "bg-orange-900/40 border-4 border-dashed border-orange-500 animate-pulse cursor-pointer hover:bg-orange-900/60",
                 numberColor: "text-orange-200",
                 labelColor: "text-orange-400 font-black uppercase tracking-widest",
-                labelText: "MERGE HERE",
+                labelText: t('statusMergeHere'),
                 icon: <FaUtensils className="text-orange-500 text-3xl" />,
                 glow: "shadow-[0_0_30px_rgba(249,115,22,0.3)]"
              };
@@ -47,7 +49,7 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
                 baseClasses: "bg-green-900/40 border-4 border-dashed border-green-500 animate-pulse cursor-pointer hover:bg-green-900/60",
                 numberColor: "text-green-200",
                 labelColor: "text-green-400 font-black uppercase tracking-widest",
-                labelText: "MOVE HERE",
+                labelText: t('statusMoveHere'),
                 icon: <FaCheckCircle className="text-green-500 text-3xl" />,
                 glow: "shadow-[0_0_30px_rgba(34,197,94,0.3)]"
              };
@@ -64,7 +66,7 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
           "bg-[#1F1D2B] border-2 border-[#2D303E] opacity-50 hover:opacity-100 hover:border-gray-500",
         numberColor: "text-gray-600",
         labelColor: "text-gray-500",
-        labelText: "Empty",
+        labelText: t('statusEmpty'),
         icon: null,
         glow: "",
       };
@@ -112,7 +114,7 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
                   "bg-gradient-to-br from-indigo-600 to-indigo-900 border-2 border-indigo-400 animate-pulse shadow-xl",
                 numberColor: "text-white",
                 labelColor: "text-indigo-100 font-bold uppercase tracking-wider",
-                labelText: "BILL REQUEST",
+                labelText: t('statusBillRequest'),
                 icon: (
                   <FaFileInvoiceDollar className="text-white text-2xl animate-bounce" />
                 ),
@@ -127,7 +129,7 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
               "bg-gradient-to-br from-red-600 to-red-800 border-2 border-red-400 animate-bounce shadow-xl",
             numberColor: "text-white",
             labelColor: "text-red-100 font-bold",
-            labelText:  isCallWaiter ? "CALLING!" : "ALERT",
+            labelText:  isCallWaiter ? t('statusCalling') : t('statusAlert'),
             icon: (
               <FaConciergeBell className="text-white text-2xl animate-wiggle" />
             ),
@@ -151,7 +153,7 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
               "bg-orange-600 border-2 border-orange-400 animate-pulse shadow-xl shadow-orange-900/50",
             numberColor: "text-white",
             labelColor: "text-orange-50 font-bold uppercase tracking-wider",
-            labelText: role === 'cashier' ? "KITCHEN SENT" : "NEW ORDER",
+            labelText: role === 'cashier' ? t('statusKitchenSent') : t('statusNewOrder'),
             icon: <FaUtensils className="text-white text-2xl" />,
             glow: "shadow-orange-600/50",
          };
@@ -168,7 +170,7 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
           "bg-yellow-600 border-2 border-yellow-400 shadow-xl",
         numberColor: "text-white",
         labelColor: "text-yellow-50 font-bold uppercase tracking-wider",
-        labelText: "COOKING",
+        labelText: t('statusCooking'),
         icon: <FaUtensils className="text-white text-2xl" />,
         glow: "shadow-yellow-500/50",
       };
@@ -182,7 +184,7 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
               "bg-orange-800/80 border-2 border-orange-700/50 shadow-lg",
             numberColor: "text-orange-100",
             labelColor: "text-orange-200 font-bold uppercase tracking-wider",
-            labelText: "WAITING",
+            labelText: t('statusWaiting'),
             icon: <FaUtensils className="text-orange-200 text-2xl" />,
             glow: "",
        };
@@ -197,7 +199,7 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
         baseClasses: "bg-emerald-700 border-2 border-emerald-500/50 shadow-lg",
         numberColor: "text-emerald-50",
         labelColor: "text-emerald-200 font-bold uppercase tracking-widest",
-        labelText: "Dining",
+        labelText: t('statusDining'),
         icon: <FaMugHot className="text-emerald-200 text-2xl" />,
         glow: "shadow-emerald-900/50",
       };
@@ -211,7 +213,7 @@ export default function TableCard({ table, session, onClick, isTransferMode, isS
       baseClasses: "bg-[#252836] border-2 border-blue-500/30",
       numberColor: "text-blue-100",
       labelColor: "text-blue-400 font-medium",
-      labelText: "Seated",
+      labelText: t('statusSeated'),
       icon: <FaUser className="text-blue-500 text-xl" />,
       glow: "",
     };
