@@ -1,6 +1,6 @@
 import { S3Client } from "@aws-sdk/client-s3";
 
-const accountId = process.env.R2_ACCOUNT_ID;
+const accountId = process.env.R2_ACCOUNT_ID || "";
 const endpoint = accountId.startsWith("https://")
   ? accountId
   : `https://${accountId}.r2.cloudflarestorage.com`;
