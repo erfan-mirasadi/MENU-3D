@@ -10,8 +10,6 @@ export async function POST(request) {
     if (!restaurantSlug) {
       return NextResponse.json({ error: "Restaurant Slug is required" }, { status: 400 });
     }
-
-    // اسم فایل رو یونیک میکنیم که تکراری نشه (مثلا: my-restaurant/category/173822-pizza.jpg)
     const folderPath = subfolder ? `${restaurantSlug}/${subfolder}` : restaurantSlug;
     const uniqueFileName = `${folderPath}/${Date.now()}-${fileName.replace(/\s+/g, "-")}`;
 
@@ -21,15 +19,16 @@ export async function POST(request) {
       ContentType: fileType,
     });
 
-    // تولید لینک موقت (فقط ۶۰ ثانیه اعتبار داره برای امنیت)
     const uploadUrl = await getSignedUrl(r2, command, { expiresIn: 60 });
 
-    // لینک نهایی که باید توی دیتابیس ذخیره بشه
     const publicUrl = `https://${process.env.R2_PUBLIC_DOMAIN}/${uniqueFileName}`;
 
     return NextResponse.json({ uploadUrl, publicUrl });
   } catch (error) {
     console.error("R2 Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "Something went wrong during upload" },
+      { status: 500 }
+    );
   }
 }
