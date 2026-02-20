@@ -5,9 +5,6 @@ import { getProducts } from "@/services/productService";
 import { getRestaurantBySlug } from "@/services/restaurantService";
 import { LanguageProvider } from "@/context/LanguageContext.jsx";
 
-// // این فانکشن رو کش (Cache) نمیکنیم تا تغییرات دیتابیس رو سریع ببینی
-// export const dynamic = "force-dynamic";
-
 async function getMenuData(slug) {
   const restaurant = await getRestaurantBySlug(slug);
 

@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import KitchenTimer from './KitchenTimer'
-import { RiRestaurantLine, RiCheckboxCircleLine, RiCheckDoubleLine, RiTimeLine, RiAlertFill } from 'react-icons/ri'
+import { RiRestaurantLine, RiCheckboxCircleLine, RiCheckDoubleLine, RiTimeLine, RiAlertFill } from 'react-icons/ri';
 import Loader from '@/components/ui/Loader'
 import { useLanguage } from '@/context/LanguageContext'
 import { useRestaurantData } from '@/app/hooks/useRestaurantData'

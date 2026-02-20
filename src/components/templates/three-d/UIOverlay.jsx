@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, useRef } from "react";
 import { useProgress } from "@react-three/drei";
 import Image from "next/image";
@@ -8,7 +7,6 @@ import { useLanguage } from "@/context/LanguageContext";
 import { MdViewInAr, MdTouchApp } from "react-icons/md";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import Loader from "@/components/ui/Loader";
-
 import CartControls from "./CartControls";
 import ModernCartDrawer from "../modern/ModernCartDrawer";
 
@@ -184,8 +182,8 @@ export default function UIOverlay({
                   src={restaurant.logo}
                   alt="Restaurant Logo"
                   fill
-                  priority
-                  sizes="48px"
+                  quality={50}
+                  sizes="64px"
                   className="object-contain rounded-xl"
                 />
               </div>
@@ -385,8 +383,8 @@ export default function UIOverlay({
                           alt={content(cat.title)}
                           width={80}
                           height={53}
+                          quality={60}
                           className="w-full h-full object-cover"
-                          priority={index < 4}
                         />
                       ) : (
                         <div className="w-full h-full bg-neutral-800 flex items-center justify-center">

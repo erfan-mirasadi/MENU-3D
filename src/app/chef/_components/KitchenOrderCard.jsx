@@ -1,6 +1,6 @@
 'use client'
 import KitchenTimer from './KitchenTimer'
-import { RiCheckboxCircleLine, RiRestaurantLine } from 'react-icons/ri'
+import { RiCheckboxCircleLine, RiRestaurantLine } from 'react-icons/ri';
 
 export default function KitchenOrderCard({ order, onConfirm, onServe }) {
     const isNew = order.status === 'confirmed' || order.status === 'pending' // Handle legacy pending too just in case

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
-import { RiMenuFoldLine, RiMenuUnfoldLine } from 'react-icons/ri'
+import { RiMenuFoldLine, RiMenuUnfoldLine } from 'react-icons/ri';
 import { supabase } from '@/lib/supabase'
 import { getKitchenOrders, updateOrderItemStatus } from '@/services/orderService'
 import { useRestaurantData } from '@/app/hooks/useRestaurantData'

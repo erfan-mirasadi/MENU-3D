@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { FaClock } from 'react-icons/fa'
+import { FaClock } from 'react-icons/fa';
 
 export default function KitchenTimer({ createdAt }) {
     const [secondsLeft, setSecondsLeft] = useState(1200) // Default 20 mins

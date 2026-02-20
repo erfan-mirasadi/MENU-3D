@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Gulzar } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { RestaurantProvider } from "@/app/hooks/useRestaurantData";
@@ -12,6 +12,13 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const gulzarFont = Gulzar({
+  weight: "400",
+  subsets: ["arabic"],
+  variable: "--font-gulzar",
+  display: "swap",
 });
 
 export const metadata = {
@@ -42,11 +49,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-
+        <link href="https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&display=swap" rel="stylesheet" />
       </head>
       <body
         suppressHydrationWarning={true}
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}
+        className={`${geistSans.variable} ${geistMono.variable} ${gulzarFont.variable} antialiased bg-black text-white`}
       >
         <RestaurantProvider>
             <LanguageProvider>

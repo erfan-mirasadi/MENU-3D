@@ -1,5 +1,3 @@
-"use client";
-
 import ClassicLayout from "@/components/templates/classic/ClassicLayout";
 import ImmersiveLayout from "@/components/templates/immersive/ImmersiveLayout";
 import MinimalLayout from "@/components/templates/minimal/MinimalLayout";

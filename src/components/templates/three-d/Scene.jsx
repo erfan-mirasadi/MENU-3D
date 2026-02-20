@@ -58,7 +58,7 @@ export default function Scene({
         <color attach="background" args={["#000000"]} />
 
         {/* Warmer environment for appetizing reflections */}
-        <Environment preset="sunset" blur={0.6} active={true} background={false} />
+        <Environment preset="sunset" blur={0.6} resolution={256} active={true} background={false} />
 
         {/* Ambient light for base visibility */}
         <ambientLight intensity={0.5} />

@@ -6,7 +6,7 @@ import TableEditor from '../_components/TableEditor'
 import { calculateDefaultLayout, calculateGridLayout } from '../_utils/layoutUtils'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
-import { RiEdit2Line, RiSave3Line, RiCloseLine, RiRestartLine, RiDragMove2Line, RiShapeLine, RiAddLine } from 'react-icons/ri'
+import { RiEdit2Line, RiSave3Line, RiCloseLine, RiRestartLine, RiDragMove2Line, RiShapeLine, RiAddLine } from 'react-icons/ri';
 import { useRouter } from 'next/navigation'
 import OrderDrawer from '@/components/shared/OrderDrawer'
 import OfflineAlert from "@/components/shared/OfflineAlert";

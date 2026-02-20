@@ -7,7 +7,7 @@ import Loader from "@/components/ui/Loader";
 import HiddenARLauncher from "@/components/ui/HiddenARLauncher";
 import { useParams } from "next/navigation";
 import { useCart } from "@/app/hooks/useCart";
-import ServiceButtons from "@/components/ui/ServiceButtons"; // Imported ServiceButtons
+import ServiceButtons from "@/components/ui/ServiceButtons"; 
 
 // --- GLOBAL VARIABLES ---
 const gyroData = { x: 0, y: 0 };

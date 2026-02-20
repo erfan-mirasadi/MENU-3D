@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import * as THREE from 'three'
 import { MapCamera, MapFloor, TableVisual, getFloorColor } from './MapShared'
 import { useRestaurantFeatures } from '@/app/hooks/useRestaurantFeatures'
-import { FaFileInvoiceDollar } from 'react-icons/fa' // Added Icon
+import { FaFileInvoiceDollar } from 'react-icons/fa';
 
 // Minimalist Avatar Component
 function CustomerAvatar({ position, color }) {

@@ -2,7 +2,7 @@
 import { useMemo } from 'react'
 import { useRestaurantData } from '@/app/hooks/useRestaurantData'
 import { useLanguage } from '@/context/LanguageContext'
-import { RiCloseLine } from 'react-icons/ri'
+import { RiCloseLine } from 'react-icons/ri';
 
 export default function KitchenSummaryBar({ orders, isOpen, onClose }) {
     const { restaurant } = useRestaurantData()
