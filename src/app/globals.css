@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&family=Gulzar&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -11,9 +12,10 @@
 
   --color-text-light: #e0e6e9;
   --color-text-dim: #abbbc2;
+
+  --font-gulzar: "Gulzar", serif;
 }
 
-/* Hide scrollbar */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -23,7 +25,7 @@
   scrollbar-width: none;
 }
 
-/* Animations */
+
 @keyframes fadeInUp {
   from {
     opacity: 0;

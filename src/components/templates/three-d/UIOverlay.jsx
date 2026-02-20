@@ -85,7 +85,7 @@ export default function UIOverlay({
   session,
   children, // Added children prop
 }) {
-  const { content, t } = useLanguage();
+  const { language, content, t } = useLanguage();
   const { active } = useProgress();
   const [showHint, setShowHint] = useState(false);
   const hasShownRef = useRef(false);
@@ -176,23 +176,40 @@ export default function UIOverlay({
 
         {/* Fixed Height Flex Container for Header Info */}
         <div className="flex flex-col items-center justify-start gap-0 w-full max-w-md mx-auto h-[35vh]">
-          {/* Restaurant Name */}
-          <h3 className="text-white/40 text-[10px] font-bold tracking-[0.4em] uppercase mb-0 shrink-0 z-50">
-            {content(restaurant.name)}
-          </h3>
+          {/* Restaurant Logo / Name */}
+          <div className="shrink-0 z-50 flex justify-center mt-0.5">
+            {restaurant.logo ? (
+              <div className="relative w-16 h-16 rounded-2xl border border-white/10 p-0.5 bg-black/20 backdrop-blur-sm shadow-lg">
+                <Image
+                  src={restaurant.logo}
+                  alt="Restaurant Logo"
+                  fill
+                  priority
+                  sizes="48px"
+                  className="object-contain rounded-xl"
+                />
+              </div>
+            ) : (
+              <h3 className={`text-white/40 text-[10px] font-bold tracking-[0.4em] uppercase`}>
+                {content(restaurant.name)}
+              </h3>
+            )}
+          </div>
 
           {focusedProduct && categoryMounted && (
             <div key={focusedProduct.id} className="contents">
               {/* Product Title - Fixed Height Container (Balanced) */}
-              <div className="w-full h-22 flex items-center justify-center px-4 shrink-0 animate-text-change">
-                <h1 className="text-white text-4xl font-black uppercase tracking-tighter drop-shadow-2xl leading-none max-w-xs mx-auto text-wrap text-center line-clamp-2">
+              <div className="w-full pt-3 flex items-center justify-center px-4 shrink-0 animate-text-change">
+                <h1 
+                  className={`text-white text-4xl font-black uppercase tracking-tighter drop-shadow-2xl max-w-xs mx-auto text-wrap text-center line-clamp-2 ${language === 'fa' ? 'font-gulzar pt-4 px-2' : ''}`}
+                >
                    {content(focusedProduct.title)}
                 </h1>
               </div>
 
               {/* Price Section - Fixed Height Container (Balanced) */}
               <div
-                className="h-16 w-full flex flex-col items-center justify-center shrink-0 animate-text-change"
+                className="h-16 w-full flex flex-col items-center justify-center shrink-0 animate-text-change "
                 style={{ animationDelay: "0.1s" }}
               >
                 {(() => {
@@ -206,10 +223,10 @@ export default function UIOverlay({
                     return (
                       <div className="flex flex-col items-center">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-white/40 text-sm font-bold line-through decoration-white/40">
+                          <span className="text-white/40 text-sm font-bold line-through decoration-white/40 ">
                             {originalPrice.toLocaleString()}₺
                           </span>
-                          <div className="bg-[#ea7c69] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(234,124,105,0.6)]">
+                          <div className={`bg-[#ea7c69] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(234,124,105,0.6)] ${language === 'fa' ? 'font-gulzar' : ''}`}>
                             {discountPercent}% {t('off')}
                           </div>
                         </div>
@@ -239,7 +256,7 @@ export default function UIOverlay({
               {/* Description - Fixed Height Container (Balanced) */}
               <div className="h-12 w-full flex items-start justify-center overflow-hidden shrink-0 ">
                 <p
-                  className="text-white/60 text-xs max-w-[280px] leading-relaxed animate-text-change text-center line-clamp-2"
+                  className={`text-white/60 text-xs max-w-[280px] animate-text-change text-center line-clamp-2 ${language === 'fa' ? 'font-gulzar text-[15px] pt-1 leading-6' : ''}`}
                   style={{ animationDelay: "0.2s" }}
                 >
                   {content(focusedProduct.description) || ""}
@@ -248,17 +265,17 @@ export default function UIOverlay({
 
               {/* AR Button - Fixed Position via Container Flow */}
               <div 
-                className="h- w-full flex items-center justify-center animate-text-change shrink-0" 
+                className={`h- w-full flex items-center justify-center animate-text-change shrink-0 ${language === 'fa' ? 'pt-4' : ''}`} 
                 style={{ animationDelay: "0.3s" }}
               >
                 {focusedProduct?.model_url && (
                   <button
                     onClick={() => onLaunchAR()}
-                    className="pointer-events-auto relative flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 backdrop-blur-2xl border border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.2)] transition-all duration-300 active:scale-95 group overflow-hidden"
+                    className="pointer-events-auto relative flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 backdrop-blur-2xl border border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.2)] transition-all duration-300 active:scale-95 group overflow-hidden "
                   >
-                    <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-50 pointer-events-none" />
-                    <MdViewInAr className="text-white text-lg relative z-10" />
-                    <span className="text-white text-[9px] font-bold uppercase tracking-widest relative z-10">
+                    <div className={`absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-50 pointer-events-none`} />
+                    <MdViewInAr className="text-white text-lg relative z-10 " />
+                    <span className={`text-white text-[9px] font-bold uppercase tracking-widest relative z-10 ${language === 'fa' ? 'font-gulzar text-[12px] ' : ''}`}>
                       {t('showOnTable')}
                     </span>
                   </button>
@@ -277,7 +294,7 @@ export default function UIOverlay({
           
           {/* Header Label - Integrated */}
           <div className="absolute top-0 left-0 w-full text-center z-10">
-            <span className="text-white/50 text-[8px] font-semibold tracking-[0.2em] uppercase">
+            <span className={`text-white/50 text-[8px] font-semibold tracking-[0.2em] uppercase ${language === 'fa' ? 'font-gulzar' : ''}`}>
               {t('menuCategories')}
             </span>
           </div>
@@ -386,7 +403,7 @@ export default function UIOverlay({
                       <span
                         className={`text-[11px] font-medium tracking-tight leading-3.5 text-center transition-colors duration-300 line-clamp-2 ${
                           isActive ? "text-white drop-shadow-md font-semibold" : "text-white/60"
-                        }`}
+                        } ${language === 'fa' ? 'font-gulzar leading-tight pt-1 pb-1' : 'leading-3.5'}`}
                       >
                         {content(cat.title)}
                       </span>
