@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useProgress } from "@react-three/drei";
 import Image from "next/image";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
@@ -44,15 +44,16 @@ const styles = `
 
 function SwipeHint() {
   return (
-    <div
-      className="absolute bottom-56 left-0 w-full flex justify-center items-center pointer-events-none z-40 animate-in fade-in zoom-in duration-1000"
-    >
+    <div className="absolute bottom-56 left-0 w-full flex justify-center items-center pointer-events-none z-40 animate-in fade-in zoom-in duration-1000">
       <div className="relative flex items-center justify-center">
-         {/* Touch Ripple Effect */}
-         <div className="absolute top-2 left-2 w-8 h-8 bg-white/30 rounded-full animate-ping" />
-         
-         {/* Hand Icon - Larger & Shadowed */}
-         <MdTouchApp size={56} className="text-white/90 animate-hand-swipe drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] filter" />
+        {/* Touch Ripple Effect */}
+        <div className="absolute top-2 left-2 w-8 h-8 bg-white/30 rounded-full animate-ping" />
+
+        {/* Hand Icon - Larger & Shadowed */}
+        <MdTouchApp
+          size={56}
+          className="text-white/90 animate-hand-swipe drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] filter"
+        />
       </div>
     </div>
   );
@@ -87,6 +88,32 @@ export default function UIOverlay({
   const { active } = useProgress();
   const [showHint, setShowHint] = useState(false);
   const hasShownRef = useRef(false);
+  const categoryScrollRef = useRef(null);
+  const [showLeft, setShowLeft] = useState(false);
+  const [showRight, setShowRight] = useState(true);
+
+  const checkCategoryScroll = useCallback(() => {
+    if (!categoryScrollRef.current) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = categoryScrollRef.current;
+    setShowLeft(scrollLeft > 10);
+    setShowRight(scrollLeft < scrollWidth - clientWidth - 10);
+  }, []);
+
+  useEffect(() => {
+    checkCategoryScroll();
+    window.addEventListener("resize", checkCategoryScroll);
+    return () => window.removeEventListener("resize", checkCategoryScroll);
+  }, [checkCategoryScroll, categories, activeCatId]);
+
+  const scrollCategories = useCallback((direction) => {
+    if (!categoryScrollRef.current) return;
+
+    categoryScrollRef.current.scrollBy({
+      left: direction * 300,
+      behavior: "smooth",
+    });
+  }, []);
 
   useEffect(() => {
     // If loading, or already shown, do nothing
@@ -96,7 +123,7 @@ export default function UIOverlay({
     const timer = setTimeout(() => {
       hasShownRef.current = true;
       setShowHint(true);
-      
+
       // Auto-hide after 3s
       setTimeout(() => setShowHint(false), 3000);
     }, 1000);
@@ -113,7 +140,9 @@ export default function UIOverlay({
       {!isCartOpen && !active && showHint && <SwipeHint />}
 
       {/* --- CONTROLS (Hidden when cart is open) --- */}
-      <div className={`transition-opacity duration-300 ${isCartOpen ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+      <div
+        className={`transition-opacity duration-300 ${isCartOpen ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+      >
         <CartControls
           focusedProduct={focusedProduct}
           cartItems={cartItems || []}
@@ -145,8 +174,11 @@ export default function UIOverlay({
           aria-label="Previous Item"
         >
           {/* Liquid Gloss Overlay */}
-          <div className="absolute inset-0.5 bg-gradient-to-tr from-white/20 to-transparent opacity-50 pointer-events-none rounded-full" />
-          <IoChevronBack size={22} className="relative z-10 drop-shadow-md text-white/60" />
+          <div className="absolute inset-0.5 bg-linear-to-tr from-white/20 to-transparent opacity-50 pointer-events-none rounded-full" />
+          <IoChevronBack
+            size={22}
+            className="relative z-10 drop-shadow-md text-white/60"
+          />
         </button>
       )}
 
@@ -161,13 +193,15 @@ export default function UIOverlay({
         >
           {/* Liquid Gloss Overlay */}
           <div className="absolute inset-0.5 bg-gradient-to-tr from-white/20 to-transparent opacity-50 pointer-events-none rounded-full" />
-          <IoChevronForward size={22} className="relative z-10 drop-shadow-md text-white/60" />
+          <IoChevronForward
+            size={22}
+            className="relative z-10 drop-shadow-md text-white/60"
+          />
         </button>
       )}
 
       {/* --- HEADER --- */}
       <div className="absolute top-0 left-0 w-full z-10 p-6 pt-3 text-center pointer-events-none">
-        
         <div className="absolute top-2 right-2 pointer-events-auto">
           <LanguageSwitcher />
         </div>
@@ -188,7 +222,9 @@ export default function UIOverlay({
                 />
               </div>
             ) : (
-              <h3 className={`text-white/40 text-[10px] font-bold tracking-[0.4em] uppercase`}>
+              <h3
+                className={`text-white/40 text-[10px] font-bold tracking-[0.4em] uppercase`}
+              >
                 {content(restaurant.name)}
               </h3>
             )}
@@ -198,10 +234,10 @@ export default function UIOverlay({
             <div key={focusedProduct.id} className="contents">
               {/* Product Title - Fixed Height Container (Balanced) */}
               <div className="w-full pt-3 flex items-center justify-center px-4 shrink-0 animate-text-change">
-                <h1 
-                  className={`text-white text-4xl font-black uppercase tracking-tighter drop-shadow-2xl max-w-xs mx-auto text-wrap text-center line-clamp-2 ${language === 'fa' ? 'font-gulzar pt-4 px-2' : ''}`}
+                <h1
+                  className={`text-white text-4xl font-black uppercase tracking-tighter drop-shadow-2xl max-w-xs mx-auto text-wrap text-center line-clamp-2 ${language === "fa" ? "font-gulzar pt-4 px-2" : ""}`}
                 >
-                   {content(focusedProduct.title)}
+                  {content(focusedProduct.title)}
                 </h1>
               </div>
 
@@ -212,28 +248,36 @@ export default function UIOverlay({
               >
                 {(() => {
                   const price = Number(focusedProduct.price);
-                  const originalPrice = focusedProduct.original_price ? Number(focusedProduct.original_price) : null;
+                  const originalPrice = focusedProduct.original_price
+                    ? Number(focusedProduct.original_price)
+                    : null;
                   const hasDiscount = originalPrice && originalPrice > price;
-                  
+
                   if (hasDiscount) {
-                    const discountPercent = Math.round(((originalPrice - price) / originalPrice) * 100);
-                    
+                    const discountPercent = Math.round(
+                      ((originalPrice - price) / originalPrice) * 100,
+                    );
+
                     return (
                       <div className="flex flex-col items-center">
                         <div className="flex items-center gap-2 mb-0.5">
                           <span className="text-white/40 text-sm font-bold line-through decoration-white/40 ">
                             {originalPrice.toLocaleString()}₺
                           </span>
-                          <div className={`bg-[#ea7c69] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(234,124,105,0.6)] ${language === 'fa' ? 'font-gulzar' : ''}`}>
-                            {discountPercent}% {t('off')}
+                          <div
+                            className={`bg-[#ea7c69] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(234,124,105,0.6)] ${language === "fa" ? "font-gulzar" : ""}`}
+                          >
+                            {discountPercent}% {t("off")}
                           </div>
                         </div>
 
                         <div className="flex items-baseline gap-1">
-                           <p className="text-white text-4xl font-black font-mono tracking-tighter drop-shadow-[0_0_10px_rgba(234,124,105,0.8)]">
+                          <p className="text-white text-4xl font-black font-mono tracking-tighter drop-shadow-[0_0_10px_rgba(234,124,105,0.8)]">
                             {price.toLocaleString()}
                           </p>
-                          <span className="text-[#ea7c69] text-xl font-bold">₺</span>
+                          <span className="text-[#ea7c69] text-xl font-bold">
+                            ₺
+                          </span>
                         </div>
                       </div>
                     );
@@ -242,7 +286,7 @@ export default function UIOverlay({
                   // Standard Price
                   return (
                     <div className="flex items-baseline gap-1">
-                       <p className="text-[#ea7c69] text-4xl font-bold font-mono">
+                      <p className="text-[#ea7c69] text-4xl font-bold font-mono">
                         {price.toLocaleString()}
                       </p>
                       <span className="text-[#ea7c69] text-xl">₺</span>
@@ -254,7 +298,7 @@ export default function UIOverlay({
               {/* Description - Fixed Height Container (Balanced) */}
               <div className="h-12 w-full flex items-start justify-center overflow-hidden shrink-0 ">
                 <p
-                  className={`text-white/60 text-xs max-w-[280px] animate-text-change text-center line-clamp-2 ${language === 'fa' ? 'font-gulzar text-[15px] pt-1 leading-6' : ''}`}
+                  className={`text-white/60 text-xs max-w-[280px] animate-text-change text-center line-clamp-2 ${language === "fa" ? "font-gulzar text-[15px] pt-1 leading-6" : ""}`}
                   style={{ animationDelay: "0.2s" }}
                 >
                   {content(focusedProduct.description) || ""}
@@ -262,8 +306,8 @@ export default function UIOverlay({
               </div>
 
               {/* AR Button - Fixed Position via Container Flow */}
-              <div 
-                className={`h- w-full flex items-center justify-center animate-text-change shrink-0 ${language === 'fa' ? 'pt-4' : ''}`} 
+              <div
+                className={`h- w-full flex items-center justify-center animate-text-change shrink-0 ${language === "fa" ? "pt-4" : ""}`}
                 style={{ animationDelay: "0.3s" }}
               >
                 {focusedProduct?.model_url && (
@@ -271,10 +315,14 @@ export default function UIOverlay({
                     onClick={() => onLaunchAR()}
                     className="pointer-events-auto relative flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 backdrop-blur-2xl border border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.2)] transition-all duration-300 active:scale-95 group overflow-hidden "
                   >
-                    <div className={`absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-50 pointer-events-none`} />
+                    <div
+                      className={`absolute inset-0 bg-linear-to-tr from-white/20 to-transparent opacity-50 pointer-events-none`}
+                    />
                     <MdViewInAr className="text-white text-lg relative z-10 " />
-                    <span className={`text-white text-[9px] font-bold uppercase tracking-widest relative z-10 ${language === 'fa' ? 'font-gulzar text-[12px] ' : ''}`}>
-                      {t('showOnTable')}
+                    <span
+                      className={`text-white text-[9px] font-bold uppercase tracking-widest relative z-10 ${language === "fa" ? "font-gulzar text-[12px] " : ""}`}
+                    >
+                      {t("showOnTable")}
                     </span>
                   </button>
                 )}
@@ -286,76 +334,57 @@ export default function UIOverlay({
 
       {/* --- BOTTOM CATEGORY NAV --- */}
       <div className="absolute bottom-0 left-0 w-full z-50 pointer-events-none px-0">
-        
         {/* Floating Glass Dock Container */}
         <div className="relative mx-auto max-w-2xl backdrop-blur-sm border-t border-white/10 rounded-t-[35px] shadow-2xl overflow-hidden pointer-events-auto bg-black/20 group/nav">
-          
           {/* Header Label - Integrated */}
           <div className="absolute top-0 left-0 w-full text-center z-10">
-            <span className={`text-white/50 text-[8px] font-semibold tracking-[0.2em] uppercase ${language === 'fa' ? 'font-gulzar' : ''}`}>
-              {t('menuCategories')}
+            <span
+              className={`text-white/50 text-[8px] font-semibold tracking-[0.2em] uppercase ${language === "fa" ? "font-gulzar" : ""}`}
+            >
+              {t("menuCategories")}
             </span>
           </div>
 
-          {/* Logic for Arrows */}
-          {(() => {
-             const scrollRef = useRef(null);
-             const [showLeft, setShowLeft] = useState(false);
-             const [showRight, setShowRight] = useState(true);
+          {/* Left Arrow */}
+          <div
+            className={`absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center z-20 transition-opacity duration-300 ${showLeft ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          >
+            <button
+              type="button"
+              onClick={() => scrollCategories(-1)}
+              className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white/70 transition-all active:scale-90"
+              aria-label="Scroll categories left"
+            >
+              <IoChevronBack size={18} />
+            </button>
+            {/* Gradient Mask */}
+            <div className="absolute inset-y-0 left-0 w-full bg-linear-to-r from-black/20 to-transparent -z-10 pointer-events-none" />
+          </div>
 
-             const checkScroll = () => {
-               if (!scrollRef.current) return;
-               const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-               setShowLeft(scrollLeft > 10);
-               setShowRight(scrollLeft < scrollWidth - clientWidth - 10);
-             };
+          {/* Right Arrow */}
+          <div
+            className={`absolute right-0 top-0 bottom-0 w-12 flex items-center justify-center z-20 transition-opacity duration-300 ${showRight ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          >
+            <button
+              type="button"
+              onClick={() => scrollCategories(1)}
+              className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white/70  transition-all active:scale-90"
+              aria-label="Scroll categories right"
+            >
+              <IoChevronForward size={18} />
+            </button>
+            {/* Gradient Mask */}
+            <div className="absolute inset-y-0 right-0 w-full bg-linear-to-l from-black/20 to-transparent -z-10 pointer-events-none" />
+          </div>
 
-             useEffect(() => {
-               checkScroll();
-               window.addEventListener('resize', checkScroll);
-               return () => window.removeEventListener('resize', checkScroll);
-             }, []);
-
-             const scroll = (direction) => {
-               if (scrollRef.current) {
-                 scrollRef.current.scrollBy({ left: direction * 300, behavior: 'smooth' });
-               }
-             };
-
-             return (
-               <>
-                 {/* Left Arrow */}
-                 <div className={`absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center z-20 transition-opacity duration-300 ${showLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                   <button 
-                     onClick={() => scroll(-1)}
-                     className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white/70 transition-all active:scale-90"
-                   >
-                     <IoChevronBack size={18} />
-                   </button>
-                   {/* Gradient Mask */}
-                   <div className="absolute inset-y-0 left-0 w-full bg-gradient-to-r from-black/20 to-transparent -z-10 pointer-events-none" />
-                 </div>
-
-                 {/* Right Arrow */}
-                 <div className={`absolute right-0 top-0 bottom-0 w-12 flex items-center justify-center z-20 transition-opacity duration-300 ${showRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                   <button 
-                     onClick={() => scroll(1)}
-                     className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white/70  transition-all active:scale-90"
-                   >
-                     <IoChevronForward size={18} />
-                   </button>
-                   {/* Gradient Mask */}
-                   <div className="absolute inset-y-0 right-0 w-full bg-gradient-to-l from-black/20 to-transparent -z-10 pointer-events-none" />
-                 </div>
-
-                 {/* Scroll Container */}
-                 <div 
-                   ref={scrollRef}
-                   onScroll={checkScroll}
-                   className="category-scroll w-full overflow-x-auto no-scrollbar px-5 pt-8 pb-0 touch-pan-x scroll-smooth"
-                 >
-                   <div className="flex gap-4 min-w-max items-start justify-center mx-auto">
-              {categories.map((cat, index) => {
+          {/* Scroll Container */}
+          <div
+            ref={categoryScrollRef}
+            onScroll={checkCategoryScroll}
+            className="category-scroll w-full overflow-x-auto no-scrollbar px-5 pt-8 pb-0 touch-pan-x scroll-smooth"
+          >
+            <div className="flex gap-4 min-w-max items-start justify-center mx-auto">
+              {categories.map((cat) => {
                 const isActive = activeCatId === cat.id;
                 return (
                   <button
@@ -374,13 +403,13 @@ export default function UIOverlay({
                       }`}
                     >
                       {/* Glossy Overlay (The Liquid Feel) */}
-                      <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/5 to-transparent z-20 pointer-events-none mix-blend-overlay" />
-                      <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent z-20 pointer-events-none rounded-t-[18px]" />
+                      <div className="absolute inset-0 bg-linear-to-b from-white/30 via-white/5 to-transparent z-20 pointer-events-none mix-blend-overlay" />
+                      <div className="absolute inset-x-0 top-0 h-1/2 bg-linear-to-b from-white/20 to-transparent z-20 pointer-events-none rounded-t-[18px]" />
 
                       {cat.image_url ? (
                         <Image
                           src={cat.image_url}
-                          alt={content(cat.title)}
+                          alt={`${content(cat.title)} Image || "Category Image"`}
                           width={80}
                           height={53}
                           quality={60}
@@ -391,17 +420,21 @@ export default function UIOverlay({
                           <span className="text-lg text-white">●</span>
                         </div>
                       )}
-                      
+
                       {/* Active Color Tint */}
-                       {isActive && <div className="absolute inset-0 bg-[#ea7c69]/20 mix-blend-overlay z-10" />}
+                      {isActive && (
+                        <div className="absolute inset-0 bg-[#ea7c69]/20 mix-blend-overlay z-10" />
+                      )}
                     </div>
 
                     {/* Label - Fixed Height & Medium Text */}
                     <div className="h-8 flex items-start justify-center w-full">
                       <span
                         className={`text-[11px] font-medium tracking-tight leading-3.5 text-center transition-colors duration-300 line-clamp-2 ${
-                          isActive ? "text-white drop-shadow-md font-semibold" : "text-white/60"
-                        } ${language === 'fa' ? 'font-gulzar leading-tight pt-1 pb-1' : 'leading-3.5'}`}
+                          isActive
+                            ? "text-white drop-shadow-md font-semibold"
+                            : "text-white/60"
+                        } ${language === "fa" ? "font-gulzar leading-tight pt-1 pb-1" : "leading-3.5"}`}
                       >
                         {content(cat.title)}
                       </span>
@@ -409,18 +442,15 @@ export default function UIOverlay({
                   </button>
                 );
               })}
-                   </div>
-                 </div>
-               </>
-             );
-          })()}
+            </div>
+          </div>
         </div>
       </div>
 
-     {/* --- SERVICE BUTTONS / CHILDREN (Top Layer) --- */}
-     {!isCartOpen && (
+      {/* --- SERVICE BUTTONS / CHILDREN (Top Layer) --- */}
+      {!isCartOpen && (
         <div className="absolute top-2 left-2 pointer-events-auto z-[60]">
-            {children}
+          {children}
         </div>
       )}
     </>

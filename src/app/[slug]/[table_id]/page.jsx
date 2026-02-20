@@ -5,6 +5,23 @@ import { getProducts } from "@/services/productService";
 import { getRestaurantBySlug } from "@/services/restaurantService";
 import { LanguageProvider } from "@/context/LanguageContext.jsx";
 
+export async function generateMetadata({ params }) {
+  const resolvedParams = await params;
+  const decodedSlug = decodeURIComponent(resolvedParams.slug);
+  const restaurant = await getRestaurantBySlug(decodedSlug);
+
+  if (!restaurant) {
+    return {
+      title: "Menu 3D",
+    };
+  }
+
+  return {
+    title: `${restaurant.name} | Menu 3D`,
+    description: `${restaurant.name} menu`,
+  };
+}
+
 async function getMenuData(slug) {
   const restaurant = await getRestaurantBySlug(slug);
 
@@ -20,7 +37,7 @@ async function getMenuData(slug) {
   const categoriesWithProducts = categories.map((category) => ({
     ...category,
     products: allProducts.filter(
-      (product) => product.category_id === category.id
+      (product) => product.category_id === category.id,
     ),
   }));
 

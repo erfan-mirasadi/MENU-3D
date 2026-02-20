@@ -173,10 +173,11 @@ export default function ThreeDLayout({ restaurant, categories }) {
 
 
   return (
-    <div
-      className="three-d-container relative w-full h-[100dvh] bg-black overflow-hidden select-none font-sans"
+    <main
+      className="three-d-container relative w-full h-dvh bg-black overflow-hidden select-none font-sans"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      aria-label="3D menu"
     >
       {/* --- CUSTOM SMOOTH LOADER --- */}
       <Loader active={isLoading} />
@@ -224,6 +225,6 @@ export default function ThreeDLayout({ restaurant, categories }) {
             sessionId={sessionData?.id}
           />
       </UIOverlay>
-    </div>
+    </main>
   );
 }
