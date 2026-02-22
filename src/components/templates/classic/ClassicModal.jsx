@@ -2,7 +2,7 @@
 import ARViewer from "@/components/ui/ARViewer";
 import { useLanguage } from "@/context/LanguageContext";
 
-export default function ClassicModal({ product, onClose, onAddToCart }) {
+export default function ClassicModal({ product, onClose, onAddToCart, isGuestMode }) {
   const { content, t } = useLanguage();
 
   if (!product) return null;
@@ -67,15 +67,17 @@ export default function ClassicModal({ product, onClose, onAddToCart }) {
               {content(product.description)}
             </p>
 
-            <button
-              onClick={() => {
-                onAddToCart(product);
-                onClose();
-              }}
-              className="w-full py-4 bg-[#2C1810] text-[#D4AF37] text-lg font-bold uppercase tracking-widest hover:bg-[#3E2419] transition-colors shadow-lg"
-            >
-              Add to Order
-            </button>
+            {!isGuestMode && (
+              <button
+                onClick={() => {
+                  if (onAddToCart) onAddToCart(product);
+                  onClose();
+                }}
+                className="w-full py-4 bg-[#2C1810] text-[#D4AF37] text-lg font-bold uppercase tracking-widest hover:bg-[#3E2419] transition-colors shadow-lg"
+              >
+                Add to Order
+              </button>
+            )}
           </div>
         </div>
       </div>

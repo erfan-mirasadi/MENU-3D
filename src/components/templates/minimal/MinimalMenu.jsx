@@ -7,7 +7,7 @@ import MinimalCartDrawer from "./MinimalCartDrawer";
 import MinimalModal from "./MinimalModal";
 import { useCart } from "@/app/hooks/useCart";
 
-export default function MinimalMenu({ restaurant, categories, tableId }) {
+export default function MinimalMenu({ restaurant, categories, tableId, isGuestMode }) {
   const { cartItems, addToCart, removeFromCart, submitOrder, isLoading } =
     useCart(tableId, restaurant.id);
   const [activeCategory, setActiveCategory] = useState(categories?.[0]?.id);
@@ -50,7 +50,8 @@ export default function MinimalMenu({ restaurant, categories, tableId }) {
                     key={product.id}
                     product={product}
                     onClick={() => setSelectedProduct(product)}
-                    onAdd={() => addToCart(product)}
+                    onAdd={!isGuestMode ? () => addToCart(product) : undefined}
+                    isGuestMode={isGuestMode}
                   />
                 ))}
               </div>
@@ -62,7 +63,7 @@ export default function MinimalMenu({ restaurant, categories, tableId }) {
       </div>
 
       {/* Floating Cart Button */}
-      {totalCount > 0 && (
+      {!isGuestMode && totalCount > 0 && (
         <button
           onClick={() => setIsCartOpen(true)}
           className="fixed bottom-8 right-8 bg-black text-white w-16 h-16 shadow-[5px_5px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] border-2 border-white outline outline-2 outline-black flex flex-col items-center justify-center transition-all z-50"
@@ -78,16 +79,19 @@ export default function MinimalMenu({ restaurant, categories, tableId }) {
       <MinimalModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
-        onAddToCart={addToCart}
+        onAddToCart={!isGuestMode ? addToCart : undefined}
+        isGuestMode={isGuestMode}
       />
 
-      <MinimalCartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        cartItems={cartItems}
-        onRemove={removeFromCart}
-        onSubmit={submitOrder}
-      />
+      {!isGuestMode && (
+        <MinimalCartDrawer
+          isOpen={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+          cartItems={cartItems}
+          onRemove={removeFromCart}
+          onSubmit={submitOrder}
+        />
+      )}
     </div>
   );
 }

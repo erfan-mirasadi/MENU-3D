@@ -8,7 +8,7 @@ import ClassicCartButton from "./ClassicCartButton";
 import ClassicCartDrawer from "./ClassicCartDrawer";
 import { useCart } from "@/app/hooks/useCart";
 
-export default function ClassicMenu({ restaurant, categories, tableId }) {
+export default function ClassicMenu({ restaurant, categories, tableId, isGuestMode }) {
   const { cartItems, addToCart, removeFromCart, submitOrder, isLoading } =
     useCart(tableId, restaurant.id);
   const [activeCategory, setActiveCategory] = useState(categories?.[0]?.id);
@@ -58,7 +58,8 @@ export default function ClassicMenu({ restaurant, categories, tableId }) {
                       key={product.id}
                       product={product}
                       onClick={() => setSelectedProduct(product)}
-                      onAdd={() => addToCart(product)}
+                      onAdd={!isGuestMode ? () => addToCart(product) : undefined}
+                      isGuestMode={isGuestMode}
                     />
                   ))}
                 </div>
@@ -69,27 +70,32 @@ export default function ClassicMenu({ restaurant, categories, tableId }) {
       </div>
 
       {/* Floating Cart Button */}
-      <ClassicCartButton
-        totalCount={totalCount}
-        totalAmount={totalAmount}
-        onClick={() => setIsCartOpen(true)}
-      />
+      {!isGuestMode && (
+        <ClassicCartButton
+          totalCount={totalCount}
+          totalAmount={totalAmount}
+          onClick={() => setIsCartOpen(true)}
+        />
+      )}
 
       {/* Modal Details */}
       <ClassicModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
-        onAddToCart={addToCart}
+        onAddToCart={!isGuestMode ? addToCart : undefined}
+        isGuestMode={isGuestMode}
       />
 
       {/* Cart Drawer */}
-      <ClassicCartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        cartItems={cartItems}
-        onRemove={removeFromCart}
-        onSubmit={submitOrder}
-      />
+      {!isGuestMode && (
+        <ClassicCartDrawer
+          isOpen={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+          cartItems={cartItems}
+          onRemove={removeFromCart}
+          onSubmit={submitOrder}
+        />
+      )}
     </div>
   );
 }

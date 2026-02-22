@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import SmartMedia from "@/components/ui/SmartMedia";
 import { useLanguage } from "@/context/LanguageContext";
 
-export default function ModernCard({ product, onClick, onAdd }) {
+export default function ModernCard({ product, onClick, onAdd, isGuestMode }) {
   const { content, t } = useLanguage();
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef(null);
@@ -13,7 +13,6 @@ export default function ModernCard({ product, onClick, onAdd }) {
   const hasVideo = !!(iosUrl || androidUrl);
   const isPromo = !!product.original_price;
 
-  // همون IntersectionObserver قبلی برای تریگر کردن
   useEffect(() => {
     if (!hasVideo) return;
 
@@ -38,7 +37,6 @@ export default function ModernCard({ product, onClick, onAdd }) {
       onClick={onClick}
       className="group relative w-full max-w-[320px] mx-auto mt-24 mb-6 select-none cursor-pointer"
     >
-      {/* GLOW EFFECT - فقط اگه ویدیو باشه */}
       {hasVideo && (
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-40 h-40 bg-[#ea7c69] opacity-20 blur-[60px] rounded-full pointer-events-none" />
       )}
@@ -66,7 +64,6 @@ export default function ModernCard({ product, onClick, onAdd }) {
           )}
 
           <div className="relative w-full h-full drop-shadow-[0_20px_20px_rgba(0,0,0,0.4)]">
-            {/* استفاده از SmartMedia برای نمایش */}
             <SmartMedia
               files={{
                 image_url: product.image_url,
@@ -74,7 +71,6 @@ export default function ModernCard({ product, onClick, onAdd }) {
                 animation_url_android: product.animation_url_android,
               }}
               alt={content(product.title)}
-              // خود SmartMedia لاجیک نمایش رو داره، ولی ما isVisible رو پاس میدیم تا با اسکرول سینک باشه
               isVisible={isVisible}
               className="transform group-hover:scale-105 transition-transform duration-500"
             />
@@ -111,26 +107,28 @@ export default function ModernCard({ product, onClick, onAdd }) {
               </div>
             </div>
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onAdd();
-              }}
-              className="relative overflow-hidden bg-[#ea7c69] text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-all"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-6 h-6 z-10"
+            {!isGuestMode && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onAdd) onAdd();
+                }}
+                className="relative overflow-hidden bg-[#ea7c69] text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-all"
               >
-                <path
-                  fillRule="evenodd"
-                  d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-6 h-6 z-10"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
       </div>

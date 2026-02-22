@@ -18,7 +18,7 @@ const ServiceButtons = dynamic(() => import("@/components/ui/ServiceButtons"), {
 const gyroData = { x: 0, y: 0 };
 const GYRO_INTENSITY = 40;
 
-export default function ThreeDLayout({ restaurant, categories }) {
+export default function ThreeDLayout({ restaurant, categories, isGuestMode }) {
   const params = useParams();
   const {
     cartItems,
@@ -221,12 +221,15 @@ export default function ThreeDLayout({ restaurant, categories }) {
         /* --- CART STATE --- */
         isCartOpen={isCartOpen}
         setIsCartOpen={setIsCartOpen}
+        isGuestMode={isGuestMode}
       >
-        <ServiceButtons
-          restaurantId={restaurant.id}
-          tableId={tableId} // Use resolved UUID
-          sessionId={sessionData?.id}
-        />
+        {!isGuestMode && (
+          <ServiceButtons
+            restaurantId={restaurant.id}
+            tableId={tableId} // Use resolved UUID
+            sessionId={sessionData?.id}
+          />
+        )}
       </UIOverlay>
     </main>
   );

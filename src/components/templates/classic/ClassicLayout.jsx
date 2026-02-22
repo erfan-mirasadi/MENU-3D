@@ -8,6 +8,7 @@ export default function ClassicLayout({
   categories,
   tableId,
   featuredProducts,
+  isGuestMode,
 }) {
   const [showMenu, setShowMenu] = useState(false);
 
@@ -36,6 +37,7 @@ export default function ClassicLayout({
           restaurant={restaurant}
           categories={categories}
           tableId={tableId}
+          isGuestMode={isGuestMode}
         />
       </div>
     </main>

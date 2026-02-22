@@ -8,6 +8,7 @@ export default function ImmersiveLayout({
   categories,
   tableId,
   featuredProducts,
+  isGuestMode,
 }) {
   const [showMenu, setShowMenu] = useState(false);
 
@@ -53,6 +54,7 @@ export default function ImmersiveLayout({
           restaurant={restaurant}
           categories={categories}
           tableId={tableId}
+          isGuestMode={isGuestMode}
         />
       </div>
     </main>

@@ -21,6 +21,7 @@ export default function ClientWrapper({
   categories,
   tableId,
   featuredProducts,
+  isGuestMode,
 }) {
   const style = restaurant.template_style;
   const sharedProps = {
@@ -28,6 +29,7 @@ export default function ClientWrapper({
     categories,
     tableId,
     featuredProducts,
+    isGuestMode,
   };
 
   switch (style) {

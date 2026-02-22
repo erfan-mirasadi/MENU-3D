@@ -29,18 +29,15 @@ const QrCodeGenerator = ({
                 canvas.height = size;
                 const ctx = canvas.getContext("2d");
                 
-                // Draw rounded rect
                 ctx.beginPath();
-                // 2xl is roughly 24px, but scaling to image size relative to 1000px base
-                const radius = size * 0.2; // approx 20% radius for "rounded-2xl" look
+                const radius = size * 0.2; 
                 ctx.roundRect(0, 0, size, size, radius);
                 ctx.clip();
                 
-                // Draw image centered
                 ctx.drawImage(img, (img.width - size)/2, (img.height - size)/2, size, size, 0, 0, size, size);
                 resolve(canvas.toDataURL());
             };
-            img.onerror = () => resolve(src); // Fallback to original
+            img.onerror = () => resolve(src); 
             img.src = src;
         });
     };
@@ -113,8 +110,6 @@ const QrCodeGenerator = ({
         if (divRef.current) {
             divRef.current.innerHTML = "";
             qrCode.current.append(divRef.current);
-
-            // [NEW] Enforce visual size (Display Scaling)
             const canvas = divRef.current.querySelector("canvas");
             if (canvas) {
                 canvas.style.width = `${width}px`;
@@ -126,7 +121,6 @@ const QrCodeGenerator = ({
     initQr();
   }, [url, width, height, color1, color2, logo, resolution]);
 
-  // [NEW] Effect to handle download trigger
   useEffect(() => {
     if (downloadTrigger > 0 && qrCode.current) {
         qrCode.current.download({ name: fileName, extension: "png" });

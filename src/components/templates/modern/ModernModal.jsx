@@ -3,7 +3,7 @@ import Image from "next/image";
 import ARViewer from "@/components/ui/ARViewer";
 import { useLanguage } from "@/context/LanguageContext";
 
-export default function ModernModal({ product, onClose, onAddToCart }) {
+export default function ModernModal({ product, onClose, onAddToCart, isGuestMode }) {
   const { content, t } = useLanguage();
 
   if (!product) return null;
@@ -86,15 +86,17 @@ export default function ModernModal({ product, onClose, onAddToCart }) {
               {content(product.description)}
             </p>
 
-            <button
-              onClick={() => {
-                onAddToCart(product);
-                onClose();
-              }}
-              className="w-full bg-[#ea7c69] hover:bg-[#ff8f7d] py-5 rounded-2xl text-white font-bold text-lg shadow-xl shadow-orange-900/40 active:scale-95 transition-transform flex items-center justify-center gap-3"
-            >
-              <span>Add to Cart</span>
-            </button>
+            {!isGuestMode && (
+              <button
+                onClick={() => {
+                  if (onAddToCart) onAddToCart(product);
+                  onClose();
+                }}
+                className="w-full bg-[#ea7c69] hover:bg-[#ff8f7d] py-5 rounded-2xl text-white font-bold text-lg shadow-xl shadow-orange-900/40 active:scale-95 transition-transform flex items-center justify-center gap-3"
+              >
+                <span>Add to Cart</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

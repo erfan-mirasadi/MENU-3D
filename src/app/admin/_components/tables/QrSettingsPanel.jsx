@@ -51,7 +51,7 @@ export default function QrSettingsPanel({ color1, setColor1, color2, setColor2, 
       <div className="flex flex-col items-center gap-3">
         <span className="text-xs text-gray-500 font-semibold uppercase tracking-widest">Live Preview</span>
         <QrCodeGenerator 
-            url={`https://menu-3d.com/${slug || 'demo'}`}
+            url={`https://menu-3d.com/${slug}`}
             width={180} 
             height={180} 
             color1={color1} 

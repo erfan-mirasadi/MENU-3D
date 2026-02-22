@@ -85,6 +85,7 @@ export default function UIOverlay({
   isCartOpen,
   setIsCartOpen,
   session,
+  isGuestMode,
   children, // Added children prop
 }) {
   const { language, content, t } = useLanguage();
@@ -142,24 +143,26 @@ export default function UIOverlay({
       {!isCartOpen && !isSceneLoading && showHint && <SwipeHint />}
 
       {/* --- CONTROLS (Hidden when cart is open) --- */}
-      <div
-        className={`transition-opacity duration-300 ${isCartOpen ? "opacity-0 pointer-events-none" : "opacity-100"}`}
-      >
-        <CartControls
-          focusedProduct={focusedProduct}
-          cartItems={cartItems || []}
-          onAdd={addToCart}
-          onDecrease={decreaseFromCart}
-          onRemove={removeFromCart}
-          onOpenCart={() => {
-            setShouldLoadCartDrawer(true);
-            setIsCartOpen(true);
-          }}
-        />
-      </div>
+      {!isGuestMode && (
+        <div
+          className={`transition-opacity duration-300 ${isCartOpen ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+        >
+          <CartControls
+            focusedProduct={focusedProduct}
+            cartItems={cartItems || []}
+            onAdd={addToCart}
+            onDecrease={decreaseFromCart}
+            onRemove={removeFromCart}
+            onOpenCart={() => {
+              setShouldLoadCartDrawer(true);
+              setIsCartOpen(true);
+            }}
+          />
+        </div>
+      )}
 
       {/* --- DRAWER --- */}
-      {shouldLoadCartDrawer && (
+      {!isGuestMode && shouldLoadCartDrawer && (
         <ModernCartDrawer
           isOpen={isCartOpen}
           onClose={() => setIsCartOpen(false)}

@@ -20,7 +20,11 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
 
   //  Setup Session & Guest
   useEffect(() => {
-    if (!tableNumberFromUrl || !restaurantId) return;
+    if (!tableNumberFromUrl || !restaurantId) {
+      setIsLoading(false);
+      return;
+    }
+    
     let ignore = false;
 
     const initializeSession = async () => {
@@ -45,6 +49,7 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
 
         if (!tableData) {
           console.error("❌ Table not found");
+          setIsLoading(false);
           return;
         }
 
@@ -65,7 +70,10 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
         setSessionId(session?.id);
         sessionRef.current = session?.id;
       } catch (err) {
-        if (!ignore) console.error("❌ Error init session:", err);
+        if (!ignore) {
+          console.error("❌ Error init session:", err);
+          setIsLoading(false);
+        }
       }
     };
 
@@ -148,6 +156,7 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
   };
 
   const decreaseFromCart = async (itemId) => {
+    if (!sessionId || !guestId) return;
     try {
       const existingItem = cartItems.find((item) => item.id === itemId);
       if (!existingItem) return;
@@ -183,6 +192,7 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
   };
 
   const removeFromCart = async (itemId) => {
+    if (!sessionId || !guestId) return;
     if (itemId.toString().startsWith("temp-")) return;
     const existingItem = cartItems.find((item) => item.id === itemId);
     setCartItems((prev) => prev.filter((item) => item.id !== itemId));

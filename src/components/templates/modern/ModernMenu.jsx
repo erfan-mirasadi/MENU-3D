@@ -8,7 +8,7 @@ import ModernModal from "./ModernModal";
 import ModernCartDrawer from "./ModernCartDrawer";
 import { useCart } from "@/app/hooks/useCart";
 
-export default function ModernMenu({ restaurant, categories, tableId }) {
+export default function ModernMenu({ restaurant, categories, tableId, isGuestMode }) {
   const {
     cartItems,
     addToCart,
@@ -59,7 +59,8 @@ export default function ModernMenu({ restaurant, categories, tableId }) {
                     key={product.id}
                     product={product}
                     onClick={() => setSelectedProduct(product)}
-                    onAdd={() => addToCart(product)}
+                    onAdd={!isGuestMode ? () => addToCart(product) : undefined}
+                    isGuestMode={isGuestMode}
                   />
                 ))}
               </div>
@@ -68,30 +69,32 @@ export default function ModernMenu({ restaurant, categories, tableId }) {
         })}
       </div>
 
-      {/* دکمه شناور پایین */}
-      <ModernCart
-        totalAmount={totalAmount}
-        totalCount={totalCount}
-        isLoading={isLoadingCart}
-        onClick={() => setIsCartOpen(true)} // <--- 3. Open Modal
-      />
+      {!isGuestMode && (
+        <ModernCart
+          totalAmount={totalAmount}
+          totalCount={totalCount}
+          isLoading={isLoadingCart}
+          onClick={() => setIsCartOpen(true)} 
+        />
+      )}
 
-      {/* مودال دیتیل محصول */}
       <ModernModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
-        onAddToCart={addToCart}
+        onAddToCart={!isGuestMode ? addToCart : undefined}
+        isGuestMode={isGuestMode}
       />
 
-      {/* مودال سبد خرید (جدید) */}
-      <ModernCartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        cartItems={cartItems}
-        onRemove={removeFromCart}
-        onSubmit={submitOrder}
-        session={sessionData}
-      />
+      {!isGuestMode && (
+        <ModernCartDrawer
+          isOpen={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+          cartItems={cartItems}
+          onRemove={removeFromCart}
+          onSubmit={submitOrder}
+          session={sessionData}
+        />
+      )}
     </div>
   );
 }

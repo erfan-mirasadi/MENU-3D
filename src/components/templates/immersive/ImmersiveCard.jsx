@@ -2,7 +2,7 @@
 import SmartMedia from "@/components/ui/SmartMedia";
 import { useLanguage } from "@/context/LanguageContext";
 
-export default function ImmersiveCard({ product, onClick, onAdd }) {
+export default function ImmersiveCard({ product, onClick, onAdd, isGuestMode }) {
   const { content, t } = useLanguage();
   const has3D = !!(product.model_url || product.model_lowpoly_url);
 
@@ -54,15 +54,19 @@ export default function ImmersiveCard({ product, onClick, onAdd }) {
 
           {/* Price & Add Bar */}
           <div className="w-full flex items-center justify-between bg-black/40 rounded-2xl p-1.5 pr-5 border border-white/5">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onAdd();
-              }}
-              className="bg-white text-black w-12 h-12 rounded-xl flex items-center justify-center font-bold text-2xl hover:scale-105 active:scale-90 transition-transform shadow-[0_0_15px_rgba(255,255,255,0.2)]"
-            >
-              +
-            </button>
+            {!isGuestMode ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAdd();
+                }}
+                className="bg-white text-black w-12 h-12 rounded-xl flex items-center justify-center font-bold text-2xl hover:scale-105 active:scale-90 transition-transform shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+              >
+                +
+              </button>
+            ) : (
+              <div className="w-12 h-12"></div>
+            )}
 
             <div className="flex items-baseline gap-1">
               {/* HUGE PRICE */}

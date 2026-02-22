@@ -2,7 +2,7 @@
 import SmartMedia from "@/components/ui/SmartMedia";
 import { useLanguage } from "@/context/LanguageContext";
 
-export default function MinimalCard({ product, onClick, onAdd }) {
+export default function MinimalCard({ product, onClick, onAdd, isGuestMode }) {
   const { content, t } = useLanguage();
   const has3D = !!(product.model_url || product.model_lowpoly_url);
 
@@ -36,15 +36,17 @@ export default function MinimalCard({ product, onClick, onAdd }) {
         )}
 
         {/* Quick Add Button (Bottom Right) */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAdd();
-          }}
-          className="absolute bottom-0 right-0 w-12 h-12 bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:text-black border-l border-t border-black"
-        >
-          <span className="text-2xl font-light leading-none mb-1">+</span>
-        </button>
+        {!isGuestMode && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onAdd) onAdd();
+            }}
+            className="absolute bottom-0 right-0 w-12 h-12 bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:text-black border-l border-t border-black"
+          >
+            <span className="text-2xl font-light leading-none mb-1">+</span>
+          </button>
+        )}
       </div>
 
       {/* 2. Info Area */}
@@ -69,17 +71,19 @@ export default function MinimalCard({ product, onClick, onAdd }) {
         </p>
 
         {/* 'Add to Order' Text Button (Mobile friendly fallback) */}
-        <div className="mt-3 md:hidden">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onAdd();
-            }}
-            className="text-[10px] font-bold uppercase tracking-widest border-b border-black pb-0.5"
-          >
-            Add to Cart
-          </button>
-        </div>
+        {!isGuestMode && (
+          <div className="mt-3 md:hidden">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onAdd) onAdd();
+              }}
+              className="text-[10px] font-bold uppercase tracking-widest border-b border-black pb-0.5"
+            >
+              Add to Cart
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

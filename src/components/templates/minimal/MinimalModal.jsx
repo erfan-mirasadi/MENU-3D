@@ -2,7 +2,7 @@
 import ARViewer from "@/components/ui/ARViewer";
 import { useLanguage } from "@/context/LanguageContext";
 
-export default function MinimalModal({ product, onClose, onAddToCart }) {
+export default function MinimalModal({ product, onClose, onAddToCart, isGuestMode }) {
   const { content, t } = useLanguage();
 
   if (!product) return null;
@@ -63,15 +63,17 @@ export default function MinimalModal({ product, onClose, onAddToCart }) {
             {content(product.description)}
           </p>
 
-          <button
-            onClick={() => {
-              onAddToCart(product);
-              onClose();
-            }}
-            className="w-full bg-black text-white py-6 text-xl font-bold uppercase hover:bg-white hover:text-black border-2 border-black transition-all"
-          >
-            Add to Order
-          </button>
+          {!isGuestMode && (
+            <button
+              onClick={() => {
+                if (onAddToCart) onAddToCart(product);
+                onClose();
+              }}
+              className="w-full bg-black text-white py-6 text-xl font-bold uppercase hover:bg-white hover:text-black border-2 border-black transition-all"
+            >
+              Add to Order
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@
 import ARViewer from "@/components/ui/ARViewer";
 import { useLanguage } from "@/context/LanguageContext";
 
-export default function ImmersiveModal({ product, onClose, onAddToCart }) {
+export default function ImmersiveModal({ product, onClose, onAddToCart, isGuestMode }) {
   const { content, t } = useLanguage();
 
   if (!product) return null;
@@ -56,15 +56,17 @@ export default function ImmersiveModal({ product, onClose, onAddToCart }) {
             {content(product.description)}
           </p>
 
-          <button
-            onClick={() => {
-              onAddToCart(product);
-              onClose();
-            }}
-            className="w-full py-4 bg-white text-black font-black rounded-xl hover:scale-[1.02] active:scale-95 transition-transform shadow-[0_0_30px_-5px_rgba(255,255,255,0.3)]"
-          >
-            Add to Cart
-          </button>
+          {!isGuestMode && (
+            <button
+              onClick={() => {
+                if (onAddToCart) onAddToCart(product);
+                onClose();
+              }}
+              className="w-full py-4 bg-white text-black font-black rounded-xl hover:scale-[1.02] active:scale-95 transition-transform shadow-[0_0_30px_-5px_rgba(255,255,255,0.3)]"
+            >
+              Add to Cart
+            </button>
+          )}
 
           <button
             onClick={onClose}

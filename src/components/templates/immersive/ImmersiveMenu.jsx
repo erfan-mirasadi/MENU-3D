@@ -8,7 +8,7 @@ import ImmersiveModal from "./ImmersiveModal";
 import ImmersiveCartDrawer from "./ImmersiveCartDrawer";
 import { useCart } from "@/app/hooks/useCart";
 
-export default function ImmersiveMenu({ restaurant, categories, tableId }) {
+export default function ImmersiveMenu({ restaurant, categories, tableId, isGuestMode }) {
   const { cartItems, addToCart, removeFromCart, submitOrder, isLoading, sessionData } =
     useCart(tableId, restaurant.id);
   const [activeCategory, setActiveCategory] = useState(categories?.[0]?.id);
@@ -52,7 +52,8 @@ export default function ImmersiveMenu({ restaurant, categories, tableId }) {
                     key={product.id}
                     product={product}
                     onClick={() => setSelectedProduct(product)}
-                    onAdd={() => addToCart(product)}
+                    onAdd={!isGuestMode ? () => addToCart(product) : undefined}
+                    isGuestMode={isGuestMode}
                   />
                 ))}
               </div>
@@ -62,7 +63,7 @@ export default function ImmersiveMenu({ restaurant, categories, tableId }) {
       </div>
 
       {/* Cart Bar - Fixed Position */}
-      {totalCount > 0 && (
+      {!isGuestMode && totalCount > 0 && (
         <ImmersiveCartBar
           totalCount={totalCount}
           totalAmount={totalAmount}
@@ -73,17 +74,20 @@ export default function ImmersiveMenu({ restaurant, categories, tableId }) {
       <ImmersiveModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
-        onAddToCart={addToCart}
+        onAddToCart={!isGuestMode ? addToCart : undefined}
+        isGuestMode={isGuestMode}
       />
 
-      <ImmersiveCartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        cartItems={cartItems}
-        onRemove={removeFromCart}
-        onSubmit={submitOrder}
-        session={sessionData}
-      />
+      {!isGuestMode && (
+        <ImmersiveCartDrawer
+          isOpen={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+          cartItems={cartItems}
+          onRemove={removeFromCart}
+          onSubmit={submitOrder}
+          session={sessionData}
+        />
+      )}
     </div>
   );
 }

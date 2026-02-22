@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import { useRestaurantData } from "@/app/hooks/useRestaurantData"; // [NEW]
-import { createTable, deleteTable } from "@/services/tableService"; // Removed getTables
+import { useRestaurantData } from "@/app/hooks/useRestaurantData"; 
+import { createTable, deleteTable } from "@/services/tableService";
 import TableCard from "@/app/admin/_components/tables/TableCard";
 import AddCard from "@/app/admin/_components/ui/AddCart";
 import QrSettingsPanel from "@/app/admin/_components/tables/QrSettingsPanel";
@@ -9,7 +9,7 @@ import Loader from "@/components/ui/Loader";
 import toast from "react-hot-toast";
 
 export default function TablesPage() {
-  const { tables, loading, restaurant, refetch } = useRestaurantData(); // [FIX] Use Context
+  const { tables, loading, restaurant, refetch } = useRestaurantData();
   const [adding, setAdding] = useState(false);
   
   // QR Code Settings State
@@ -23,8 +23,6 @@ export default function TablesPage() {
     }
     setAdding(true);
     try {
-      // 1. Calculate Next Table Number
-      // Find max number from T-XX pattern
       let maxNum = 0;
       tables.forEach(t => {
           const match = t.table_number.match(/^T-(\d+)$/);
@@ -61,7 +59,6 @@ export default function TablesPage() {
         toast.success("Table deleted successfully");
         refetch(restaurant?.id); // Refresh global data
     } catch (error) {
-        // error handled in service
     }
   };
 
@@ -88,6 +85,14 @@ export default function TablesPage() {
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 gap-y-10">
+        {/* General Menu QR */}
+        <TableCard 
+          isGeneral={true}
+          qrSettings={{ color1, color2 }}
+          slug={restaurant?.slug}
+          restaurantLogo={restaurant?.logo}
+        />
+
         {/* Add Card acting as the first item or separate button */}
         <AddCard 
           onClick={handleAddTable} 

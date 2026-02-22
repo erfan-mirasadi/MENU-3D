@@ -2,7 +2,7 @@
 import SmartMedia from "@/components/ui/SmartMedia";
 import { useLanguage } from "@/context/LanguageContext";
 
-export default function ClassicRow({ product, onClick, onAdd }) {
+export default function ClassicRow({ product, onClick, onAdd, isGuestMode }) {
   const { content, t } = useLanguage();
   return (
     <div className="group relative flex items-center justify-between py-6 border-b border-[#E5E0D8] last:border-0">
@@ -46,15 +46,17 @@ export default function ClassicRow({ product, onClick, onAdd }) {
       </div>
 
       {/* Add Button (Minimal) */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onAdd();
-        }}
-        className="absolute bottom-6 right-28 bg-[#2C1810] text-[#D4AF37] w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300 shadow-lg z-10"
-      >
-        +
-      </button>
+      {!isGuestMode && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onAdd) onAdd();
+          }}
+          className="absolute bottom-6 right-28 bg-[#2C1810] text-[#D4AF37] w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300 shadow-lg z-10"
+        >
+          +
+        </button>
+      )}
     </div>
   );
 }

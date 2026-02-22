@@ -8,6 +8,7 @@ export default function MinimalLayout({
   categories,
   tableId,
   featuredProducts,
+  isGuestMode,
 }) {
   const [showMenu, setShowMenu] = useState(false);
 
@@ -32,6 +33,7 @@ export default function MinimalLayout({
           restaurant={restaurant}
           categories={categories}
           tableId={tableId}
+          isGuestMode={isGuestMode}
         />
       </div>
     </main>
