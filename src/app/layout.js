@@ -24,7 +24,6 @@ const gulzarFont = Gulzar({
 export const metadata = {
   title: "Menu 3D",
   description: "Pro Digital 3D Menu ",
-  manifest: "/manifest.json",
   icons: {
     icon: "/logo-web.png",
     apple: "/logo-web.png",
@@ -49,6 +48,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
+        suppressHydrationWarning={true}
         className={`${geistSans.variable} ${geistMono.variable} ${gulzarFont.variable} antialiased bg-black text-white`}
       >
         <RestaurantProvider>
