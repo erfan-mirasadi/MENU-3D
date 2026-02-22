@@ -13,6 +13,7 @@ import {
 import { voidOrderItem, updateOrderItemSecurely } from "@/services/orderService";
 import { useRestaurantFeatures } from "./useRestaurantFeatures";
 import { useLanguage } from "@/context/LanguageContext";
+import { triggerStaffPushNotification } from "@/services/notificationService";
 
 export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter", onCloseDrawer, onRefetch) => {
   const { features } = useRestaurantFeatures();
@@ -376,8 +377,10 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
             toast.success(t('sentToCashier'));
         } else if (targetStatus === 'preparing') {
             toast.success(t('sentToKitchen'));
+            triggerStaffPushNotification('PREPARING', table.restaurant_id, table.table_number);
         } else {
              toast.success(t('ordersServed'));
+             triggerStaffPushNotification('SERVED', table.restaurant_id, table.table_number);
         }
     } catch (error) { 
         toast.error(t('failedToConfirm'));
@@ -426,6 +429,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
 
               setOptimisticLock({ targetStatus: 'preparing', count: totalCount > 0 ? 1 : 0 });
               toast.success(t('startPreparing'), { icon: '👨‍🍳' });
+              triggerStaffPushNotification('PREPARING', table.restaurant_id, table.table_number);
 
           } else {
               // No Kitchen Flow: Confirmed -> Served (Directly)
@@ -443,6 +447,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
 
               setOptimisticLock({ targetStatus: 'served', count: totalCount > 0 ? 1 : 0 });
               toast.success(t('ordersServed'));
+              triggerStaffPushNotification('SERVED', table.restaurant_id, table.table_number);
           }
 
           setTimeout(() => {
@@ -546,6 +551,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
             setOptimisticLock({ targetStatus: 'preparing', count: totalCount > 0 ? totalCount : 0 });
 
             toast.success(t('sentToKitchen'));
+            triggerStaffPushNotification('PREPARING', table.restaurant_id, table.table_number);
 
         } else {
             // No Kitchen: Confirm -> Served directly
@@ -572,6 +578,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
              setOptimisticLock({ targetStatus: 'served', count: totalCount > 0 ? totalCount : 0 });
 
              toast.success(t('ordersServed'));
+             triggerStaffPushNotification('SERVED', table.restaurant_id, table.table_number);
         }
         
         // Timeout Logic shared

@@ -9,6 +9,7 @@ import {
 } from "@/services/orderService";
 import { useClientSession } from "./useClientSession";
 import { ORDER_STATUS } from "@/lib/constants";
+import { triggerStaffPushNotification } from "@/services/notificationService";
 
 export const useCart = (tableNumberFromUrl, restaurantId) => {
   const [cartItems, setCartItems] = useState([]);
@@ -208,6 +209,12 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
   const submitOrder = async () => {
     if (!sessionId) return;
     await submitDraftOrders(sessionId);
+
+    // Fetch the table to get the table number for the notification
+    const tableData = await getTableByNumber(tableNumberFromUrl, restaurantId);
+    if(tableData) {
+       triggerStaffPushNotification('NEW_ORDER', restaurantId, tableData.table_number);
+    }
   };
 
   return {
