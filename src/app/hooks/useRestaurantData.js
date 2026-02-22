@@ -31,25 +31,18 @@ export const RestaurantProvider = ({ children }) => {
     sessionsRef.current = sessions;
   }, [sessions]);
 
-  // 1. Initial Session Check (Runs ONCE on mount)
+  // 1. Auth Listener — handles both initial session and post-login navigation
   useEffect(() => {
-      async function checkSession() {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-              console.log("� [Init] Session found, starting initial fetch...");
-              fetchData();
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {  
+          if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+              if (session?.user) {
+                  fetchData();
+              } else {
+                  setLoading(false);
+              }
           }
-      }
-      checkSession();
-  }, []);
 
-  // 2. Auth Listener (Only for Logout or unexpected state changes)
-  useEffect(() => {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          //console.log(` [Auth Listener] Event captured: ${event}`);
-          
           if (event === 'SIGNED_OUT') {
-              console.log("👋 User Signed Out. Clearing Data.");
               setTables([]);
               setSessions([]);
               setRestaurant(null);

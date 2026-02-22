@@ -181,10 +181,10 @@ export default function ChefDashboard() {
                     <div className="flex items-center gap-3">
                         {/* Mobile Sidebar Toggle */}
                         <button 
-                            onClick={() => setIsSidebarOpen(true)}
+                            onClick={() => setIsSidebarOpen(prev => !prev)}
                             className="md:hidden p-2 text-white bg-dark-800 rounded-lg shadow-md border border-dark-700 active:scale-95 transition-transform"
                         >
-                            <RiMenuUnfoldLine size={24} />
+                            {isSidebarOpen ? <RiMenuFoldLine size={24} /> : <RiMenuUnfoldLine size={24} />}
                         </button>
                         <div>
                             <h1 className="text-2xl md:text-4xl font-black text-text-light tracking-tight flex items-center gap-2">
