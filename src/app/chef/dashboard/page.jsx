@@ -191,12 +191,12 @@ export default function ChefDashboard() {
                                 {t('kitchenDisplay')}
                             </h1>
                             <p className="text-text-dim mt-1 font-medium text-sm md:text-base">
-                                {groupedTickets.length} {t('activeTickets')} • {orders.length} {t('items')}
+                                {groupedTickets.length} {t('activeTickets')} • {orders.filter(o => o.status === 'preparing').reduce((sum, o) => sum + (o.quantity || 1), 0)} {t('items')}
                             </p>
                         </div>
                     </div>
                     
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 w-full justify-end md:w-auto">
                         <LanguageSwitcher />
 
                         {/* Connection Status Indicator */}

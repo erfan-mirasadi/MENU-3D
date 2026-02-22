@@ -2,11 +2,24 @@
 import { useMemo } from 'react'
 import { useRestaurantData } from '@/app/hooks/useRestaurantData'
 import { useLanguage } from '@/context/LanguageContext'
-import { RiCloseLine } from 'react-icons/ri';
+import { RiCloseLine, RiLogoutBoxLine } from 'react-icons/ri';
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 export default function KitchenSummaryBar({ orders, isOpen, onClose }) {
     const { restaurant } = useRestaurantData()
     const { language } = useLanguage()
+    const router = useRouter()
+
+    const handleLogout = async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            toast.error("Logout failed");
+        } else {
+            router.push("/login");
+        }
+    };
     
     // 1. Aggregate Logic
     const summary = useMemo(() => {
@@ -52,14 +65,14 @@ export default function KitchenSummaryBar({ orders, isOpen, onClose }) {
             {/* Mobile Overlay */}
             {isOpen && (
                 <div 
-                    className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+                    className="fixed inset-0 bg-black/50 z-[110] md:hidden backdrop-blur-sm"
                     onClick={onClose}
                 />
             )}
 
             {/* Sidebar / Drawer */}
             <div className={`
-                fixed md:static inset-y-0 left-0 z-50
+                fixed md:static inset-y-0 left-0 z-[120]
                 w-24 md:w-28 bg-dark-800 border-r border-dark-700 h-screen 
                 flex flex-col items-center py-6 gap-6 overflow-y-auto no-scrollbar shadow-xl shrink-0 
                 transition-transform duration-300 transform
@@ -104,6 +117,18 @@ export default function KitchenSummaryBar({ orders, isOpen, onClose }) {
                     </span>
                 </div>
             ))}
+                
+            {/* Logout Button (Bottom of Sidebar) */}
+            <div className="mt-auto pt-4 w-full px-2 md:px-4">
+                <button
+                    onClick={handleLogout}
+                    className="w-full py-3 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-xl border border-red-500/20 transition-all duration-300 shadow-xl flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 group backdrop-blur-sm cursor-pointer"
+                    title="Logout"
+                >
+                    <RiLogoutBoxLine size={20} className="group-hover:-translate-x-1 transition-transform" />
+                    <span className="text-[10px] md:text-xs font-bold">Exit</span>
+                </button>
+            </div>
         </div>
         </>
     )
