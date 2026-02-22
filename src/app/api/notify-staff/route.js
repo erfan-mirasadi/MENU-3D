@@ -3,11 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 import { getRestaurantStaffPushTokens } from '@/services/userService';
 
-webpush.setVapidDetails(
-  'mailto:support@menu-3d.com', 
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
-);
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -43,6 +38,12 @@ const NOTIFICATION_PAYLOADS = {
 
 export async function POST(request) {
   try {
+    webpush.setVapidDetails(
+      'mailto:support@menu-3d.com', 
+      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY
+    );
+
     const { orderDetails, restaurantId, type } = await request.json();
     const tableNumber = orderDetails?.tableNumber || '?';
     
