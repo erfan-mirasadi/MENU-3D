@@ -1,19 +1,20 @@
 "use client";
-
 import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
-import Scene from "./Scene";
-import UIOverlay from "./UIOverlay";
 import Loader from "@/components/ui/Loader";
 import HiddenARLauncher from "@/components/ui/HiddenARLauncher";
 import { useParams } from "next/navigation";
 import { useCart } from "@/app/hooks/useCart";
-
+const Scene = dynamic(() => import("./Scene"), {
+  ssr: false,
+});
+const UIOverlay = dynamic(() => import("./UIOverlay"), {
+  ssr: false,
+});
 const ServiceButtons = dynamic(() => import("@/components/ui/ServiceButtons"), {
   ssr: false,
 });
 
-// --- GLOBAL VARIABLES ---
 const gyroData = { x: 0, y: 0 };
 const GYRO_INTENSITY = 40;
 
@@ -27,7 +28,7 @@ export default function ThreeDLayout({ restaurant, categories }) {
     submitOrder,
     isLoading: isLoadingCart,
     sessionData,
-    tableId, // Destructure tableId
+    tableId,
   } = useCart(params?.table_id, restaurant.id);
 
   // --- STATE ---
@@ -123,7 +124,7 @@ export default function ThreeDLayout({ restaurant, categories }) {
   // --- LOGIC: TOUCH GESTURES ---
   const handleTouchStart = useCallback(
     (e) => {
-      if (isCartOpen) return; // Block swipe when cart is open
+      if (isCartOpen) return;
       if (e.target.closest(".category-scroll")) return;
       const touch = e.touches[0];
       touchStartRef.current = {
@@ -137,7 +138,7 @@ export default function ThreeDLayout({ restaurant, categories }) {
 
   const handleTouchEnd = useCallback(
     (e) => {
-      if (isCartOpen) return; // Block swipe when cart is open
+      if (isCartOpen) return;
       if (!touchStartRef.current || touchStartRef.current.time === 0) return;
       const touch = e.changedTouches[0];
       const deltaX = touch.clientX - touchStartRef.current.x;
@@ -185,7 +186,6 @@ export default function ThreeDLayout({ restaurant, categories }) {
       onTouchEnd={handleTouchEnd}
       aria-label="3D menu"
     >
-      {/* --- CUSTOM SMOOTH LOADER --- */}
       <Loader active={isLoading} />
 
       <Scene
@@ -193,6 +193,7 @@ export default function ThreeDLayout({ restaurant, categories }) {
         activeIndex={activeIndex}
         gyroData={gyroData}
         onModelLoaded={handleModelLoaded}
+        enableEffects={!isLoading}
       />
 
       <HiddenARLauncher ref={arLauncherRef} />
@@ -205,6 +206,7 @@ export default function ThreeDLayout({ restaurant, categories }) {
         focusedProduct={focusedProduct}
         onLaunchAR={handleLaunchAR}
         categoryMounted={!isLoading}
+        isSceneLoading={isLoading}
         cartItems={cartItems}
         addToCart={addToCart}
         decreaseFromCart={decreaseFromCart}

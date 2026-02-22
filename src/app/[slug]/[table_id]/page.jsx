@@ -28,12 +28,10 @@ async function getMenuData(slug) {
   if (!restaurant) {
     return { error: "Restaurant not found" };
   }
-
   const [categories, allProducts] = await Promise.all([
     getCategories(restaurant.id),
     getProducts(restaurant.id),
   ]);
-
   const categoriesWithProducts = categories.map((category) => ({
     ...category,
     products: allProducts.filter(
@@ -53,7 +51,6 @@ async function getMenuData(slug) {
 export default async function Page({ params }) {
   const resolvedParams = await params;
   const { slug, table_id } = resolvedParams;
-
   const decodedSlug = decodeURIComponent(slug);
   const decodedTableId = decodeURIComponent(table_id);
   const data = await getMenuData(decodedSlug, decodedTableId);

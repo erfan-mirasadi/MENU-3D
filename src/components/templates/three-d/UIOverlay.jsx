@@ -1,13 +1,11 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useProgress } from "@react-three/drei";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 import { useLanguage } from "@/context/LanguageContext";
 import { MdViewInAr, MdTouchApp } from "react-icons/md";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
-import Loader from "@/components/ui/Loader";
 import CartControls from "./CartControls";
 
 const ModernCartDrawer = dynamic(() => import("../modern/ModernCartDrawer"), {
@@ -70,6 +68,7 @@ export default function UIOverlay({
   setActiveCatId,
   focusedProduct,
   categoryMounted,
+  isSceneLoading,
   onLaunchAR,
   // Cart Props
   cartItems,
@@ -89,7 +88,6 @@ export default function UIOverlay({
   children, // Added children prop
 }) {
   const { language, content, t } = useLanguage();
-  const { active } = useProgress();
   const [showHint, setShowHint] = useState(false);
   const hasShownRef = useRef(false);
   const categoryScrollRef = useRef(null);
@@ -122,7 +120,7 @@ export default function UIOverlay({
 
   useEffect(() => {
     // If loading, or already shown, do nothing
-    if (active || hasShownRef.current) return;
+    if (isSceneLoading || hasShownRef.current) return;
 
     // Start timer to show hint after 1s of stable "loaded" state
     const timer = setTimeout(() => {
@@ -135,14 +133,13 @@ export default function UIOverlay({
 
     // Cleanup: If 'active' changes (e.g. becomes true) or unmount, clear timer
     return () => clearTimeout(timer);
-  }, [active]);
+  }, [isSceneLoading]);
 
   return (
     <>
       <style>{styles}</style>
-      <Loader active={active} />
       {/* Run only when loading finishes (!active) and cart is closed */}
-      {!isCartOpen && !active && showHint && <SwipeHint />}
+      {!isCartOpen && !isSceneLoading && showHint && <SwipeHint />}
 
       {/* --- CONTROLS (Hidden when cart is open) --- */}
       <div
@@ -228,6 +225,7 @@ export default function UIOverlay({
                   fill
                   quality={50}
                   sizes="64px"
+                  priority
                   className="object-contain rounded-xl"
                 />
               </div>
@@ -285,7 +283,7 @@ export default function UIOverlay({
                           <p className="text-white text-4xl font-black font-mono tracking-tighter drop-shadow-[0_0_10px_rgba(234,124,105,0.8)]">
                             {price.toLocaleString()}
                           </p>
-                          <span className="text-[#ea7c69] text-xl font-bold">
+                          <span className="text-accent text-xl font-bold">
                             ₺
                           </span>
                         </div>
@@ -296,10 +294,10 @@ export default function UIOverlay({
                   // Standard Price
                   return (
                     <div className="flex items-baseline gap-1">
-                      <p className="text-[#ea7c69] text-4xl font-bold font-mono">
+                      <p className="text-accent text-4xl font-bold font-mono">
                         {price.toLocaleString()}
                       </p>
-                      <span className="text-[#ea7c69] text-xl">₺</span>
+                      <span className="text-accent text-xl">₺</span>
                     </div>
                   );
                 })()}
@@ -435,7 +433,7 @@ export default function UIOverlay({
 
                       {/* Active Color Tint */}
                       {isActive && (
-                        <div className="absolute inset-0 bg-[#ea7c69]/20 mix-blend-overlay z-10" />
+                        <div className="absolute inset-0 bg-accent/20 mix-blend-overlay z-10" />
                       )}
                     </div>
 
@@ -461,7 +459,7 @@ export default function UIOverlay({
 
       {/* --- SERVICE BUTTONS / CHILDREN (Top Layer) --- */}
       {!isCartOpen && (
-        <div className="absolute top-2 left-2 pointer-events-auto z-[60]">
+        <div className="absolute top-2 left-2 pointer-events-auto z-60">
           {children}
         </div>
       )}

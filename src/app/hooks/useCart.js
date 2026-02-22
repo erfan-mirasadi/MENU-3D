@@ -16,14 +16,11 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
   const [guestId, setGuestId] = useState(null);
   const [tableId, setTableId] = useState(null); // Local state for resolved UUID
   const [isLoading, setIsLoading] = useState(true);
-
-  // استفاده از Ref برای جلوگیری از رندرهای تکراری در لاگ
   const sessionRef = useRef(null);
 
-  // 1. Setup Session & Guest
+  //  Setup Session & Guest
   useEffect(() => {
     if (!tableNumberFromUrl || !restaurantId) return;
-
     let ignore = false;
 
     const initializeSession = async () => {
@@ -39,7 +36,10 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
         if (!ignore) setGuestId(storedGuestId);
 
         console.log("🔍 Checking Table:", tableNumberFromUrl);
-        const tableData = await getTableByNumber(tableNumberFromUrl, restaurantId);
+        const tableData = await getTableByNumber(
+          tableNumberFromUrl,
+          restaurantId,
+        );
 
         if (ignore) return;
 
@@ -54,18 +54,14 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
 
         // Check for active session
         let session = await getActiveSession(realTableUuid);
-        
         if (ignore) return;
-
         if (!session) {
           console.log("🆕 Creating new session...");
           session = await createSession(realTableUuid, realRestaurantId);
         } else {
           console.log("✅ Found active session:", session.id);
         }
-
         if (ignore) return;
-
         setSessionId(session?.id);
         sessionRef.current = session?.id;
       } catch (err) {
@@ -81,34 +77,27 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
     };
   }, [tableNumberFromUrl, restaurantId]);
 
-
-
-  // 2. Use Optimized Client Session Hook
+  //  Use Optimized Client Session Hook
   const { orders: realtimeOrders, sessionData } = useClientSession(sessionId);
 
-  // Sync realtime orders to local cartItems state (handling optimistic updates is tricky, 
-  // but usually we let server state override local state when it arrives)
+  // Sync realtime orders to local cartItems state
   useEffect(() => {
-      if (realtimeOrders) {
-          setCartItems(realtimeOrders);
-          setIsLoading(false);
-      }
+    if (realtimeOrders) {
+      setCartItems(realtimeOrders);
+      setIsLoading(false);
+    }
   }, [realtimeOrders]);
 
   // (Removed manual fetchCartItems and manual subscription)
-
-
-  // --- ACTIONS ---
-
   const addToCart = async (product) => {
     if (!sessionId || !guestId) return;
 
     try {
       const existingItem = cartItems.find(
-        (item) => item.product_id === product.id && item.status === ORDER_STATUS.DRAFT
+        (item) =>
+          item.product_id === product.id && item.status === ORDER_STATUS.DRAFT,
       );
 
-      // Optimistic Update Log
       console.log("🚀 Optimistic Add:", product.title);
 
       if (existingItem) {
@@ -116,15 +105,15 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
           prev.map((item) =>
             item.id === existingItem.id
               ? { ...item, quantity: item.quantity + 1 }
-              : item
-          )
+              : item,
+          ),
         );
 
         if (existingItem.id.toString().startsWith("temp-")) return;
 
         await updateOrderItemQuantity(
           existingItem.id,
-          existingItem.quantity + 1
+          existingItem.quantity + 1,
         );
       } else {
         const tempId = `temp-${Date.now()}`;
@@ -169,16 +158,23 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
       if (existingItem.quantity > 1) {
         setCartItems((prev) =>
           prev.map((item) =>
-            item.id === itemId ? { ...item, quantity: item.quantity - 1 } : item
-          )
+            item.id === itemId
+              ? { ...item, quantity: item.quantity - 1 }
+              : item,
+          ),
         );
         await updateOrderItemQuantity(
           existingItem.id,
-          existingItem.quantity - 1
+          existingItem.quantity - 1,
         );
       } else {
         setCartItems((prev) => prev.filter((item) => item.id !== itemId));
-        await removeOrderItem(itemId);
+        try {
+          await removeOrderItem(itemId);
+        } catch (err) {
+          console.error("❌ Database Delete Error", err);
+          setCartItems((prev) => [...prev, existingItem]);
+        }
       }
     } catch (error) {
       console.error("❌ Decrease Error:", error);
@@ -188,8 +184,15 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
 
   const removeFromCart = async (itemId) => {
     if (itemId.toString().startsWith("temp-")) return;
+    const existingItem = cartItems.find((item) => item.id === itemId);
     setCartItems((prev) => prev.filter((item) => item.id !== itemId));
-    await removeOrderItem(itemId);
+    try {
+      await removeOrderItem(itemId);
+      console.log("✅ Item removed from database successfully.");
+    } catch (err) {
+      console.error("❌ Database Delete Error", err);
+      if (existingItem) setCartItems((prev) => [...prev, existingItem]);
+    }
   };
 
   const submitOrder = async () => {
@@ -205,7 +208,6 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
     submitOrder,
     isLoading,
     sessionData,
-    tableId: tableId, // Expose the resolved Table UUID
+    tableId: tableId,
   };
 };
-

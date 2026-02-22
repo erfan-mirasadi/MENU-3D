@@ -7,7 +7,7 @@ import FeatureGuard from "@/components/shared/FeatureGuard";
 import { updateSessionNote } from "@/services/sessionService";
 
 import { useDrag } from "@use-gesture/react";
-import { MdDeleteOutline, MdAdd, MdRemove, MdOutlineMessage } from "react-icons/md";
+import { MdDeleteOutline, MdOutlineMessage } from "react-icons/md";
 
 function SwipeableItem({ item, onRemove, t, content }) {
   const [x, setX] = useState(0);
@@ -59,14 +59,18 @@ function SwipeableItem({ item, onRemove, t, content }) {
       >
         
         {/* Image - No Frame, Larger */}
-        <div className="relative w-22 h-22 rounded-2xl overflow-hidden shrink-0 pointer-events-none shadow-md">
-          <Image
-            src={item.product?.image_url}
-            alt={content(item.product?.title)}
-            fill
-            sizes="120px"
-            className="object-cover"
-          />
+        <div className="relative w-22 h-22 rounded-2xl overflow-hidden shrink-0 pointer-events-none shadow-md bg-[#1F1D2B] flex items-center justify-center">
+          {item.product?.image_url ? (
+            <Image
+              src={item.product?.image_url}
+              alt={content(item.product?.title) || "Product image"}
+              fill
+              sizes="120px"
+              className="object-cover"
+            />
+          ) : (
+             <span className="text-white/20 text-[10px] uppercase font-bold tracking-widest text-center px-1 leading-tight">No Img</span>
+          )}
         </div>
 
         {/* Info */}
@@ -254,14 +258,18 @@ export default function ModernCartDrawer({
                       key={item.id}
                       className="flex items-center gap-4 p-2 rounded-xl"
                     >
-                      <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 grayscale">
-                        <Image
-                          src={item.product?.image_url}
-                          alt={content(item.product?.title)}
-                          fill
-                          sizes="50px"
-                          className="object-cover"
-                        />
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 grayscale bg-[#1F1D2B] flex items-center justify-center">
+                        {item.product?.image_url ? (
+                          <Image
+                            src={item.product?.image_url}
+                            alt={content(item.product?.title) || "Product image"}
+                            fill
+                            sizes="50px"
+                            className="object-cover"
+                          />
+                        ) : (
+                           <span className="text-white/20 text-[8px] uppercase tracking-wider font-bold">No Img</span>
+                        )}
                       </div>
                       <div className="flex-1">
                         <h4 className="text-gray-300 font-medium text-xs truncate">

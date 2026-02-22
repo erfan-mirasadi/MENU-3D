@@ -17,22 +17,19 @@ import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
-// --- SETTINGS ---
 const X_SPACING = 4.0;
 const VISIBLE_RANGE = 1;
 const RENDER_WINDOW = 2;
 const ITEM_SCALE_ACTIVE = 11;
 const ITEM_SCALE_SIDE = 6;
-// --- COMPONENT: REAL MODEL ---
-// --- CACHE ---
+// CACHE
 const gltfCache = new Map();
 
-// --- SINGLETONS ---
+// SINGLETONS
 let ktx2Loader = null;
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
 
-// --- COMPONENT: REAL MODEL ---
 function RealModel({ url, productTitle, onLoad }) {
   const gl = useThree((state) => state.gl);
   const [scene, setScene] = useState(null);
@@ -41,7 +38,7 @@ function RealModel({ url, productTitle, onLoad }) {
   useEffect(() => {
     let isMounted = true;
 
-    // 1. Check Cache
+    //  Check Cache
     if (gltfCache.has(url)) {
       console.log(`⚡ FROM CACHE: ${productTitle}`);
       Promise.resolve().then(() => {
@@ -54,14 +51,14 @@ function RealModel({ url, productTitle, onLoad }) {
 
     console.log(`⬇️ DOWNLOADING: ${productTitle}`);
 
-    // 2. Initialize Singletons
+    // Initialize Singletons
     if (!ktx2Loader) {
       ktx2Loader = new KTX2Loader();
       ktx2Loader.setTranscoderPath("/libs/basis/");
       ktx2Loader.detectSupport(gl);
     }
 
-    // 3. Create Loader
+    // Create Loader
     const loader = new GLTFLoader();
 
     if (MeshoptDecoder) {
@@ -69,13 +66,11 @@ function RealModel({ url, productTitle, onLoad }) {
     }
     loader.setKTX2Loader(ktx2Loader);
     loader.setDRACOLoader(dracoLoader);
-
-    // 4. Load
     loader.load(
       url,
       (gltf) => {
         if (!isMounted) return;
-        gltfCache.set(url, gltf.scene); // Store raw scene
+        gltfCache.set(url, gltf.scene);
         setScene(gltf.scene);
       },
       undefined,
@@ -106,9 +101,17 @@ function RealModel({ url, productTitle, onLoad }) {
         obj.castShadow = false;
         obj.receiveShadow = false;
         if (obj.material) {
+          // 1. Clone material to prevent WebGL feedback loops (crash fix)
+          obj.material = obj.material.clone();
+          
+          // 2. Disable heavy glass rendering (transmission) for mobile performance
+          if (obj.material.transmission > 0) {
+            obj.material.transparent = true;
+            obj.material.opacity = Math.max(0.6, 1.0 - obj.material.transmission);
+            obj.material.transmission = 0;
+          }
+          
           if (obj.material.map) obj.material.map.needsUpdate = true;
-          obj.material.envMapIntensity = 1.0;
-          obj.material.roughness = 0.5;
           obj.material.needsUpdate = true;
         }
       }
@@ -122,7 +125,6 @@ function RealModel({ url, productTitle, onLoad }) {
   return <primitive object={clone} />;
 }
 
-// ... (PlaceholderMesh and FoodItem same as before) ...
 function PlaceholderMesh() {
   return (
     <mesh>

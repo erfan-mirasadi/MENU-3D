@@ -1,10 +1,10 @@
 "use client";
 import { Canvas } from "@react-three/fiber";
-import { ContactShadows, PerformanceMonitor } from "@react-three/drei";
-import { Suspense, useMemo, useState } from "react";
+import { ContactShadows } from "@react-three/drei";
+import { Suspense, useMemo } from "react";
 import FoodItem from "./FoodItem";
 import BackgroundParticles from "./BackgroundParticles";
-import SteamEffect from "./SteamEffect";
+// import SteamEffect from "./SteamEffect";
 
 function SceneLights() {
   return (
@@ -77,14 +77,13 @@ export default function Scene({
   activeIndex,
   gyroData,
   onModelLoaded,
+  enableEffects,
 }) {
-  const [dpr, setDpr] = useState(1.25);
-
   return (
     <div className="absolute inset-0 z-0">
       <Canvas
         shadows={false}
-        dpr={dpr}
+        dpr={1.7}
         camera={{ position: [0, 0, 12], fov: 35 }}
         gl={{
           antialias: false,
@@ -95,10 +94,6 @@ export default function Scene({
           precision: "mediump",
         }}
       >
-        <PerformanceMonitor
-          onDecline={() => setDpr(1)}
-          onIncline={() => setDpr(1.25)}
-        />
         <color attach="background" args={["#000000"]} />
 
         <SceneLights />
@@ -112,8 +107,8 @@ export default function Scene({
           />
         )}
 
-        <BackgroundParticles gyroData={gyroData} />
-        <SteamEffect />
+        {enableEffects && <BackgroundParticles gyroData={gyroData} />}
+        {/* {enableEffects && <SteamEffect />} */}
 
         <Suspense fallback={null}>
           <ContactShadows
