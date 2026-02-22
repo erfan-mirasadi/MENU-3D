@@ -23,8 +23,8 @@ const styles = `
     animation: handSwipe 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   }
       @keyframes blurFadeIn {
-    0% { opacity: 0; filter: blur(10px); transform: translateY(10px); }
-    100% { opacity: 1; filter: blur(0); transform: translateY(0); }
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
   .animate-text-change {
     animation: blurFadeIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
@@ -392,7 +392,7 @@ export default function UIOverlay({
             className="category-scroll w-full overflow-x-auto no-scrollbar px-5 pt-8 pb-0 touch-pan-x scroll-smooth"
           >
             <div className="flex gap-4 min-w-max items-start justify-center mx-auto">
-              {categories.map((cat) => {
+              {categories.map((cat, index) => {
                 const isActive = activeCatId === cat.id;
                 return (
                   <button
@@ -420,9 +420,8 @@ export default function UIOverlay({
                           alt={`${content(cat.title)} Image || "Category Image"`}
                           width={80}
                           height={53}
-                          quality={60}
-                          loading={isActive ? "eager" : "lazy"}
-                          priority={isActive}
+                          quality={50}
+                          priority={index === 0}
                           className="w-full h-full object-cover"
                         />
                       ) : (

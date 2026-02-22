@@ -47,12 +47,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <link href="https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&display=swap" rel="stylesheet" />
-      </head>
+    <html lang="en">
       <body
-        suppressHydrationWarning={true}
         className={`${geistSans.variable} ${geistMono.variable} ${gulzarFont.variable} antialiased bg-black text-white`}
       >
         <RestaurantProvider>
@@ -61,14 +57,13 @@ export default function RootLayout({ children }) {
             </LanguageProvider>
         </RestaurantProvider>
 
-        {/* Global Toast Notification Component */}
         <Toaster
           position="bottom-center"
           reverseOrder={false}
           toastOptions={{
             duration: 4000,
             style: {
-              background: "#252836", // Matches dark-800
+              background: "#252836", 
               color: "#fff",
               border: "1px solid #2d303e",
               padding: "16px",
@@ -76,13 +71,13 @@ export default function RootLayout({ children }) {
             },
             success: {
               iconTheme: {
-                primary: "#10B981", // Modern emerald green
+                primary: "#10B981", 
                 secondary: "#fff",
               },
             },
             error: {
               iconTheme: {
-                primary: "#EF4444", // Red for errors
+                primary: "#EF4444", 
                 secondary: "#fff",
               },
             },
