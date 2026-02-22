@@ -13,11 +13,9 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { PresentationControls, Float } from "@react-three/drei";
 import * as THREE from "three";
 import { easing } from "maath";
-
-// --- IMPORTS ---
-import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader'
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
-import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
+import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
 // --- SETTINGS ---
 const X_SPACING = 4.0;
@@ -32,7 +30,7 @@ const gltfCache = new Map();
 // --- SINGLETONS ---
 let ktx2Loader = null;
 const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+dracoLoader.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
 
 // --- COMPONENT: REAL MODEL ---
 function RealModel({ url, productTitle, onLoad }) {
@@ -46,16 +44,20 @@ function RealModel({ url, productTitle, onLoad }) {
     // 1. Check Cache
     if (gltfCache.has(url)) {
       console.log(`⚡ FROM CACHE: ${productTitle}`);
-      setScene(gltfCache.get(url));
+      Promise.resolve().then(() => {
+        if (isMounted) {
+          setScene(gltfCache.get(url));
+        }
+      });
       return;
     }
 
     console.log(`⬇️ DOWNLOADING: ${productTitle}`);
 
-    // 2. Initialize Singletons 
+    // 2. Initialize Singletons
     if (!ktx2Loader) {
       ktx2Loader = new KTX2Loader();
-      ktx2Loader.setTranscoderPath('/libs/basis/');
+      ktx2Loader.setTranscoderPath("/libs/basis/");
       ktx2Loader.detectSupport(gl);
     }
 
@@ -81,7 +83,7 @@ function RealModel({ url, productTitle, onLoad }) {
         if (!isMounted) return;
         console.error(`❌ Error loading ${productTitle}:`, err);
         setError(err);
-      }
+      },
     );
 
     return () => {
@@ -146,8 +148,6 @@ export default function FoodItem({
     }
   }, [product, onLoad]);
 
-  if (!product) return null;
-
   const isActive = index === activeIndex;
   const offset = index - activeIndex;
   const absOffset = Math.abs(offset);
@@ -155,11 +155,16 @@ export default function FoodItem({
   const isVisible = absOffset <= RENDER_WINDOW;
 
   useFrame((state, delta) => {
-    if (!group.current) return;
+    if (!group.current || !isVisible || !product) return;
     const targetX = offset * X_SPACING;
     const targetZ = -Math.abs(offset) * 3;
     const targetY = -1;
-    easing.damp3(group.current.position, [targetX, targetY, targetZ], 0.6, delta);
+    easing.damp3(
+      group.current.position,
+      [targetX, targetY, targetZ],
+      0.6,
+      delta,
+    );
 
     const gyroX = gyroData.x;
     const gyroY = gyroData.y;
@@ -167,22 +172,27 @@ export default function FoodItem({
     if (isActive) {
       const currentScale = group.current.scale.x;
       group.current.scale.setScalar(
-        THREE.MathUtils.lerp(currentScale, ITEM_SCALE_ACTIVE, delta * 6)
+        THREE.MathUtils.lerp(currentScale, ITEM_SCALE_ACTIVE, delta * 6),
       );
       easing.dampE(group.current.rotation, [gyroX, gyroY, 0], 0.4, delta);
     } else {
       const currentScale = group.current.scale.x;
       group.current.scale.setScalar(
-        THREE.MathUtils.lerp(currentScale, ITEM_SCALE_SIDE, delta * 6)
+        THREE.MathUtils.lerp(currentScale, ITEM_SCALE_SIDE, delta * 6),
       );
-      easing.dampE(group.current.rotation, [gyroX, offset * -0.2 + gyroY, 0], 0.4, delta);
+      easing.dampE(
+        group.current.rotation,
+        [gyroX, offset * -0.2 + gyroY, 0],
+        0.4,
+        delta,
+      );
       if (modelRef.current) {
         easing.dampE(modelRef.current.rotation, [0, 0, 0], 0.5, delta);
       }
     }
   });
 
-  if (!isVisible) return null;
+  if (!product) return null;
 
   return (
     <group ref={group}>
@@ -196,18 +206,25 @@ export default function FoodItem({
         polar={[-Math.PI / 4, Math.PI / 4]}
         azimuth={[-Infinity, Infinity]}
       >
-        <Float speed={isActive ? 1.5 : 0} rotationIntensity={isActive ? 0.2 : 0} floatIntensity={isActive ? 0.5 : 0}>
+        <Float
+          speed={isActive ? 1.5 : 0}
+          rotationIntensity={isActive ? 0.2 : 0}
+          floatIntensity={isActive ? 0.5 : 0}
+        >
           <group ref={modelRef}>
             <Suspense fallback={<PlaceholderMesh />}>
-              {(product?.model_url || product?.cached_model_url) && shouldLoadModel && (
-                <RealModel
-                  url={product.cached_model_url || product.model_url}
-                  productTitle={product.title?.en || `Item ${index}`}
-                  onLoad={isActive ? onLoad : undefined}
-                />
-              )}
+              {(product?.model_url || product?.cached_model_url) &&
+                shouldLoadModel && (
+                  <RealModel
+                    url={product.cached_model_url || product.model_url}
+                    productTitle={product.title?.en || `Item ${index}`}
+                    onLoad={isActive ? onLoad : undefined}
+                  />
+                )}
             </Suspense>
-            {!product.model_url && !product.cached_model_url && <PlaceholderMesh />}
+            {!product.model_url && !product.cached_model_url && (
+              <PlaceholderMesh />
+            )}
           </group>
         </Float>
       </PresentationControls>

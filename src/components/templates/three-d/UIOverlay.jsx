@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useProgress } from "@react-three/drei";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 import { useLanguage } from "@/context/LanguageContext";
@@ -8,7 +9,10 @@ import { MdViewInAr, MdTouchApp } from "react-icons/md";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import Loader from "@/components/ui/Loader";
 import CartControls from "./CartControls";
-import ModernCartDrawer from "../modern/ModernCartDrawer";
+
+const ModernCartDrawer = dynamic(() => import("../modern/ModernCartDrawer"), {
+  ssr: false,
+});
 
 const styles = `
   @keyframes handSwipe {
@@ -91,6 +95,7 @@ export default function UIOverlay({
   const categoryScrollRef = useRef(null);
   const [showLeft, setShowLeft] = useState(false);
   const [showRight, setShowRight] = useState(true);
+  const [shouldLoadCartDrawer, setShouldLoadCartDrawer] = useState(false);
 
   const checkCategoryScroll = useCallback(() => {
     if (!categoryScrollRef.current) return;
@@ -149,19 +154,24 @@ export default function UIOverlay({
           onAdd={addToCart}
           onDecrease={decreaseFromCart}
           onRemove={removeFromCart}
-          onOpenCart={() => setIsCartOpen(true)}
+          onOpenCart={() => {
+            setShouldLoadCartDrawer(true);
+            setIsCartOpen(true);
+          }}
         />
       </div>
 
       {/* --- DRAWER --- */}
-      <ModernCartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        cartItems={cartItems || []}
-        onRemove={removeFromCart}
-        onSubmit={submitOrder}
-        session={session}
-      />
+      {shouldLoadCartDrawer && (
+        <ModernCartDrawer
+          isOpen={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+          cartItems={cartItems || []}
+          onRemove={removeFromCart}
+          onSubmit={submitOrder}
+          session={session}
+        />
+      )}
 
       {/* --- LIQUID GLASS NAVIGATION ARROWS (CENTERED) --- */}
       {!isCartOpen && activeIndex > 0 && (
@@ -192,7 +202,7 @@ export default function UIOverlay({
           aria-label="Next Item"
         >
           {/* Liquid Gloss Overlay */}
-          <div className="absolute inset-0.5 bg-gradient-to-tr from-white/20 to-transparent opacity-50 pointer-events-none rounded-full" />
+          <div className="absolute inset-0.5 bg-linear-to-tr from-white/20 to-transparent opacity-50 pointer-events-none rounded-full" />
           <IoChevronForward
             size={22}
             className="relative z-10 drop-shadow-md text-white/60"
@@ -265,7 +275,7 @@ export default function UIOverlay({
                             {originalPrice.toLocaleString()}₺
                           </span>
                           <div
-                            className={`bg-[#ea7c69] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(234,124,105,0.6)] ${language === "fa" ? "font-gulzar" : ""}`}
+                            className={`bg-accent text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(234,124,105,0.6)] ${language === "fa" ? "font-gulzar" : ""}`}
                           >
                             {discountPercent}% {t("off")}
                           </div>
@@ -390,13 +400,13 @@ export default function UIOverlay({
                   <button
                     key={cat.id}
                     onClick={() => setActiveCatId(cat.id)}
-                    className={`group flex flex-col items-center gap-2 transition-all duration-300 ease-out active:scale-95 w-[5.5rem] ${
+                    className={`group flex flex-col items-center gap-2 transition-all duration-300 ease-out active:scale-95 w-22 ${
                       isActive ? "opacity-100" : "opacity-60"
                     }`}
                   >
                     {/* Liquid Glass Icon - Rectangular  */}
                     <div
-                      className={`relative w-[5rem] h-[3.3rem] rounded-[18px] overflow-hidden transition-all duration-500 shrink-0 ${
+                      className={`relative w-20 h-[3.3rem] rounded-[18px] overflow-hidden transition-all duration-500 shrink-0 ${
                         isActive
                           ? "shadow-[0_5px_20px_rgba(234,124,105,0.45)] ring-1 ring-white/50 scale-105"
                           : "ring-1 ring-white/10 grayscale-[0.3]"
@@ -413,6 +423,8 @@ export default function UIOverlay({
                           width={80}
                           height={53}
                           quality={60}
+                          loading={isActive ? "eager" : "lazy"}
+                          priority={isActive}
                           className="w-full h-full object-cover"
                         />
                       ) : (

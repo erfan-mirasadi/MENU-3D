@@ -1,13 +1,17 @@
 "use client";
 
 import { useRef, useEffect, useState, useMemo, useCallback } from "react";
+import dynamic from "next/dynamic";
 import Scene from "./Scene";
 import UIOverlay from "./UIOverlay";
 import Loader from "@/components/ui/Loader";
 import HiddenARLauncher from "@/components/ui/HiddenARLauncher";
 import { useParams } from "next/navigation";
 import { useCart } from "@/app/hooks/useCart";
-import ServiceButtons from "@/components/ui/ServiceButtons"; 
+
+const ServiceButtons = dynamic(() => import("@/components/ui/ServiceButtons"), {
+  ssr: false,
+});
 
 // --- GLOBAL VARIABLES ---
 const gyroData = { x: 0, y: 0 };
@@ -43,16 +47,17 @@ export default function ThreeDLayout({ restaurant, categories }) {
 
   const focusedProduct = activeProducts[activeIndex] || activeProducts[0];
 
-  useEffect(() => {
-    setActiveIndex(0);
-    const selectedCategory = categories.find((c) => c.id === activeCatId);
-    const hasProducts = selectedCategory?.products?.length > 0;
-    if (hasProducts) {
-      setIsLoading(true);
-    } else {
-      setIsLoading(false);
-    }
-  }, [activeCatId, categories]);
+  const handleCategoryChange = useCallback(
+    (categoryId) => {
+      setActiveCatId(categoryId);
+      setActiveIndex(0);
+
+      const selectedCategory = categories.find((c) => c.id === categoryId);
+      const hasProducts = selectedCategory?.products?.length > 0;
+      setIsLoading(hasProducts);
+    },
+    [categories],
+  );
 
   const handleModelLoaded = useCallback((url) => {
     setIsLoading(false);
@@ -60,12 +65,12 @@ export default function ThreeDLayout({ restaurant, categories }) {
   }, []);
 
   const arLauncherRef = useRef();
-  
+
   const handleLaunchAR = useCallback(() => {
     // Direct trigger for headless AR
     const urlToUse = currentBlobUrl || focusedProduct?.model_url;
     if (arLauncherRef.current && urlToUse) {
-        arLauncherRef.current.launchAR(urlToUse);
+      arLauncherRef.current.launchAR(urlToUse);
     }
   }, [currentBlobUrl, focusedProduct]);
 
@@ -116,16 +121,19 @@ export default function ThreeDLayout({ restaurant, categories }) {
   }, []);
 
   // --- LOGIC: TOUCH GESTURES ---
-  const handleTouchStart = useCallback((e) => {
-    if (isCartOpen) return; // Block swipe when cart is open
-    if (e.target.closest(".category-scroll")) return;
-    const touch = e.touches[0];
-    touchStartRef.current = {
-      x: touch.clientX,
-      y: touch.clientY,
-      time: Date.now(),
-    };
-  }, [isCartOpen]);
+  const handleTouchStart = useCallback(
+    (e) => {
+      if (isCartOpen) return; // Block swipe when cart is open
+      if (e.target.closest(".category-scroll")) return;
+      const touch = e.touches[0];
+      touchStartRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now(),
+      };
+    },
+    [isCartOpen],
+  );
 
   const handleTouchEnd = useCallback(
     (e) => {
@@ -147,7 +155,7 @@ export default function ThreeDLayout({ restaurant, categories }) {
       }
       touchStartRef.current = { x: 0, y: 0, time: 0 };
     },
-    [activeIndex, activeProducts.length, isCartOpen]
+    [activeIndex, activeProducts.length, isCartOpen],
   );
 
   // --- LOGIC: LOCK SCROLL ---
@@ -170,8 +178,6 @@ export default function ThreeDLayout({ restaurant, categories }) {
     };
   }, []);
 
-
-
   return (
     <main
       className="three-d-container relative w-full h-dvh bg-black overflow-hidden select-none font-sans"
@@ -182,8 +188,6 @@ export default function ThreeDLayout({ restaurant, categories }) {
       {/* --- CUSTOM SMOOTH LOADER --- */}
       <Loader active={isLoading} />
 
-
-
       <Scene
         activeProducts={activeProducts}
         activeIndex={activeIndex}
@@ -191,15 +195,13 @@ export default function ThreeDLayout({ restaurant, categories }) {
         onModelLoaded={handleModelLoaded}
       />
 
-      <HiddenARLauncher 
-        ref={arLauncherRef} 
-      />
+      <HiddenARLauncher ref={arLauncherRef} />
 
       <UIOverlay
         restaurant={restaurant}
         categories={categories}
         activeCatId={activeCatId}
-        setActiveCatId={setActiveCatId}
+        setActiveCatId={handleCategoryChange}
         focusedProduct={focusedProduct}
         onLaunchAR={handleLaunchAR}
         categoryMounted={!isLoading}
@@ -218,12 +220,11 @@ export default function ThreeDLayout({ restaurant, categories }) {
         isCartOpen={isCartOpen}
         setIsCartOpen={setIsCartOpen}
       >
-
-          <ServiceButtons 
-            restaurantId={restaurant.id}
-            tableId={tableId} // Use resolved UUID
-            sessionId={sessionData?.id}
-          />
+        <ServiceButtons
+          restaurantId={restaurant.id}
+          tableId={tableId} // Use resolved UUID
+          sessionId={sessionData?.id}
+        />
       </UIOverlay>
     </main>
   );

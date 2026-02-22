@@ -1,8 +1,20 @@
-import ClassicLayout from "@/components/templates/classic/ClassicLayout";
-import ImmersiveLayout from "@/components/templates/immersive/ImmersiveLayout";
-import MinimalLayout from "@/components/templates/minimal/MinimalLayout";
-import ModernLayout from "@/components/templates/modern/ModernLayout";
-import ThreeDLayout from "@/components/templates/three-d/ThreeDLayout";
+import dynamic from "next/dynamic";
+
+const ClassicLayout = dynamic(
+  () => import("@/components/templates/classic/ClassicLayout"),
+);
+const ImmersiveLayout = dynamic(
+  () => import("@/components/templates/immersive/ImmersiveLayout"),
+);
+const MinimalLayout = dynamic(
+  () => import("@/components/templates/minimal/MinimalLayout"),
+);
+const ModernLayout = dynamic(
+  () => import("@/components/templates/modern/ModernLayout"),
+);
+const ThreeDLayout = dynamic(
+  () => import("@/components/templates/three-d/ThreeDLayout"),
+);
 
 export default function ClientWrapper({
   restaurant,
@@ -11,60 +23,29 @@ export default function ClientWrapper({
   featuredProducts,
 }) {
   const style = restaurant.template_style;
+  const sharedProps = {
+    restaurant,
+    categories,
+    tableId,
+    featuredProducts,
+  };
 
-  if (style === "modern") {
-    return (
-      <ModernLayout
-        restaurant={restaurant}
-        categories={categories}
-        tableId={tableId}
-        featuredProducts={featuredProducts}
-      />
-    );
+  switch (style) {
+    case "modern":
+      return <ModernLayout {...sharedProps} />;
+    case "classic":
+      return <ClassicLayout {...sharedProps} />;
+    case "minimal":
+      return <MinimalLayout {...sharedProps} />;
+    case "immersive":
+      return <ImmersiveLayout {...sharedProps} />;
+    case "three-d":
+      return <ThreeDLayout {...sharedProps} />;
+    default:
+      return (
+        <div className="flex h-screen items-center justify-center bg-black text-white">
+          <p>⚠️ Template not found!</p>
+        </div>
+      );
   }
-  if (style === "classic") {
-    return (
-      <ClassicLayout
-        restaurant={restaurant}
-        categories={categories}
-        tableId={tableId}
-        featuredProducts={featuredProducts}
-      />
-    );
-  }
-  if (style === "minimal") {
-    return (
-      <MinimalLayout
-        restaurant={restaurant}
-        categories={categories}
-        tableId={tableId}
-        featuredProducts={featuredProducts}
-      />
-    );
-  }
-  if (style === "immersive") {
-    return (
-      <ImmersiveLayout
-        restaurant={restaurant}
-        categories={categories}
-        tableId={tableId}
-        featuredProducts={featuredProducts}
-      />
-    );
-  }
-  if (style === "three-d") {
-    return (
-      <ThreeDLayout
-        restaurant={restaurant}
-        categories={categories}
-        tableId={tableId}
-        featuredProducts={featuredProducts}
-      />
-    );
-  }
-  return (
-    <div className="flex h-screen items-center justify-center bg-black text-white">
-      <p>⚠️ Template not found!</p>
-    </div>
-  );
 }
