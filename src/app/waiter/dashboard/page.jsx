@@ -15,6 +15,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 import { moveSession, mergeSessions } from "@/services/waiterService";
 import { serviceRequestService } from "@/services/serviceRequestService";
+import { unsubscribeFromPushNotifications } from "@/services/notificationService";
 import toast from "react-hot-toast";
 
 export default function WaiterDashboard() {
@@ -25,6 +26,7 @@ export default function WaiterDashboard() {
 
   const handleLogout = async () => {
     if (confirm(t('logoutConfirm'))) {
+      await unsubscribeFromPushNotifications();
       await supabase.auth.signOut();
       router.push("/login");
     }

@@ -1,5 +1,4 @@
-import { supabase } from "@/lib/supabase";
-import { updateUserPushToken } from "@/services/userService";
+import { removeUserPushToken, updateUserPushToken } from "@/services/userService";
 
 export async function subscribeToPushNotifications() {
   try {
@@ -18,18 +17,48 @@ export async function subscribeToPushNotifications() {
     
     // Convert VAPID key to Uint8Array required by PushManager
     const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
-    
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey
-    });
 
-    // Save token using our consolidated user service
+    // Reuse the existing browser subscription to avoid accumulating duplicates in the array.
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey
+      });
+    }
+
     const subscriptionObject = JSON.parse(JSON.stringify(subscription));
     await updateUserPushToken(supabase, user.id, subscriptionObject);
 
   } catch (error) {
     console.error("Failed to subscribe to push notifications:", error);
+  }
+}
+
+// Called on logout: unsubscribes this device from the browser PushManager
+// and removes its endpoint from the user's push_token array in the DB.
+// Other devices belonging to the same user are preserved.
+export async function unsubscribeFromPushNotifications() {
+  try {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+
+    if (subscription) {
+      const endpoint = subscription.endpoint;
+
+      // Unsubscribe from the browser — stops push events reaching this device.
+      await subscription.unsubscribe();
+
+      // Remove this specific endpoint from the user's token array in the DB.
+      if (user) {
+        await removeUserPushToken(supabase, user.id, endpoint);
+      }
+    }
+  } catch (error) {
+    console.error("Failed to unsubscribe from push notifications:", error);
   }
 }
 

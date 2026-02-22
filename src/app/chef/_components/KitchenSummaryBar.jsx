@@ -5,6 +5,7 @@ import { useLanguage } from '@/context/LanguageContext'
 import { RiCloseLine, RiLogoutBoxLine } from 'react-icons/ri';
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { unsubscribeFromPushNotifications } from "@/services/notificationService";
 import toast from "react-hot-toast";
 
 export default function KitchenSummaryBar({ orders, isOpen, onClose }) {
@@ -13,6 +14,7 @@ export default function KitchenSummaryBar({ orders, isOpen, onClose }) {
     const router = useRouter()
 
     const handleLogout = async () => {
+        await unsubscribeFromPushNotifications();
         const { error } = await supabase.auth.signOut();
         if (error) {
             toast.error("Logout failed");

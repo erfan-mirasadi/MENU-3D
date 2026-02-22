@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
 import { RiLogoutBoxRLine } from "react-icons/ri";
+import { unsubscribeFromPushNotifications } from "@/services/notificationService";
 import GeneralForm from "@/app/admin/_components/settings/GeneralForm";
 import LanguageSettings from "@/app/admin/_components/settings/LanguageSettings";
 import FeatureSettings from "@/app/admin/_components/settings/FeatureSettings";
@@ -17,6 +18,7 @@ export default function SettingsPage() {
   const handleLogout = async () => {
     setLoading(true);
     try {
+      await unsubscribeFromPushNotifications();
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
