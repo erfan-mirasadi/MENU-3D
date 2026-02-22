@@ -65,14 +65,11 @@ export default function LoginPage() {
 
       toast.success(`Welcome back, ${role}!`);
 
-      // 4. Redirect based on Role
+      // 4. Redirect based on the SELECTED TAB (role state), not profile.role.
+      // This allows owners to access any panel by selecting the appropriate tab.
       if (role === "owner") {
         const restaurant = await getRestaurantByOwnerId(authData.user.id);
-        if (restaurant) {
-          router.push("/admin/dashboard");
-        } else {
-          router.push("/admin/onboarding");
-        }
+        router.push(restaurant ? "/admin/dashboard" : "/admin/onboarding");
       } else if (role === "cashier") {
         router.push("/cashier/dashboard");
       } else if (role === "waiter") {

@@ -10,29 +10,30 @@ const supabase = createClient(
 );
 
 // Maps each notification event type to its target roles and message content.
+// 'owner' is included in all roles so admin users receive every notification type.
 const NOTIFICATION_PAYLOADS = {
   NEW_ORDER: (tableNumber) => ({
-    targetRoles: ['waiter'],
+    targetRoles: ['waiter', 'owner'],
     payload: {
       title: '🔔 New Order Pending',
       body: `Table ${tableNumber} has a new order needing confirmation.`,
-      data: { url: '/waiter' }
+      data: { url: '/waiter/dashboard' }
     }
   }),
   PREPARING: (tableNumber) => ({
-    targetRoles: ['chef'],
+    targetRoles: ['chef', 'owner'],
     payload: {
       title: '👨‍🍳 Kitchen Alert',
       body: `Order for Table ${tableNumber} is ready to be prepared!`,
-      data: { url: '/chef' }
+      data: { url: '/chef/dashboard' }
     }
   }),
   SERVED: (tableNumber) => ({
-    targetRoles: ['waiter'],
+    targetRoles: ['waiter', 'owner'],
     payload: {
-      title: '✅ Food Ready',
-      body: `Order for Table ${tableNumber} is ready to serve!`,
-      data: { url: '/waiter' }
+      title: '🍽️ Food Ready',
+      body: `Order for Table ${tableNumber} is ready to serve! `,
+      data: { url: '/waiter/dashboard' }
     }
   })
 };
