@@ -1,3 +1,4 @@
+import { supabase } from "@/lib/supabase";
 import { removeUserPushToken, updateUserPushToken } from "@/services/userService";
 
 export async function subscribeToPushNotifications() {
