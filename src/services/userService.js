@@ -38,17 +38,66 @@ export async function getRestaurantStaffPushTokens(supabase, restaurantId, roles
   }
 }
 
-export async function updateUserPushToken(supabase, userId, token) {
+export async function updateUserPushToken(supabase, userId, newSubscription) {
   try {
-    const { error } = await supabase
+    // Fetch the user's current array of subscriptions
+    const { data: profile, error: fetchError } = await supabase
       .from('profiles')
-      .update({ push_token: token })
+      .select('push_token')
+      .eq('id', userId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // The push_token column now stores an array of subscription objects.
+    // Normalize: if the column is null or a non-array (legacy single object), start fresh.
+    const existingTokens = Array.isArray(profile?.push_token) ? profile.push_token : [];
+
+    // Deduplicate: only append if an identical endpoint doesn't already exist.
+    const alreadyRegistered = existingTokens.some(
+      (sub) => sub.endpoint === newSubscription.endpoint
+    );
+
+    if (alreadyRegistered) return true;
+
+    const updatedTokens = [...existingTokens, newSubscription];
+
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ push_token: updatedTokens })
       .eq('id', userId);
-      
-    if (error) throw error;
+
+    if (updateError) throw updateError;
     return true;
   } catch (error) {
     console.error("Error updating user push token:", error);
+    return false;
+  }
+}
+
+// Removes a single revoked subscription endpoint from a user's token array.
+export async function removeUserPushToken(supabase, userId, revokedEndpoint) {
+  try {
+    const { data: profile, error: fetchError } = await supabase
+      .from('profiles')
+      .select('push_token')
+      .eq('id', userId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const existingTokens = Array.isArray(profile?.push_token) ? profile.push_token : [];
+    const filteredTokens = existingTokens.filter((sub) => sub.endpoint !== revokedEndpoint);
+
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ push_token: filteredTokens.length > 0 ? filteredTokens : null })
+      .eq('id', userId);
+
+    if (updateError) throw updateError;
+    return true;
+  } catch (error) {
+    console.error("Error removing revoked push token:", error);
     return false;
   }
 }
