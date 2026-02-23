@@ -9,8 +9,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-// Maps each notification event type to its target roles and message content.
-// 'owner' is included in all roles so admin users receive every notification type.
 const NOTIFICATION_PAYLOADS = {
   NEW_ORDER: (tableNumber) => ({
     targetRoles: ['waiter', 'owner'],
@@ -64,30 +62,35 @@ export async function POST(request) {
 
     const payloadStr = JSON.stringify(payload);
 
-    // For each staff member, iterate over their array of device subscriptions.
     await Promise.all(
-      staff.map(async (user) => {
-        // Normalize: push_token can be an array (new) or a single object (legacy).
+      staff.flatMap((user) => {
         const subscriptions = Array.isArray(user.push_token)
           ? user.push_token
           : user.push_token ? [user.push_token] : [];
 
-        await Promise.all(
-          subscriptions.map(async (subscription) => {
-            try {
-              await webpush.sendNotification(subscription, payloadStr);
-              console.log(`[API /notify-staff] 🚀 Sent push to User ${user.id} on endpoint: ...${subscription.endpoint.slice(-20)}`);
-            } catch (err) {
-              // 404/410 means the subscription is expired or revoked — remove it from the array.
-              if (err.statusCode === 404 || err.statusCode === 410) {
-                console.warn(`[API /notify-staff] ❌ Stale token for User ${user.id}. Removing endpoint.`);
-                await removeUserPushToken(supabase, user.id, subscription.endpoint);
-              } else {
-                console.error(`[API /notify-staff] ⚠️ Error sending push to User ${user.id}:`, err.message);
+        return subscriptions.map(async (subscription) => {
+          if (subscription.activeRole) {
+              const isTargeted = targetRoles.includes(subscription.activeRole);
+              const isOwnerCatchAll = targetRoles.includes('owner') && subscription.activeRole === 'owner';
+              
+              if (!isTargeted && !isOwnerCatchAll) {
+                  return;
               }
+          }
+
+          try {
+            await webpush.sendNotification(subscription, payloadStr);
+            console.log(`[API /notify-staff] 🚀 Sent push to User ${user.id} on endpoint: ...${subscription.endpoint.slice(-20)}`);
+          } catch (err) {
+            // 404/410 means the subscription is expired or revoked — remove it from the array.
+            if (err.statusCode === 404 || err.statusCode === 410) {
+              console.warn(`[API /notify-staff] ❌ Stale token for User ${user.id}. Removing endpoint.`);
+              await removeUserPushToken(supabase, user.id, subscription.endpoint);
+            } else {
+              console.error(`[API /notify-staff] ⚠️ Error sending push to User ${user.id}:`, err.message);
             }
-          })
-        );
+          }
+        });
       })
     );
 

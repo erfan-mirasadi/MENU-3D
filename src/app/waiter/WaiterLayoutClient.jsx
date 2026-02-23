@@ -8,7 +8,7 @@ export default function WaiterLayoutClient({ children }) {
     // Register service worker and subscribe to push
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').then(() => {
-        subscribeToPushNotifications();
+        subscribeToPushNotifications('waiter');
       });
     }
   }, []);

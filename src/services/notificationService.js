@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { removeUserPushToken, updateUserPushToken } from "@/services/userService";
 
-export async function subscribeToPushNotifications() {
+export async function subscribeToPushNotifications(activeRole) {
   try {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
       return;
@@ -22,6 +22,18 @@ export async function subscribeToPushNotifications() {
     console.log("[PushService] Permission granted.");
 
     const registration = await navigator.serviceWorker.ready;
+    
+    // Ensure the service worker is fully active before subscribing
+    if (registration.active.state !== 'activated') {
+      await new Promise((resolve) => {
+        registration.active.addEventListener('statechange', (e) => {
+          if (e.target.state === 'activated') {
+            resolve();
+          }
+        });
+      });
+    }
+
     const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     
     // Convert VAPID key to Uint8Array required by PushManager
@@ -37,7 +49,10 @@ export async function subscribeToPushNotifications() {
     }
 
     const subscriptionObject = JSON.parse(JSON.stringify(subscription));
-    console.log("[PushService] Calling updateUserPushToken with:", subscriptionObject.endpoint);
+    // Attach the active role so the backend knows *which* dashboard this device is currently logged into.
+    subscriptionObject.activeRole = activeRole; 
+
+    console.log(`[PushService] Calling updateUserPushToken with role ${activeRole} for endpoint:`, subscriptionObject.endpoint);
     const success = await updateUserPushToken(supabase, user.id, subscriptionObject);
     console.log("[PushService] updateUserPushToken result:", success);
 

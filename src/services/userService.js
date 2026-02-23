@@ -143,7 +143,6 @@ export async function removeUserPushToken(supabase, userId, revokedEndpoint) {
     }
     
     if (!profile) {
-        // No profile exists, so there are no tokens to remove.
         return true;
     }
 

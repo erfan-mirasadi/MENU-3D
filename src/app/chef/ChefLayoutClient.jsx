@@ -7,7 +7,7 @@ export default function ChefLayoutClient({ children }) {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').then(() => {
-        subscribeToPushNotifications();
+        subscribeToPushNotifications('chef');
       });
     }
   }, []);
