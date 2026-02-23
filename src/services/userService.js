@@ -20,23 +20,77 @@ export async function getUserProfile(supabase, userId) {
 
 export async function getRestaurantStaffPushTokens(supabase, restaurantId, roles) {
   try {
-    const { data: staff, error } = await supabase
-      .from('profiles')
-      .select('id, push_token, role')
-      .in('role', roles)
-      .eq('restaurant_id', restaurantId)
-      .not('push_token', 'is', null);
+    // Separate owner from regular staff roles, since owners are identified
+    // via the restaurants table (owner_id), not the restaurant_id on their profile.
+    const staffRoles = roles.filter(r => r !== 'owner');
+    const includeOwner = roles.includes('owner');
 
-    if (error) {
-      console.error("Error fetching staff push tokens:", error);
-      return [];
+    const queries = [];
+
+    // 1. Fetch regular staff (waiter, chef, cashier) filtered by restaurant_id on profile.
+    if (staffRoles.length > 0) {
+      queries.push(
+        supabase
+          .from('profiles')
+          .select('id, push_token, role')
+          .in('role', staffRoles)
+          .eq('restaurant_id', restaurantId)
+          .not('push_token', 'is', null)
+      );
     }
-    return staff || [];
+
+    // 2. Fetch owners: look up the restaurant's owner_id, then fetch their profile.
+    if (includeOwner) {
+      const { data: restaurant } = await supabase
+        .from('restaurants')
+        .select('owner_id')
+        .eq('id', restaurantId)
+        .single();
+
+      if (restaurant?.owner_id) {
+        queries.push(
+          supabase
+            .from('profiles')
+            .select('id, push_token, role')
+            .eq('id', restaurant.owner_id)
+            .not('push_token', 'is', null)
+            .maybeSingle()
+        );
+      }
+    }
+
+    const results = await Promise.all(queries);
+
+    let staff = [];
+
+    // Collect regular staff results
+    if (staffRoles.length > 0) {
+      const { data, error } = results[0];
+      if (error) console.error("Error fetching staff push tokens:", error);
+      if (data) staff.push(...data);
+    }
+
+    // Collect owner profile from restaurant join
+    if (includeOwner) {
+      const ownerResult = results[staffRoles.length > 0 ? 1 : 0];
+      const { data, error } = ownerResult;
+      if (error) console.error("Error fetching owner push token:", error);
+      if (data) staff.push(data); 
+    }
+
+    // Filter out any profiles with empty push_token arrays (no active subscriptions).
+    const validStaff = staff.filter(u => {
+      if (Array.isArray(u.push_token)) return u.push_token.length > 0;
+      return !!u.push_token; // legacy single-object format
+    });
+
+    return validStaff;
   } catch (error) {
     console.error("Unexpected error fetching staff push tokens:", error);
     return [];
   }
 }
+
 
 export async function updateUserPushToken(supabase, userId, newSubscription) {
   try {
