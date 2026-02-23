@@ -79,14 +79,11 @@ export default function LoginPage() {
       }
 
       router.refresh();
-      // NOTE: We intentionally do NOT set loading(false) here. 
-      // The navigation events or unmount will handle it.
-      // Setting it to false causes the "double click" issue as UI re-enables before page change.
     } catch (error) {
       console.error(error);
       toast.error(error.message || "Login failed");
-      await supabase.auth.signOut(); // Force logout on failure to prevent stuck session
-      setLoading(false); // Only reset loading on error
+      await supabase.auth.signOut({ scope: 'local' }) 
+      setLoading(false); 
     } 
   };
 

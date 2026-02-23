@@ -19,7 +19,7 @@ export default function SettingsPage() {
     setLoading(true);
     try {
       await unsubscribeFromPushNotifications();
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
       if (error) throw error;
 
       toast.success("Logged out successfully");

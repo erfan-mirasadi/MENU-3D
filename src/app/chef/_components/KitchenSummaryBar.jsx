@@ -15,7 +15,7 @@ export default function KitchenSummaryBar({ orders, isOpen, onClose }) {
 
     const handleLogout = async () => {
         await unsubscribeFromPushNotifications();
-        const { error } = await supabase.auth.signOut();
+        const { error } = await supabase.auth.signOut({ scope: 'local' });
         if (error) {
             toast.error("Logout failed");
         } else {

@@ -3,9 +3,9 @@
 import { useRestaurantData } from "@/app/hooks/useRestaurantData";
 import { useState } from "react";
 import { FaLayerGroup } from "react-icons/fa";
-import { RiLogoutBoxRLine } from "react-icons/ri"; // Added icon
-import { useRouter } from "next/navigation"; // Added router
-import { supabase } from "@/lib/supabase"; // Added supabase
+import { RiLogoutBoxRLine } from "react-icons/ri";  
+import { useRouter } from "next/navigation"; 
+import { supabase } from "@/lib/supabase"; 
 import OrderDrawer from "@/components/shared/OrderDrawer";
 import OfflineAlert from "@/components/shared/OfflineAlert";
 import TableGrid from "@/components/shared/TableView/TableGrid";
@@ -22,12 +22,12 @@ export default function WaiterDashboard() {
   const { tables, sessions, loading, handleCheckout, isConnected, refetch } = useRestaurantData();
   const { t } = useLanguage();
   const [loadingTransfer, setLoadingTransfer] = useState(false);
-  const router = useRouter(); // Added router
+  const router = useRouter(); 
 
   const handleLogout = async () => {
     if (confirm(t('logoutConfirm'))) {
       await unsubscribeFromPushNotifications();
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: 'local' });
       router.push("/login");
     }
   };
