@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { getRestaurantByOwnerId } from "@/services/restaurantService";
@@ -25,6 +25,16 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("owner");
   const [formData, setFormData] = useState({ email: "", password: "" });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const roleParam = params.get("role");
+      if (roleParam && ["owner", "cashier", "waiter", "chef"].includes(roleParam)) {
+        setRole(roleParam);
+      }
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -64,9 +74,6 @@ export default function LoginPage() {
 
 
       toast.success(`Welcome back, ${role}!`);
-
-      // 4. Redirect based on the SELECTED TAB (role state), not profile.role.
-      // This allows owners to access any panel by selecting the appropriate tab.
       if (role === "owner") {
         const restaurant = await getRestaurantByOwnerId(authData.user.id);
         router.push(restaurant ? "/admin/dashboard" : "/admin/onboarding");

@@ -40,18 +40,28 @@ export async function middleware(request) {
   if (!user && pathname.startsWith("/admin") && !pathname.includes("/login")) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    url.searchParams.set("role", "owner");
     return NextResponse.redirect(url);
   }
 
   if (!user && pathname.startsWith("/waiter") && !pathname.includes("/login")) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    url.searchParams.set("role", "waiter");
     return NextResponse.redirect(url);
   }
 
   if (!user && pathname.startsWith("/cashier") && !pathname.includes("/login")) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    url.searchParams.set("role", "cashier");
+    return NextResponse.redirect(url);
+  }
+
+  if (!user && pathname.startsWith("/chef") && !pathname.includes("/login")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("role", "chef");
     return NextResponse.redirect(url);
   }
 

@@ -28,7 +28,8 @@ export default function WaiterDashboard() {
     if (confirm(t('logoutConfirm'))) {
       await unsubscribeFromPushNotifications();
       await supabase.auth.signOut({ scope: 'local' });
-      router.push("/login");
+      router.push("/login?role=waiter");
+      toast.success("Logged out successfully");
     }
   };
 

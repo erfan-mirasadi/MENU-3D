@@ -14,7 +14,6 @@ export default function SettingsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  // --- Logout Function ---
   const handleLogout = async () => {
     setLoading(true);
     try {
@@ -23,7 +22,7 @@ export default function SettingsPage() {
       if (error) throw error;
 
       toast.success("Logged out successfully");
-      router.push("/login");
+      router.push("/login?role=owner");
       router.refresh();
     } catch (error) {
       console.error("Logout Error:", error);

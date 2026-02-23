@@ -19,7 +19,8 @@ export default function KitchenSummaryBar({ orders, isOpen, onClose }) {
         if (error) {
             toast.error("Logout failed");
         } else {
-            router.push("/login");
+            router.push("/login?role=chef");
+            toast.success("Logged out successfully");
         }
     };
     

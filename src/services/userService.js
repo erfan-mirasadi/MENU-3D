@@ -81,7 +81,7 @@ export async function getRestaurantStaffPushTokens(supabase, restaurantId, roles
     // Filter out any profiles with empty push_token arrays (no active subscriptions).
     const validStaff = staff.filter(u => {
       if (Array.isArray(u.push_token)) return u.push_token.length > 0;
-      return !!u.push_token; // legacy single-object format
+      return !!u.push_token;
     });
 
     return validStaff;
@@ -97,14 +97,13 @@ export async function updateUserPushToken(supabase, userId, newSubscription) {
     // Fetch the user's current array of subscriptions
     const { data: profile, error: fetchError } = await supabase
       .from('profiles')
-      .select('push_token')
+      .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (fetchError) throw fetchError;
+    if (!profile) return false;
 
-    // The push_token column now stores an array of subscription objects.
-    // Normalize: if the column is null or a non-array (legacy single object), start fresh.
     const existingTokens = Array.isArray(profile?.push_token) ? profile.push_token : [];
 
     // Deduplicate: only append if an identical endpoint doesn't already exist.
@@ -129,16 +128,24 @@ export async function updateUserPushToken(supabase, userId, newSubscription) {
   }
 }
 
-// Removes a single revoked subscription endpoint from a user's token array.
+
 export async function removeUserPushToken(supabase, userId, revokedEndpoint) {
   try {
     const { data: profile, error: fetchError } = await supabase
       .from('profiles')
-      .select('push_token')
+      .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
-    if (fetchError) throw fetchError;
+    if (fetchError) {
+        console.error("fetchError in removeUserPushToken:", fetchError);
+        throw fetchError;
+    }
+    
+    if (!profile) {
+        // No profile exists, so there are no tokens to remove.
+        return true;
+    }
 
     const existingTokens = Array.isArray(profile?.push_token) ? profile.push_token : [];
     const filteredTokens = existingTokens.filter((sub) => sub.endpoint !== revokedEndpoint);

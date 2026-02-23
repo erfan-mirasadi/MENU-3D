@@ -22,7 +22,7 @@ export default function AdminSidebar({ links }) {
       if (error) throw error;
 
       toast.success("Logged out successfully");
-      router.push("/login");
+      router.push("/login?role=owner");
       router.refresh();
     } catch (error) {
       console.error("Logout Error:", error);
