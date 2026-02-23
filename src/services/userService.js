@@ -106,14 +106,22 @@ export async function updateUserPushToken(supabase, userId, newSubscription) {
 
     const existingTokens = Array.isArray(profile?.push_token) ? profile.push_token : [];
 
-    // Deduplicate: only append if an identical endpoint doesn't already exist.
-    const alreadyRegistered = existingTokens.some(
-      (sub) => sub.endpoint === newSubscription.endpoint
+    // Deduplicate: If an entry already exists for this exact activeRole, 
+    // remove it first to prevent endless accumulation of rotated browser endpoints.
+    const filteredTokens = existingTokens.filter(
+      (sub) => sub.activeRole !== newSubscription.activeRole
     );
 
-    if (alreadyRegistered) return true;
+    // Also double check exact endpoint string just in case there are role-less duplicates
+    const finalTokensStr = filteredTokens.filter(
+      (sub) => {
+         const subEndpoint = typeof sub === 'string' ? sub : sub?.endpoint;
+         if (!subEndpoint) return false;
+         return subEndpoint !== newSubscription.endpoint;
+      }
+    )
 
-    const updatedTokens = [...existingTokens, newSubscription];
+    const updatedTokens = [...finalTokensStr, newSubscription];
 
     const { error: updateError } = await supabase
       .from('profiles')
@@ -147,14 +155,38 @@ export async function removeUserPushToken(supabase, userId, revokedEndpoint) {
     }
 
     const existingTokens = Array.isArray(profile?.push_token) ? profile.push_token : [];
-    const filteredTokens = existingTokens.filter((sub) => sub.endpoint !== revokedEndpoint);
+    
+    console.log(`[UserService] Attempting to remove token. User has ${existingTokens.length} active tokens. Target endpoint:`, revokedEndpoint);
+
+    const filteredTokens = existingTokens.filter((sub) => {
+        // Handle both older string-based formats and the new object formats
+        const subEndpoint = typeof sub === 'string' ? sub : sub?.endpoint;
+        
+        if (!subEndpoint) return false; // Filter out malformed entries
+
+        // Use includes to handle slight URL variations (trailing slashes, params)
+        const isMatch = subEndpoint === revokedEndpoint || subEndpoint.includes(revokedEndpoint) || revokedEndpoint.includes(subEndpoint);
+        
+        if (isMatch) {
+            console.log(`[UserService] Found matching token to remove! DB Endpoint:`, subEndpoint);
+        }
+
+        return !isMatch;
+    });
+
+    console.log(`[UserService] Remaining tokens after filter: ${filteredTokens.length}`);
 
     const { error: updateError } = await supabase
       .from('profiles')
       .update({ push_token: filteredTokens.length > 0 ? filteredTokens : null })
       .eq('id', userId);
 
-    if (updateError) throw updateError;
+    if (updateError) {
+        console.error("[UserService] Error updating profile with filtered tokens:", updateError);
+        throw updateError;
+    }
+    
+    console.log("[UserService] Successfully updated user push tokens in DB.");
     return true;
   } catch (error) {
     console.error("Error removing revoked push token:", error);

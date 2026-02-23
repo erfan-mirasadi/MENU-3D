@@ -7,11 +7,13 @@ import { LanguageProvider } from "@/context/LanguageContext";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  preload: false,
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  preload: false,
 });
 
 const gulzarFont = Gulzar({
@@ -19,6 +21,7 @@ const gulzarFont = Gulzar({
   subsets: ["arabic"],
   variable: "--font-gulzar",
   display: "swap",
+  preload: false,
 });
 
 export const metadata = {

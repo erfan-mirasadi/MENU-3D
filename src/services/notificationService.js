@@ -69,19 +69,19 @@ export async function unsubscribeFromPushNotifications() {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
 
     const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
 
     if (subscription) {
       const endpoint = subscription.endpoint;
 
-      // Unsubscribe from the browser — stops push events reaching this device.
-      await subscription.unsubscribe();
-
       // Remove this specific endpoint from the user's token array in the DB.
-      if (user) {
-        await removeUserPushToken(supabase, user.id, endpoint);
-      }
+      await removeUserPushToken(supabase, user.id, endpoint);
+
+      // Unsubscribe from the browser (this can sometimes invalidate the JS object)
+      await subscription.unsubscribe();
     }
   } catch (error) {
     console.error("Failed to unsubscribe from push notifications:", error);

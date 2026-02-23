@@ -15,7 +15,8 @@ import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 
 export default function ChefDashboard() {
     const [orders, setOrders] = useState([])
-    const [loading, setLoading] = useState(true)
+    const [loading, setInitialLoading] = useState(true)
+    const [isLoggingOut, setIsLoggingOut] = useState(false)
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const { restaurantId } = useRestaurantData()
     const { t } = useLanguage();
@@ -32,7 +33,7 @@ export default function ChefDashboard() {
                 console.error("Failed to load orders", err)
                 toast.error("Failed to load orders")
             } finally {
-                setLoading(false)
+                setInitialLoading(false)
             }
         }
 
@@ -173,7 +174,11 @@ export default function ChefDashboard() {
                 orders={orders} 
                 isOpen={isSidebarOpen} 
                 onClose={() => setIsSidebarOpen(false)}
+                isLoggingOut={isLoggingOut}
+                setIsLoggingOut={setIsLoggingOut}
             />
+            
+            <Loader active={isLoggingOut} />
 
             {/* Main Content */}
             <main className="flex-1 p-4 md:p-6 overflow-y-auto h-screen relative">
