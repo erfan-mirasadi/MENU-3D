@@ -7,10 +7,20 @@ self.addEventListener('push', function (event) {
       console.log("[Service Worker] Received push event:", payload);
       
       const title = payload.title || 'New Order Alert';
+
+      // Pick icon based on the notification's target role
+      const targetUrl = payload.data?.url || '';
+      let notifIcon = '/logo.jpeg'; // fallback
+      if (targetUrl.includes('/chef')) {
+        notifIcon = '/chef-icon.jpeg';
+      } else if (targetUrl.includes('/waiter') || targetUrl.includes('/cashier')) {
+        notifIcon = '/waiter-icon.jpeg';
+      }
+
       const options = {
         body: payload.body || 'You have a new update.',
-        icon: '/images/default-logo.png', 
-        badge: '/images/default-logo.png', 
+        icon: notifIcon, 
+        badge: notifIcon, 
         data: payload.data || {},        
         vibrate: [200, 100, 200]         
       };

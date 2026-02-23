@@ -73,7 +73,7 @@ export default function Home() {
             <div className="w-full h-full backdrop-filter rounded-4xl border border-white/5 shadow-xl transform rotate-x-6 hover:rotate-x-0 transition-all duration-700 ease-out p-2 flex items-center justify-center overflow-hidden relative">
               {/* Background Logo Texture */}
               <div className="absolute inset-0 opacity-80 blur-[5px] pointer-events-none select-none">
-                <Image src="/logo.png" alt="Card Background" fill />
+                <Image src="/logo.jpeg" alt="Card Background" fill />
               </div>
 
               <div className="absolute inset-0 bg-gradient-to-tr from-[#ea7c69]/10 to-transparent pointer-events-none"></div>
