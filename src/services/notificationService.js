@@ -8,10 +8,18 @@ export async function subscribeToPushNotifications() {
     }
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+        console.log("[PushService] No user found, aborting subscription.");
+        return;
+    }
+    console.log("[PushService] Subscribing for user:", user.id);
 
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return;
+    if (permission !== 'granted') {
+        console.log("[PushService] Permission not granted:", permission);
+        return;
+    }
+    console.log("[PushService] Permission granted.");
 
     const registration = await navigator.serviceWorker.ready;
     const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -29,7 +37,9 @@ export async function subscribeToPushNotifications() {
     }
 
     const subscriptionObject = JSON.parse(JSON.stringify(subscription));
-    await updateUserPushToken(supabase, user.id, subscriptionObject);
+    console.log("[PushService] Calling updateUserPushToken with:", subscriptionObject.endpoint);
+    const success = await updateUserPushToken(supabase, user.id, subscriptionObject);
+    console.log("[PushService] updateUserPushToken result:", success);
 
   } catch (error) {
     console.error("Failed to subscribe to push notifications:", error);

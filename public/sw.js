@@ -9,15 +9,42 @@ self.addEventListener('push', function (event) {
       const title = payload.title || 'New Order Alert';
       const options = {
         body: payload.body || 'You have a new update.',
-        icon: '/images/default-logo.png', // Or your app's actual icon if you have one
-        badge: '/images/default-logo.png', // Optional monochrome badge icon
-        data: payload.data || {},        // Custom payload data (e.g. redirect urls)
-        vibrate: [200, 100, 200]         // Vibrate pattern for mobile devices
+        icon: '/images/default-logo.png', 
+        badge: '/images/default-logo.png', 
+        data: payload.data || {},        
+        vibrate: [200, 100, 200]         
       };
 
-      // 2. Hand it over to the browser to display
+      // Owners receive all notifications from the backend. 
+      // We filter them locally based on which panel they currently have open.
       event.waitUntil(
-        self.registration.showNotification(title, options)
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+          
+          let shouldShow = true; 
+          const targetUrl = options.data?.url || '';
+
+          if (clientList.length > 0) {
+
+             
+             const hasAdminOpen = clientList.some(c => c.url.includes('/admin'));
+             const hasChefOpen = clientList.some(c => c.url.includes('/chef'));
+             const hasWaiterOpen = clientList.some(c => c.url.includes('/waiter') || c.url.includes('/cashier'));
+
+             if (!hasAdminOpen) {
+                 if (targetUrl.includes('/chef') && !hasChefOpen && hasWaiterOpen) {
+                     shouldShow = false; // Drop chef notification if only waiter is open
+                 } else if (targetUrl.includes('/waiter') && !hasWaiterOpen && hasChefOpen) {
+                     shouldShow = false; // Drop waiter notification if only chef is open
+                 }
+             }
+          }
+
+          if (shouldShow) {
+            return self.registration.showNotification(title, options);
+          } else {
+            console.log("[Service Worker] Ignored notification because user is in a different panel.");
+          }
+        })
       );
     } catch (e) {
       // Fallback in case the server sent plain text instead of JSON
