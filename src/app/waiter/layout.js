@@ -3,6 +3,14 @@ import { redirect } from "next/navigation";
 import WaiterLayoutClient from "./WaiterLayoutClient";
 import { getUserProfile } from "@/services/userService";
 
+export const metadata = {
+  title: "Menu 3D — Waiter",
+  icons: {
+    icon: "/waiter-icon.jpeg",
+    apple: "/waiter-icon.jpeg",
+  },
+};
+
 export default async function WaiterLayout({ children }) {
   const supabase = await createSupabaseServerClient();
   const {

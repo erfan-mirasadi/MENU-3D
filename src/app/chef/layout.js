@@ -3,6 +3,14 @@ import { redirect } from "next/navigation";
 import { getUserProfile } from "@/services/userService";
 import ChefLayoutClient from "./ChefLayoutClient";
 
+export const metadata = {
+  title: "Menu 3D — Chef",
+  icons: {
+    icon: "/chef-icon.jpeg",
+    apple: "/chef-icon.jpeg",
+  },
+};
+
 export default async function chefLayout({ children }) {
   const supabase = await createSupabaseServerClient();
   const {

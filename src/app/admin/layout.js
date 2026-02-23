@@ -3,6 +3,14 @@ import { getRestaurantByOwnerId, getRestaurantById } from "@/services/restaurant
 import { getUserProfile } from "@/services/userService";
 import AdminLayoutClient from "./AdminLayoutClient";
 
+export const metadata = {
+  title: "Menu 3D — Admin",
+  icons: {
+    icon: "/logo.jpeg",
+    apple: "/logo.jpeg",
+  },
+};
+
 export default async function AdminLayout({ children }) {
   const supabase = await createSupabaseServerClient();
   const {

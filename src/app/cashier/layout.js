@@ -3,6 +3,14 @@ import { redirect } from "next/navigation";
 import { getUserProfile } from "@/services/userService";
 import CashierLayoutClient from "./CashierLayoutClient";
 
+export const metadata = {
+  title: "Menu 3D — Cashier",
+  icons: {
+    icon: "/cashier-icon.jpeg",
+    apple: "/cashier-icon.jpeg",
+  },
+};
+
 export default async function CashierLayout({ children }) {
   const supabase = await createSupabaseServerClient();
   const {
