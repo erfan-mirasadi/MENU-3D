@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { subscribeToPushNotifications } from "@/services/notificationService";
+import InstallPwaPopup from "@/components/ui/InstallPwaPopup";
 
 export default function ChefLayoutClient({ children }) {
   useEffect(() => {
@@ -17,6 +18,7 @@ export default function ChefLayoutClient({ children }) {
       <div className="w-full h-full">
           {children}
       </div>
+      <InstallPwaPopup />
     </div>
   );
 }

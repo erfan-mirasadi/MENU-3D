@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { subscribeToPushNotifications } from "@/services/notificationService";
+import InstallPwaPopup from "@/components/ui/InstallPwaPopup";
 
 export default function WaiterLayoutClient({ children }) {
   useEffect(() => {
@@ -18,6 +19,7 @@ export default function WaiterLayoutClient({ children }) {
       <div className="w-full h-full overflow-y-auto overflow-x-hidden">
           {children}
       </div>
+      <InstallPwaPopup />
     </div>
   );
 }
