@@ -6,7 +6,7 @@ import TableEditor from '../_components/TableEditor'
 import { calculateDefaultLayout, calculateGridLayout } from '../_utils/layoutUtils'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
-import { RiEdit2Line, RiSave3Line, RiCloseLine, RiRestartLine, RiDragMove2Line, RiShapeLine, RiAddLine } from 'react-icons/ri';
+import { RiEdit2Line, RiSave3Line, RiCloseLine, RiRestartLine, RiDragMove2Line, RiShapeLine, RiAddLine, RiLogoutBoxRLine } from 'react-icons/ri';
 import { useRouter } from 'next/navigation'
 import OrderDrawer from '@/components/shared/OrderDrawer'
 import OfflineAlert from "@/components/shared/OfflineAlert";
@@ -39,6 +39,20 @@ export default function DashboardPage() {
   // Local state for layout changes
   const [localTables, setLocalTables] = useState([])
   const [floorStyle, setFloorStyle] = useState('terazzo') 
+
+  // Logout (mobile only)
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error) throw error;
+      toast.success('Logged out');
+      router.push('/login?role=cashier');
+      router.refresh();
+    } catch (err) {
+      console.error('Logout Error:', err);
+      toast.error('Failed to log out');
+    }
+  };
 
   // Load persistence
   useEffect(() => {
@@ -419,7 +433,7 @@ export default function DashboardPage() {
                 </div>
             )
         ) : (
-            <div className="p-8 pt-24 h-full overflow-y-auto bg-[#1F1D2B]">
+            <div className="p-4 md:p-8 pt-20 md:pt-24 pb-24 md:pb-8 h-full overflow-y-auto bg-[#1F1D2B]">
                 <TableGrid 
                     tables={mergedTables}
                     sessions={sessions}
@@ -457,10 +471,10 @@ export default function DashboardPage() {
 
       {/* TRANSFER MODE BANNER */}
       {isTransferMode && (
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 bg-[#ea7c69] text-white px-8 py-4 rounded-full shadow-2xl animate-in slide-in-from-bottom flex gap-6 items-center">
+          <div className="absolute bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-50 bg-[#ea7c69] text-white px-6 md:px-8 py-3 md:py-4 rounded-full shadow-2xl animate-in slide-in-from-bottom flex gap-4 md:gap-6 items-center">
               <div>
-                  <p className="font-bold text-lg whitespace-nowrap">{t('selectTargetTable')}</p>
-                  <p className="text-white/80 text-xs">{t('clickToMove')}</p>
+                  <p className="font-bold text-sm md:text-lg whitespace-nowrap">{t('selectTargetTable')}</p>
+                  <p className="text-white/80 text-xs hidden md:block">{t('clickToMove')}</p>
               </div>
               <button 
                 onClick={handleCancelTransfer}
@@ -472,23 +486,23 @@ export default function DashboardPage() {
       )}
 
       {/* UI Overlay */}
-      <div className="absolute inset-0 z-10 pointer-events-none p-6 flex flex-col justify-between">
+      <div className="absolute inset-0 z-10 pointer-events-none p-3 md:p-6 flex flex-col justify-between">
         
         {/* Header */}
-        <header className="flex justify-between items-start pointer-events-auto">
+        <header className="flex flex-wrap justify-between items-start gap-2 pointer-events-auto">
           <div className="flex items-start flex-col gap-1">
-              <h1 className="text-2xl font-bold tracking-wider uppercase text-white drop-shadow-md select-none">{t('floorManager')}</h1>
+              <h1 className="text-lg md:text-2xl font-bold tracking-wider uppercase text-white drop-shadow-md select-none">{t('floorManager')}</h1>
               {isEditing && <span className="text-xs bg-blue-500/20 text-blue-200 px-2 py-0.5 rounded border border-blue-500/30 font-bold">{t('editMode')}</span>}
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4 flex-wrap justify-end">
                {/* Language Switcher */}
                {/* <LanguageSwitcher /> */}
 
                {/* Stats */}
               {!isEditing && (
                 <>
-                  <div className="bg-[#252836]/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-white/10 text-sm font-medium flex items-center gap-3 text-white select-none">
+                  <div className="hidden md:flex bg-[#252836]/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-white/10 text-sm font-medium items-center gap-3 text-white select-none">
                      
                      {/* System Status */}
                      <div className="flex items-center gap-2">
@@ -579,10 +593,10 @@ export default function DashboardPage() {
               )}
 
               {/* Edit Controls */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                   {viewMode === '3d' && (
                     isEditing ? (
-                      <div className="flex gap-2 animate-in slide-in-from-top-2">
+                      <div className="flex gap-2 flex-wrap animate-in slide-in-from-top-2">
                         <button 
                             onClick={handleAddTable}
                             className="bg-[#252836] text-green-400 border border-green-500/30 px-4 py-2 rounded-xl shadow-lg font-bold flex items-center gap-2 hover:bg-[#2d3042] hover:border-green-500 hover:text-green-300 transition-all mr-2 cursor-pointer"
@@ -640,22 +654,33 @@ export default function DashboardPage() {
                   )}
               </div>
 
-            {/* View Toggler (Moved to End for RTL usage) */}
+            {/* View Toggler + Mobile Logout */}
             {!isEditing && (
-                <div className="bg-[#252836]/90 backdrop-blur-md p-1 rounded-xl shadow-lg border border-white/10 flex gap-1">
-                    <button 
-                        onClick={() => setViewMode('3d')}
-                        className={`p-2 rounded-lg transition-all ${viewMode === '3d' ? 'bg-gray-700 text-white shadow-md' : 'text-gray-400 hover:bg-white/5'}`}
-                        title="3D View"
+                <div className="flex items-center gap-2">
+                    <div className="bg-[#252836]/90 backdrop-blur-md p-1 rounded-xl shadow-lg border border-white/10 flex gap-1">
+                        <button 
+                            onClick={() => setViewMode('3d')}
+                            className={`p-2 rounded-lg transition-all ${viewMode === '3d' ? 'bg-gray-700 text-white shadow-md' : 'text-gray-400 hover:bg-white/5'}`}
+                            title="3D View"
+                        >
+                            <FaCube size={16} />
+                        </button>
+                        <button 
+                            onClick={() => setViewMode('grid')}
+                            className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-gray-700 text-white shadow-md' : 'text-gray-400 hover:bg-white/5'}`}
+                            title="Grid View"
+                        >
+                            <FaList size={16} />
+                        </button>
+                    </div>
+
+                    {/* Logout — mobile only */}
+                    <button
+                        onClick={handleLogout}
+                        className="md:hidden bg-[#252836]/90 backdrop-blur-md p-2 rounded-xl shadow-lg border border-white/10 text-red-400 hover:bg-red-500/20 active:scale-90 transition-all"
+                        title="Logout"
                     >
-                        <FaCube size={16} />
-                    </button>
-                    <button 
-                        onClick={() => setViewMode('grid')}
-                        className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-gray-700 text-white shadow-md' : 'text-gray-400 hover:bg-white/5'}`}
-                        title="Grid View"
-                    >
-                        <FaList size={16} />
+                        <RiLogoutBoxRLine size={18} />
                     </button>
                 </div>
             )}

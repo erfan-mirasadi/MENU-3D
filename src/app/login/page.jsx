@@ -33,6 +33,25 @@ export default function LoginPage() {
       if (roleParam && ["owner", "cashier", "waiter", "chef"].includes(roleParam)) {
         setRole(roleParam);
       }
+
+      // If owner is already logged in, redirect to the requested role dashboard
+      const checkExistingSession = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const profile = await getUserProfile(supabase, user.id);
+        if (profile?.role !== "owner") return; // Non-owners handled by layout.js
+        
+        const target = roleParam || "owner";
+        const routes = {
+          owner: "/admin/dashboard",
+          cashier: "/cashier/dashboard",
+          waiter: "/waiter/dashboard",
+          chef: "/chef/dashboard",
+        };
+        router.push(routes[target] || "/admin/dashboard");
+        router.refresh();
+      };
+      checkExistingSession();
     }
   }, []);
 
@@ -74,6 +93,7 @@ export default function LoginPage() {
 
 
       toast.success(`Welcome back, ${role}!`);
+      // Owner can access any role — redirect based on selected tab
       if (role === "owner") {
         const restaurant = await getRestaurantByOwnerId(authData.user.id);
         router.push(restaurant ? "/admin/dashboard" : "/admin/onboarding");

@@ -18,6 +18,10 @@ export const metadata = {
   },
 };
 
+export const viewport = {
+  themeColor: "#1f1d2b",
+};
+
 export default async function chefLayout({ children }) {
   const supabase = await createSupabaseServerClient();
   const {

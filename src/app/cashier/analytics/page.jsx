@@ -64,7 +64,7 @@ const ReportsPage = () => {
   ];
 
   return (
-    <div className="bg-[#1F1D2B] min-h-screen text-white p-2 overflow-x-hidden pb-20">
+    <div className="bg-[#1F1D2B] min-h-screen text-white p-2 overflow-x-hidden pb-24 md:pb-4">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-4">
         <div>

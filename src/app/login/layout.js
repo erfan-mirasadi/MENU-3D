@@ -11,10 +11,14 @@ export default async function LoginLayout({ children }) {
   if (user) {
     const profile = await getUserProfile(supabase, user.id);
 
-    if (profile?.role === "owner") {
-      redirect("/admin/dashboard");
-    } else if (profile?.role === "waiter") {
+    // Non-owner roles: redirect to their dashboard
+    // Owners: let them stay on login page to pick a role tab
+    if (profile?.role === "waiter") {
       redirect("/waiter/dashboard");
+    } else if (profile?.role === "chef") {
+      redirect("/chef/dashboard");
+    } else if (profile?.role === "cashier") {
+      redirect("/cashier/dashboard");
     }
   }
 
