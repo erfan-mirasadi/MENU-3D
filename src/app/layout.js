@@ -62,9 +62,8 @@ export const metadata = {
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
+  themeColor: "#1f1d2b",
 };
 
 export default function RootLayout({ children }) {
@@ -72,7 +71,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body
         suppressHydrationWarning={true}
-        className={`${geistSans.variable} ${geistMono.variable} ${gulzarFont.variable} antialiased bg-black text-white`}
+        className={`${geistSans.variable} ${geistMono.variable} ${gulzarFont.variable} antialiased bg-[#1f1d2b] text-white`}
       >
         <RestaurantProvider>
             <LanguageProvider>

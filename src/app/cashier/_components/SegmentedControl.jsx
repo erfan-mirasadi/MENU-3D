@@ -44,9 +44,9 @@ const SegmentedControl = ({ options, active, onChange, className = "", fullWidth
             key={value}
             ref={(el) => (itemsRef.current[index] = el)}
             onClick={() => onChange(value)}
-            className={`relative z-10 px-2 py-2 text-sm font-medium transition-colors duration-600 cursor-pointer text-center min-w-0 ${fullWidth ? 'flex-1 w-full' : ''} ${
+            className={`relative z-10 px-2 py-2 text-sm font-medium transition-all duration-600 cursor-pointer text-center min-w-0 ${fullWidth ? 'flex-1 w-full' : ''} ${
               isActive
-                ? "text-white"
+                ? "text-white scale-110 shadow-lg transform"
                 : "text-[#ABBBC2] hover:text-white"
             }`}
           >

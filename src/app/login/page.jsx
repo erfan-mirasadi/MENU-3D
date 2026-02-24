@@ -12,12 +12,15 @@ import {
   RiEyeLine,
   RiEyeOffLine,
   RiUserStarLine,
-  RiServiceLine,
-  RiMoneyDollarCircleLine,
+  RiHome4Line,
 } from "react-icons/ri";
+import { BiDish } from "react-icons/bi";
+import { FaCashRegister } from "react-icons/fa6";
+import Link from "next/link";
 import { PiChefHat } from "react-icons/pi";
 import Loader from "@/components/ui/Loader";
 import SegmentedControl from "@/app/cashier/_components/SegmentedControl";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -60,7 +63,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // 1. Authenticate with Email/Password
+      // Authenticate with Email/Password
       const { data: authData, error: authError } =
         await supabase.auth.signInWithPassword({
           email: formData.email,
@@ -69,13 +72,12 @@ export default function LoginPage() {
 
       if (authError) throw authError;
 
-      // 2. Fetch User Profile to check Role
+      // Fetch User Profile to check Role
       const profile = await getUserProfile(supabase, authData.user.id);
 
       if (!profile) throw new Error("Profile access denied.");
 
-      // 3. Role Enforcement
-      // 3. Role Enforcement (Owners have master access)
+      // Role Enforcement
       if (profile.role !== "owner") {
             if (profile.role === "waiter" && role !== "waiter") {
                 throw new Error("Please log in using the Waiter tab.")
@@ -122,12 +124,22 @@ export default function LoginPage() {
         <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-blue-500/5 rounded-full blur-[80px]" />
       </div>
 
+      <div className="absolute top-6 right-6 z-50">
+        <Link 
+            href="/"
+            className="flex items-center justify-center p-2 bg-dark-800/80 backdrop-blur-md hover:bg-dark-700 rounded-2xl border border-gray-800 text-gray-400 hover:text-white transition-all shadow-lg active:scale-95"
+            title="Back to Home"
+        >
+          <RiHome4Line size={18} />
+        </Link>
+      </div>
+
       {/* Content Container with Blur transition */}
-      <div className={`w-full max-w-sm z-10 flex flex-col gap-8 transition-all duration-1000 ${loading ? 'blur-sm opacity-50 pointer-events-none' : ''}`}>
+      <div className={`w-full max-w-sm z-10 flex flex-col gap-8 transition-all duration-1000 animate-fade-in-up ${loading ? 'blur-sm opacity-50 pointer-events-none' : ''}`}>
         {/* Header */}
         <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-dark-800 border border-gray-800 shadow-2xl shadow-black/50 mb-2">
-          <img src="logo-web.png" alt="logo" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-dark-800 border border-gray-800 shadow-2xl shadow-black/50 mb-2 animate-float">
+          <Image src="/logo-web.png" alt="logo" width={100} height={100} priority />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white tracking-tight">
@@ -147,9 +159,9 @@ export default function LoginPage() {
                 active={role}
                 onChange={setRole}
                 options={[
-                    { value: "owner", label: <div className="flex items-center justify-center gap-1 md:gap-2"><RiUserStarLine size={16} className="md:w-[18px] md:h-[18px]" /> <span className="text-[10px] md:text-sm font-bold">Manager</span></div> },
-                    { value: "cashier", label: <div className="flex items-center justify-center gap-1 md:gap-2"><RiMoneyDollarCircleLine size={16} className="md:w-[18px] md:h-[18px]" /> <span className="text-[10px] md:text-sm font-bold">Cashier</span></div> },
-                    { value: "waiter", label: <div className="flex items-center justify-center gap-1 md:gap-2"><RiServiceLine size={16} className="md:w-[18px] md:h-[18px]" /> <span className="text-[10px] md:text-sm font-bold">Waiter</span></div> },
+                    { value: "owner", label: <div className="flex items-center justify-center gap-1 md:gap-2"><RiUserStarLine size={20} className="md:w-[18px] md:h-[18px]" /> <span className="text-[10px] md:text-sm font-bold">Manager</span></div> },
+                    { value: "cashier", label: <div className="flex items-center justify-center gap-1 md:gap-2"><FaCashRegister size={16} className="md:w-[18px] md:h-[18px]" /> <span className="text-[10px] md:text-sm font-bold">Cashier</span></div> },
+                    { value: "waiter", label: <div className="flex items-center justify-center gap-1 md:gap-2"><BiDish size={16} className="md:w-[18px] md:h-[18px]" /> <span className="text-[10px] md:text-sm font-bold">Waiter</span></div> },
                     { value: "chef", label: <div className="flex items-center justify-center gap-1 md:gap-2"><PiChefHat size={16} className="md:w-[18px] md:h-[18px]" /> <span className="text-[10px] md:text-sm font-bold">Chef</span></div> },
                 ]}
             />
@@ -160,7 +172,7 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                <label htmlFor="email" className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                     Email
                 </label>
               </div>
@@ -169,6 +181,8 @@ export default function LoginPage() {
                   <RiMailLine size={20} />
                 </div>
                 <input
+                  id="email"
+                  name="email"
                   type="email"
                   required
                   className="w-full bg-dark-900 border border-gray-700 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all font-medium"
@@ -191,7 +205,7 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                <label htmlFor="password" className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                   Password
                 </label>
               </div>
@@ -200,6 +214,8 @@ export default function LoginPage() {
                   <RiLock2Line size={20} />
                 </div>
                 <input
+                  id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   required
                   className="w-full bg-dark-900 border border-gray-700 rounded-2xl py-4 pl-12 pr-12 text-white placeholder-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all font-medium"

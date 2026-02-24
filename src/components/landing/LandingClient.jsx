@@ -18,7 +18,7 @@ import {
   RiEarthLine,
   RiCheckLine
 } from "react-icons/ri";
-import { translations } from "@/data/landingTranslations";
+import { translations } from "@/components/landing/landingTranslations";
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -253,37 +253,37 @@ export default function LandingClient() {
         <section className="bg-[#252836]/30 rounded-3xl p-8 md:p-12 border border-white/5">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="space-y-3">
-              <h4 className="text-white font-bold text-lg flex items-center gap-2">
+              <h3 className="text-white font-bold text-lg flex items-center gap-2">
                 <RiMagicLine className="text-[#ea7c69] text-xl" /> Stunning 3D
-              </h4>
+              </h3>
               <p className="text-sm text-gray-400">
                 High-fidelity 3D food models that make diners hungry instantly.
               </p>
             </div>
             <div className="space-y-3">
-              <h4 className="text-white font-bold text-lg flex items-center gap-2">
+              <h3 className="text-white font-bold text-lg flex items-center gap-2">
                 <RiFlashlightLine className="text-yellow-400 text-xl" /> Instant
                 Sync
-              </h4>
+              </h3>
               <p className="text-sm text-gray-400">
                 Powered by Supabase Realtime, everyone stays in sync. No delays.
               </p>
             </div>
             <div className="space-y-3">
-              <h4 className="text-white font-bold text-lg flex items-center gap-2">
+              <h3 className="text-white font-bold text-lg flex items-center gap-2">
                 <RiSmartphoneLine className="text-blue-400 text-xl" /> Fully
                 Responsive
-              </h4>
+              </h3>
               <p className="text-sm text-gray-400">
                 Optimized for every device: iPhone, Android, Tablet, and
                 Desktop.
               </p>
             </div>
             <div className="space-y-3">
-              <h4 className="text-white font-bold text-lg flex items-center gap-2">
+              <h3 className="text-white font-bold text-lg flex items-center gap-2">
                 <RiGlobalLine className="text-green-400 text-xl" />{" "}
                 Multi-Language
-              </h4>
+              </h3>
               <p className="text-sm text-gray-400">
                 Built-in support for multiple languages to serve global
                 customers.
