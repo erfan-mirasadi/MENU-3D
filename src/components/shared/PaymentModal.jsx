@@ -362,8 +362,8 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
         className={`bg-[#1F1D2B] w-full max-w-6xl h-[100dvh] md:h-auto md:max-h-[90vh] md:rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row md:min-h-[500px] border-0 md:border border-[#252836] transition-all duration-300 transform ${show ? 'scale-100 opacity-100 translate-y-0' : 'scale-100 md:scale-95 opacity-0 translate-y-8'} relative`}
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        {/* Close Button - top-right, always visible */}
-        <button onClick={onClose} className="absolute top-3 right-3 md:top-6 md:right-6 text-gray-400 hover:text-white p-2 z-20 rounded-full hover:bg-white/10 transition-colors bg-[#252836]/80 md:bg-transparent backdrop-blur-md md:backdrop-blur-none">
+        {/* Close Button - top-right, always visible, respects safe area on mobile */}
+        <button onClick={onClose} className="absolute right-3 md:top-6 md:right-6 text-gray-400 hover:text-white p-2 z-20 rounded-full hover:bg-white/10 transition-colors bg-[#252836]/80 md:bg-transparent backdrop-blur-md md:backdrop-blur-none" style={{ top: 'calc(env(safe-area-inset-top, 12px) + 12px)' }}>
             <RiCloseLine size={24} />
         </button>
         
@@ -678,7 +678,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
             </div>
 
             {/* Confirm Button - sticky at bottom */}
-            <div className="sticky bottom-0 p-3 md:p-6 bg-[#1F1D2B] border-t border-[#252836] md:border-t-0 safe-area-bottom shrink-0">
+            <div className="sticky bottom-0 p-4 pb-8 md:p-6 bg-[#1F1D2B] border-t border-[#252836] md:border-t-0 shrink-0" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 16px)' }}>
                 <button
                     onClick={handleConfirm}
                     disabled={processing || amountToPay <= 0.01 || isFullyPaid}

@@ -46,6 +46,17 @@ html, body {
   scrollbar-width: none;
 }
 
+/* Globally hide all scrollbars on mobile for an app-like feel */
+@media (max-width: 768px) {
+  *::-webkit-scrollbar {
+    display: none !important;
+  }
+  * {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
+}
+
 
 @keyframes fadeInUp {
   from {
