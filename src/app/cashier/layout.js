@@ -35,5 +35,12 @@ export default async function CashierLayout({ children }) {
     redirect("/login");
   }
 
-  return <CashierLayoutClient>{children}</CashierLayoutClient>;
+  return (
+    <>
+      <style>{`
+        body { background-color: #1f1d2b !important; }
+      `}</style>
+      <CashierLayoutClient>{children}</CashierLayoutClient>
+    </>
+  );
 }

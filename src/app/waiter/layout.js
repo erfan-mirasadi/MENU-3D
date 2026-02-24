@@ -35,5 +35,12 @@ export default async function WaiterLayout({ children }) {
     redirect("/login");
   }
 
-  return <WaiterLayoutClient>{children}</WaiterLayoutClient>;
+  return (
+    <>
+      <style>{`
+        body { background-color: #1f1d2b !important; }
+      `}</style>
+      <WaiterLayoutClient>{children}</WaiterLayoutClient>
+    </>
+  );
 }

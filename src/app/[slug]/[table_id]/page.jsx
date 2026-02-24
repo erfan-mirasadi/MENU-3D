@@ -16,9 +16,19 @@ export async function generateMetadata({ params }) {
     };
   }
 
+  let themeColor = "#000000";
+  switch (restaurant.template_style) {
+    case "modern": themeColor = "#1F1D2B"; break;
+    case "classic": themeColor = "#FDFBF7"; break;
+    case "minimal": themeColor = "#FFFFFF"; break;
+    case "immersive": themeColor = "#0f0f0f"; break;
+    case "three-d": themeColor = "#000000"; break;
+  }
+
   return {
     title: `${restaurant.name} | Menu 3D`,
     description: `${restaurant.name} menu`,
+    themeColor: themeColor,
   };
 }
 

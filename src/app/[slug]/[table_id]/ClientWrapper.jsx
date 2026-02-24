@@ -32,22 +32,36 @@ export default function ClientWrapper({
     isGuestMode,
   };
 
+  let themeColor = "#000000"; // default to black for three-d
   switch (style) {
-    case "modern":
-      return <ModernLayout {...sharedProps} />;
-    case "classic":
-      return <ClassicLayout {...sharedProps} />;
-    case "minimal":
-      return <MinimalLayout {...sharedProps} />;
-    case "immersive":
-      return <ImmersiveLayout {...sharedProps} />;
-    case "three-d":
-      return <ThreeDLayout {...sharedProps} />;
-    default:
-      return (
+    case "modern": themeColor = "#1F1D2B"; break;
+    case "classic": themeColor = "#FDFBF7"; break;
+    case "minimal": themeColor = "#FFFFFF"; break;
+    case "immersive": themeColor = "#0f0f0f"; break;
+    case "three-d": themeColor = "#000000"; break;
+  }
+
+  const renderLayout = () => {
+    switch (style) {
+      case "modern": return <ModernLayout {...sharedProps} />;
+      case "classic": return <ClassicLayout {...sharedProps} />;
+      case "minimal": return <MinimalLayout {...sharedProps} />;
+      case "immersive": return <ImmersiveLayout {...sharedProps} />;
+      case "three-d": return <ThreeDLayout {...sharedProps} />;
+      default: return (
         <div className="flex h-screen items-center justify-center bg-black text-white">
           <p>⚠️ Template not found!</p>
         </div>
       );
-  }
+    }
+  };
+
+  return (
+    <>
+      <style>{`
+        body { background-color: ${themeColor} !important; }
+      `}</style>
+      {renderLayout()}
+    </>
+  );
 }

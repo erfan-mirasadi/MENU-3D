@@ -47,8 +47,13 @@ export default async function AdminLayout({ children }) {
   }
 
   return (
-    <AdminLayoutClient user={user} restaurant={restaurant}>
-      {children}
-    </AdminLayoutClient>
+    <>
+      <style>{`
+        body { background-color: #1f1d2b !important; }
+      `}</style>
+      <AdminLayoutClient user={user} restaurant={restaurant}>
+        {children}
+      </AdminLayoutClient>
+    </>
   );
 }
