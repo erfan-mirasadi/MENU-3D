@@ -28,13 +28,14 @@ export const metadata = {
   title: "Menu 3D",
   description: "Pro Digital 3D Menu",
   applicationName: "Menu 3D",
+  manifest: "/manifests/default.json",
   appleWebApp: {
     capable: true,
     title: "Menu 3D",
-    statusBarStyle: "black-translucent", // Transparent status bar on iOS
+    statusBarStyle: "black-translucent",
   },
   formatDetection: {
-    telephone: false, // Prevent auto-linking phone numbers
+    telephone: false,
   },
   icons: {
     icon: "/logo-web.png",
@@ -55,7 +56,7 @@ export const metadata = {
     type: "website",
   },
   other: {
-    "mobile-web-app-capable": "yes", // Android standalone
+    "mobile-web-app-capable": "yes",
   },
 };
 
