@@ -64,8 +64,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: "cover", // Extends content behind notch/home indicator
-  themeColor: "#000000",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }) {

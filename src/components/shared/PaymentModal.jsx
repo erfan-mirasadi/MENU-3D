@@ -355,15 +355,19 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
   return (
     <div 
         onClick={onClose}
-        className={`fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 transition-all duration-300 ${show ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/90 backdrop-blur-sm md:p-4 transition-all duration-300 ${show ? 'opacity-100' : 'opacity-0'}`}
     >
       <div 
         onClick={(e) => e.stopPropagation()}
-        className={`bg-[#1F1D2B] w-full max-w-6xl max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[500px] border border-[#252836] transition-all duration-300 transform ${show ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-8'}`}
+        className={`bg-[#1F1D2B] w-full max-w-6xl h-[100dvh] md:h-auto md:max-h-[90vh] md:rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row md:min-h-[500px] border-0 md:border border-[#252836] transition-all duration-300 transform ${show ? 'scale-100 opacity-100 translate-y-0' : 'scale-100 md:scale-95 opacity-0 translate-y-8'} relative`}
       >
+        {/* Close Button - top-right, always visible */}
+        <button onClick={onClose} className="absolute top-3 right-3 md:top-6 md:right-6 text-gray-400 hover:text-white p-2 z-20 rounded-full hover:bg-white/10 transition-colors bg-[#252836]/80 md:bg-transparent backdrop-blur-md md:backdrop-blur-none">
+            <RiCloseLine size={24} />
+        </button>
         
         {/* LEFT: ORDER SUMMARY / ITEM SELECTOR */}
-        <div className="w-full md:w-[450px] flex flex-col border-r border-[#252836] bg-[#1F1D2B] relative">
+        <div className="w-full md:w-[450px] flex flex-col border-b md:border-b-0 md:border-r border-[#252836] bg-[#1F1D2B] relative max-h-[40dvh] md:max-h-none">
             <div className="p-6 border-b border-[#252836] bg-[#252836]/50">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                     <RiFileList3Line className="text-[#ea7c69]"/> {t("orderDetails")}
@@ -465,7 +469,7 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
 
         {/* ADJUSTMENT MODAL OVERLAY */}
         {showAdjModal && (
-            <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
                 <div onClick={e => e.stopPropagation()} className="bg-[#1F1D2B] w-full max-w-sm rounded-2xl border border-[#393C49] shadow-2xl overflow-hidden">
                     <div className="p-4 border-b border-[#252836] flex justify-between items-center bg-[#252836]/50">
                         <h3 className="text-white font-bold">{t("addAdjTitle")}</h3>
@@ -555,40 +559,37 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
         </div>
 
         {/* RIGHT: PAYMENT CONTROLS */}
-        <div className="flex-1 flex flex-col bg-[#1F1D2B] relative">
-            <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-white p-2 z-10 rounded-full hover:bg-white/10 transition-colors">
-                <RiCloseLine size={28} />
-            </button>
+        <div className="flex-1 flex flex-col bg-[#1F1D2B] relative overflow-y-auto min-h-0">
             
             {/* TABS */}
-            <div className="flex gap-8 px-8 pt-8 border-b border-[#252836]">
+            <div className="flex gap-4 md:gap-8 px-4 md:px-8 pt-4 md:pt-8 border-b border-[#252836]">
                 <button 
                     onClick={() => { setActiveTab("FULL"); setSplitMode("PEOPLE"); setSplitCount(1); setSelectedItemIds(new Set()); setPaymentMethod('CASH'); }}
-                    className={`pb-4 font-bold text-sm tracking-wide transition-all border-b-2 flex items-center gap-2 ${activeTab === "FULL" ? "border-[#ea7c69] text-[#ea7c69]" : "border-transparent text-gray-500 hover:text-gray-300"}`}
+                    className={`pb-3 md:pb-4 font-bold text-xs md:text-sm tracking-wide transition-all border-b-2 flex items-center gap-1.5 md:gap-2 ${activeTab === "FULL" ? "border-[#ea7c69] text-[#ea7c69]" : "border-transparent text-gray-500 hover:text-gray-300"}`}
                 >
                     <RiWallet3Line size={18} /> {t("fullPayment")}
                 </button>
                 <button 
                     onClick={() => { setActiveTab("SPLIT"); }}
-                    className={`pb-4 font-bold text-sm tracking-wide transition-all border-b-2 flex items-center gap-2 ${activeTab === "SPLIT" ? "border-[#ea7c69] text-[#ea7c69]" : "border-transparent text-gray-500 hover:text-gray-300"}`}
+                    className={`pb-3 md:pb-4 font-bold text-xs md:text-sm tracking-wide transition-all border-b-2 flex items-center gap-1.5 md:gap-2 ${activeTab === "SPLIT" ? "border-[#ea7c69] text-[#ea7c69]" : "border-transparent text-gray-500 hover:text-gray-300"}`}
                 >
                     <RiPieChartLine size={18} /> {t("splitPayment")}
                 </button>
             </div>
 
-            <div className="flex-1 p-8 flex flex-col overflow-y-auto custom-scrollbar">
+            <div className="flex-1 p-4 md:p-8 flex flex-col overflow-y-auto custom-scrollbar">
                 
                 {activeTab === "SPLIT" && (
-                    <div className="mb-6 animate-in fade-in slide-in-from-top-4">
-                        <label className="text-gray-400 text-xs font-bold uppercase mb-3 block">{t("splitMode")}</label>
-                        <div className="flex gap-3 mb-6">
-                             <button onClick={() => setSplitMode("PEOPLE")} className={`flex-1 py-3 px-2 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${splitMode === "PEOPLE" ? "bg-[#ea7c69] text-white border-[#ea7c69] shadow-lg shadow-[#ea7c69]/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
+                    <div className="mb-3 md:mb-6 animate-in fade-in slide-in-from-top-4">
+                        <label className="text-gray-400 text-xs font-bold uppercase mb-2 md:mb-3 block">{t("splitMode")}</label>
+                        <div className="flex gap-2 md:gap-3 mb-3 md:mb-6">
+                             <button onClick={() => setSplitMode("PEOPLE")} className={`flex-1 py-2 md:py-3 px-2 rounded-xl border font-bold text-xs md:text-sm transition-all flex items-center justify-center gap-1.5 md:gap-2 ${splitMode === "PEOPLE" ? "bg-[#ea7c69] text-white border-[#ea7c69] shadow-lg shadow-[#ea7c69]/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
                                  <RiUser3Line /> {t("byPeople")}
                              </button>
-                             <button onClick={() => setSplitMode("ITEMS")} className={`flex-1 py-3 px-2 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${splitMode === "ITEMS" ? "bg-[#ea7c69] text-white border-[#ea7c69] shadow-lg shadow-[#ea7c69]/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
+                             <button onClick={() => setSplitMode("ITEMS")} className={`flex-1 py-2 md:py-3 px-2 rounded-xl border font-bold text-xs md:text-sm transition-all flex items-center justify-center gap-1.5 md:gap-2 ${splitMode === "ITEMS" ? "bg-[#ea7c69] text-white border-[#ea7c69] shadow-lg shadow-[#ea7c69]/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
                                  <RiFileList3Line /> {t("byItems")}
                              </button>
-                             <button onClick={() => setSplitMode("CUSTOM")} className={`flex-1 py-3 px-2 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${splitMode === "CUSTOM" ? "bg-[#ea7c69] text-white border-[#ea7c69] shadow-lg shadow-[#ea7c69]/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
+                             <button onClick={() => setSplitMode("CUSTOM")} className={`flex-1 py-2 md:py-3 px-2 rounded-xl border font-bold text-xs md:text-sm transition-all flex items-center justify-center gap-1.5 md:gap-2 ${splitMode === "CUSTOM" ? "bg-[#ea7c69] text-white border-[#ea7c69] shadow-lg shadow-[#ea7c69]/20" : "bg-[#252836] border-[#393C49] text-gray-400 hover:bg-[#2D303E]"}`}>
                                  <RiCalculatorLine /> {t("custom")}
                              </button>
                         </div>
@@ -628,11 +629,11 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                 )}
 
                 {/* AMOUNT DISPLAY */}
-                <div className="flex flex-col items-center justify-center mb-8 p-6 bg-[#252836] rounded-2xl border border-[#2D303E] shadow-inner relative overflow-hidden group">
+                <div className="flex flex-col items-center justify-center mb-4 md:mb-8 p-3 md:p-6 bg-[#252836] rounded-2xl border border-[#2D303E] shadow-inner relative overflow-hidden group">
                     <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-[#ea7c69] to-transparent opacity-50"></div>
-                    <span className="text-gray-400 text-xs font-bold uppercase mb-2 tracking-widest">{t("payNow")}</span>
-                    <span className="text-5xl font-bold text-white tracking-tight flex items-baseline gap-1">
-                        <span className="text-2xl text-gray-500">₺</span>
+                    <span className="text-gray-400 text-[10px] md:text-xs font-bold uppercase mb-1 md:mb-2 tracking-widest">{t("payNow")}</span>
+                    <span className="text-3xl md:text-5xl font-bold text-white tracking-tight flex items-baseline gap-1">
+                        <span className="text-xl md:text-2xl text-gray-500">₺</span>
                         {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amountToPay)}
                     </span>
                     {activeTab === "SPLIT" && splitMode === "PEOPLE" && splitCount > 1 && (
@@ -643,18 +644,18 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                 </div>
 
                 {/* PAYMENT METHOD SELECTION */}
-                <label className="text-gray-400 text-xs font-bold uppercase mb-3 block px-1">{t("selectPaymentMethod")}</label>
-                <div className="grid grid-cols-3 gap-3 mb-6">
-                    <button onClick={() => setPaymentMethod("CASH")} className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${paymentMethod === "CASH" ? "border-green-500 bg-green-500/10 text-white shadow-[0_0_15px_rgba(34,197,94,0.2)]" : "border-[#393C49] text-gray-400 hover:border-gray-500 hover:bg-[#2D303E]"}`}>
-                        <RiMoneyDollarBoxLine size={28} className={paymentMethod === "CASH" ? "text-green-400" : ""} /> 
+                <label className="text-gray-400 text-xs font-bold uppercase mb-2 md:mb-3 block px-1">{t("selectPaymentMethod")}</label>
+                <div className="grid grid-cols-3 gap-2 md:gap-3 mb-4 md:mb-6">
+                    <button onClick={() => setPaymentMethod("CASH")} className={`flex flex-col items-center justify-center gap-1 md:gap-2 p-2 md:p-4 rounded-xl border-2 transition-all duration-200 ${paymentMethod === "CASH" ? "border-green-500 bg-green-500/10 text-white shadow-[0_0_15px_rgba(34,197,94,0.2)]" : "border-[#393C49] text-gray-400 hover:border-gray-500 hover:bg-[#2D303E]"}`}>
+                        <RiMoneyDollarBoxLine size={22} className={paymentMethod === "CASH" ? "text-green-400" : ""} /> 
                         <span className="text-xs font-bold tracking-wide">{t("cash")}</span>
                     </button>
-                    <button onClick={() => setPaymentMethod("POS")} className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${paymentMethod === "POS" ? "border-blue-500 bg-blue-500/10 text-white shadow-[0_0_15px_rgba(59,130,246,0.2)]" : "border-[#393C49] text-gray-400 hover:border-gray-500 hover:bg-[#2D303E]"}`}>
-                        <RiBankCardLine size={28} className={paymentMethod === "POS" ? "text-blue-400" : ""} /> 
+                    <button onClick={() => setPaymentMethod("POS")} className={`flex flex-col items-center justify-center gap-1 md:gap-2 p-2 md:p-4 rounded-xl border-2 transition-all duration-200 ${paymentMethod === "POS" ? "border-blue-500 bg-blue-500/10 text-white shadow-[0_0_15px_rgba(59,130,246,0.2)]" : "border-[#393C49] text-gray-400 hover:border-gray-500 hover:bg-[#2D303E]"}`}>
+                        <RiBankCardLine size={22} className={paymentMethod === "POS" ? "text-blue-400" : ""} /> 
                         <span className="text-xs font-bold tracking-wide">{t("card")}</span>
                     </button>
-                    <button onClick={() => setPaymentMethod("MIXED")} className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${paymentMethod === "MIXED" ? "border-[#ea7c69] bg-[#ea7c69]/10 text-white shadow-[0_0_15px_rgba(234,124,105,0.2)]" : "border-[#393C49] text-gray-400 hover:border-gray-500 hover:bg-[#2D303E]"}`}>
-                        <RiPieChartLine size={28} className={paymentMethod === "MIXED" ? "text-[#ea7c69]" : ""} /> 
+                    <button onClick={() => setPaymentMethod("MIXED")} className={`flex flex-col items-center justify-center gap-1 md:gap-2 p-2 md:p-4 rounded-xl border-2 transition-all duration-200 ${paymentMethod === "MIXED" ? "border-[#ea7c69] bg-[#ea7c69]/10 text-white shadow-[0_0_15px_rgba(234,124,105,0.2)]" : "border-[#393C49] text-gray-400 hover:border-gray-500 hover:bg-[#2D303E]"}`}>
+                        <RiPieChartLine size={22} className={paymentMethod === "MIXED" ? "text-[#ea7c69]" : ""} /> 
                         <span className="text-xs font-bold tracking-wide">{t("mixed")}</span>
                     </button>
                 </div>
@@ -673,22 +674,25 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
                     </div>
                 )}
 
+            </div>
+
+            {/* Confirm Button - sticky at bottom */}
+            <div className="sticky bottom-0 p-3 md:p-6 bg-[#1F1D2B] border-t border-[#252836] md:border-t-0 safe-area-bottom shrink-0">
                 <button
                     onClick={handleConfirm}
                     disabled={processing || amountToPay <= 0.01 || isFullyPaid}
-                    className="w-full mt-auto bg-[#EA7C69] hover:bg-[#d96a56] text-white font-bold py-4 rounded-xl shadow-lg shadow-[#EA7C69]/20 transition-all flex items-center justify-center gap-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98] cursor-pointer"
+                    className="w-full bg-[#EA7C69] hover:bg-[#d96a56] text-white font-bold py-3 md:py-4 rounded-xl shadow-lg shadow-[#EA7C69]/20 transition-all flex items-center justify-center gap-2 md:gap-3 text-base md:text-lg disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98] cursor-pointer"
                 >
                     {processing ? (
                         <>
-                            <RiLoader4Line className="animate-spin" size={24} /> {t("processing") || "PROCESSING..."}
+                            <RiLoader4Line className="animate-spin" size={20} /> {t("processing") || "PROCESSING..."}
                         </>
                     ) : (
                         <>
-                            <RiCheckLine size={24} /> {t("confirmPayment")}
+                            <RiCheckLine size={20} /> {t("confirmPayment")}
                         </>
                     )}
                 </button>
-
             </div>
         </div>
       </div>

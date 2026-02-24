@@ -64,7 +64,7 @@ export default function OrderDrawer({
 
             <div 
                 className={`fixed inset-y-0 right-0 w-full max-w-md bg-[#1F1D2B] z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-out transform ${show ? 'translate-x-0' : 'translate-x-full'}`}
-                style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+                style={{ paddingTop: 'env(safe-area-inset-top)' }}
             >
                 
                 <DrawerHeader

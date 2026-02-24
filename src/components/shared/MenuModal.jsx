@@ -88,7 +88,7 @@ export default function MenuModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col  bg-[#1F1D2B] animate-in slide-in-from-bottom duration-300"
-         style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+         style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       {/* HEADER */}
       <div className="p-4 bg-[#252836] border-b border-white/10 flex gap-3 items-center shadow-md shrink-0 safe-area-top">
