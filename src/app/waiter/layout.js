@@ -5,6 +5,7 @@ import { getUserProfile } from "@/services/userService";
 
 export const metadata = {
   title: "Menu 3D — Waiter",
+  manifest: "/manifests/waiter.json",
   icons: {
     icon: "/waiter-icon.jpeg",
     apple: "/waiter-icon.jpeg",

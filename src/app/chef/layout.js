@@ -5,6 +5,7 @@ import ChefLayoutClient from "./ChefLayoutClient";
 
 export const metadata = {
   title: "Menu 3D — Chef",
+  manifest: "/manifests/chef.json",
   icons: {
     icon: "/chef-icon.jpeg",
     apple: "/chef-icon.jpeg",

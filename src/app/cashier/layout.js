@@ -5,6 +5,7 @@ import CashierLayoutClient from "./CashierLayoutClient";
 
 export const metadata = {
   title: "Menu 3D — Cashier",
+  manifest: "/manifests/cashier.json",
   icons: {
     icon: "/cashier-icon.jpeg",
     apple: "/cashier-icon.jpeg",

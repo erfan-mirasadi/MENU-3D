@@ -1,0 +1,37 @@
+{
+  "name": "Menu 3D — Cashier",
+  "short_name": "Cashier",
+  "description": "Menu 3D Cashier Panel",
+  "start_url": "/cashier/dashboard",
+  "scope": "/cashier",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "categories": ["food", "business"],
+  "shortcuts": [
+    {
+      "name": "Cashier Dashboard",
+      "short_name": "Register",
+      "url": "/cashier/dashboard",
+      "icons": [{ "src": "/cashier-icon.jpeg", "sizes": "192x192", "type": "image/jpeg" }]
+    }
+  ],
+  "icons": [
+    {
+      "src": "/cashier-icon.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/cashier-icon.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import AdminLayoutClient from "./AdminLayoutClient";
 
 export const metadata = {
   title: "Menu 3D — Admin",
+  manifest: "/manifests/admin.json",
   icons: {
     icon: "/logo.jpeg",
     apple: "/logo.jpeg",

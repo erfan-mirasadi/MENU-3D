@@ -26,7 +26,16 @@ const gulzarFont = Gulzar({
 
 export const metadata = {
   title: "Menu 3D",
-  description: "Pro Digital 3D Menu ",
+  description: "Pro Digital 3D Menu",
+  applicationName: "Menu 3D",
+  appleWebApp: {
+    capable: true,
+    title: "Menu 3D",
+    statusBarStyle: "black-translucent", // Transparent status bar on iOS
+  },
+  formatDetection: {
+    telephone: false, // Prevent auto-linking phone numbers
+  },
   icons: {
     icon: "/logo-web.png",
     apple: "/logo-web.png",
@@ -45,6 +54,18 @@ export const metadata = {
     locale: "en_US",
     type: "website",
   },
+  other: {
+    "mobile-web-app-capable": "yes", // Android standalone
+  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover", // Extends content behind notch/home indicator
+  themeColor: "#000000",
 };
 
 export default function RootLayout({ children }) {

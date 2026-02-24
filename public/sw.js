@@ -1,3 +1,7 @@
+// Required by Chrome for PWA installability — fetch handler must exist.
+self.addEventListener('fetch', function (event) {
+  event.respondWith(fetch(event.request));
+});
 
 self.addEventListener('push', function (event) {
   if (event.data) {
