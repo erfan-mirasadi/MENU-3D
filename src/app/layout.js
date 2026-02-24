@@ -28,7 +28,6 @@ export const metadata = {
   title: "Menu 3D",
   description: "Pro Digital 3D Menu",
   applicationName: "Menu 3D",
-  manifest: "/manifests/default.json",
   appleWebApp: {
     capable: true,
     title: "Menu 3D",

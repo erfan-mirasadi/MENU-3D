@@ -5,7 +5,13 @@ import AdminLayoutClient from "./AdminLayoutClient";
 
 export const metadata = {
   title: "Menu 3D — Admin",
+  applicationName: "Admin",
   manifest: "/manifests/admin.json",
+  appleWebApp: {
+    capable: true,
+    title: "Admin",
+    statusBarStyle: "black-translucent",
+  },
   icons: {
     icon: "/logo.jpeg",
     apple: "/logo.jpeg",

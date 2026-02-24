@@ -5,7 +5,13 @@ import CashierLayoutClient from "./CashierLayoutClient";
 
 export const metadata = {
   title: "Menu 3D — Cashier",
+  applicationName: "Cashier",
   manifest: "/manifests/cashier.json",
+  appleWebApp: {
+    capable: true,
+    title: "Cashier",
+    statusBarStyle: "black-translucent",
+  },
   icons: {
     icon: "/cashier-icon.jpeg",
     apple: "/cashier-icon.jpeg",

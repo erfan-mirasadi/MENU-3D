@@ -5,7 +5,13 @@ import { getUserProfile } from "@/services/userService";
 
 export const metadata = {
   title: "Menu 3D — Waiter",
+  applicationName: "Waiter",
   manifest: "/manifests/waiter.json",
+  appleWebApp: {
+    capable: true,
+    title: "Waiter",
+    statusBarStyle: "black-translucent",
+  },
   icons: {
     icon: "/waiter-icon.jpeg",
     apple: "/waiter-icon.jpeg",

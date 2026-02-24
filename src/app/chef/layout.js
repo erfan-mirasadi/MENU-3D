@@ -5,7 +5,13 @@ import ChefLayoutClient from "./ChefLayoutClient";
 
 export const metadata = {
   title: "Menu 3D — Chef",
+  applicationName: "Kitchen",
   manifest: "/manifests/chef.json",
+  appleWebApp: {
+    capable: true,
+    title: "Kitchen",
+    statusBarStyle: "black-translucent",
+  },
   icons: {
     icon: "/chef-icon.jpeg",
     apple: "/chef-icon.jpeg",
