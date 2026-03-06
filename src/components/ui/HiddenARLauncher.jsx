@@ -44,7 +44,7 @@ export default function HiddenARLauncher({ arRef }) {
         <model-viewer
           ref={internalRef}
           src={url}
-          ios-src={iosUrl}
+          {...(iosUrl ? { "ios-src": iosUrl } : {})}
           ar
           ar-modes="webxr scene-viewer quick-look"
           ar-scale="auto"

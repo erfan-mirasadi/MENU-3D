@@ -27,7 +27,7 @@ export default function ARViewer({ modelUrl, modelUrlIos, posterUrl, alt, childr
     <model-viewer
       ref={modelViewerRef}
       src={modelUrl}
-      ios-src={modelUrlIos}
+      {...(modelUrlIos ? { "ios-src": modelUrlIos } : {})}
       poster={posterUrl}
       alt={alt}
       ar
