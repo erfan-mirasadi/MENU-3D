@@ -3,7 +3,6 @@ import { useState, useRef, useImperativeHandle } from "react";
 
 export default function HiddenARLauncher({ arRef }) {
   const [url, setUrl] = useState(null);
-  const [iosUrl, setIosUrl] = useState(null);
   const internalRef = useRef(null);
   const isSetup = useRef(false);
 
@@ -21,11 +20,13 @@ export default function HiddenARLauncher({ arRef }) {
            isSetup.current = true;
         }
 
-        setUrl(modelUrl);
-        setIosUrl(modelUrlIos);
+        // On iOS, use the iOS-specific GLB (without KTX2) if available
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const finalUrl = (isIOS && modelUrlIos) ? modelUrlIos : modelUrl;
+
+        setUrl(finalUrl);
 
         setTimeout(() => {
-           // Default activation (Android / Web / iOS via model-viewer)
            const viewer = internalRef.current;
            if (viewer) {
              viewer.activateAR();
@@ -41,23 +42,20 @@ export default function HiddenARLauncher({ arRef }) {
   if (!url) return null;
 
   return (
-    <>
-      <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
-          <model-viewer
-            ref={internalRef}
-            src={url}
-            {...(iosUrl ? { "ios-src": iosUrl } : {})}
-            ar
-            ar-modes="webxr scene-viewer quick-look"
-            ar-scale="auto"
-            ar-placement="floor"
-            ktx2-transcoder-path="/libs/basis/" 
-            meshopt-decoder-path="/libs/meshopt/meshopt_decoder.js"
-            loading="eager" 
-            camera-controls
-            onError={(e) => console.error("ModelViewer Error:", e)}
-          ></model-viewer>
-      </div>
-    </>
+    <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
+        <model-viewer
+          ref={internalRef}
+          src={url}
+          ar
+          ar-modes="webxr scene-viewer quick-look"
+          ar-scale="auto"
+          ar-placement="floor"
+          ktx2-transcoder-path="/libs/basis/" 
+          meshopt-decoder-path="/libs/meshopt/meshopt_decoder.js"
+          loading="eager" 
+          camera-controls
+          onError={(e) => console.error("ModelViewer Error:", e)}
+        ></model-viewer>
+    </div>
   );
 }
