@@ -24,19 +24,17 @@ export default function HiddenARLauncher({ arRef }) {
         setUrl(modelUrl);
         setIosUrl(modelUrlIos);
 
-        setTimeout(() => {
-           // iOS Fallback check
-           const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-           
-           if (isIOS && modelUrlIos) {
-             const iosLink = document.getElementById('ios-ar-quicklook-link');
-             if (iosLink) {
-               iosLink.click();
-               return; // Skip model-viewer activation on iOS if direct link works
-             }
-           }
+        // iOS Fallback check - Using direct page navigation
+        // Safari natively intercepts direct navigation to .usdz/.reality and launches AR Quick Look
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        
+        if (isIOS && modelUrlIos) {
+          window.location.href = modelUrlIos;
+          return; // Skip model-viewer activation on iOS
+        }
 
-           // Default activation (Android / Web)
+        // Default activation (Android / Web) requires a tiny delay for model-viewer to catch up
+        setTimeout(() => {
            const viewer = internalRef.current;
            if (viewer) {
              viewer.activateAR();
@@ -69,18 +67,6 @@ export default function HiddenARLauncher({ arRef }) {
             onError={(e) => console.error("ModelViewer Error:", e)}
           ></model-viewer>
       </div>
-      
-      {/* iOS Direct Quick Look Fallback Container */}
-      {iosUrl && (
-        <a 
-          id="ios-ar-quicklook-link" 
-          rel="ar" 
-          href={iosUrl} 
-          style={{ display: 'none' }}
-        >
-          <img src="" alt="AR trigger" />
-        </a>
-      )}
     </>
   );
 }

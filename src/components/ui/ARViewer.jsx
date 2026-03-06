@@ -28,10 +28,7 @@ export default function ARViewer({ modelUrl, modelUrlIos, posterUrl, alt, childr
     if (isIOS && modelUrlIos) {
       e.preventDefault();
       e.stopPropagation();
-      const iosLink = document.getElementById(`ios-ar-quicklook-link-viewer-${modelUrl}`);
-      if (iosLink) {
-        iosLink.click();
-      }
+      window.location.href = modelUrlIos;
     }
   };
 
@@ -59,18 +56,6 @@ export default function ARViewer({ modelUrl, modelUrlIos, posterUrl, alt, childr
       >
         {children}
       </model-viewer>
-      
-      {/* iOS Direct Quick Look Fallback Container */}
-      {modelUrlIos && (
-        <a 
-          id={`ios-ar-quicklook-link-viewer-${modelUrl}`}
-          rel="ar" 
-          href={modelUrlIos} 
-          style={{ display: 'none' }}
-        >
-          <img src="" alt="AR trigger" />
-        </a>
-      )}
     </>
   );
 }
