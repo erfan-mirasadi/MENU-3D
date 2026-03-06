@@ -1,5 +1,4 @@
 "use client";
-
 import { useMemo } from "react";
 import { FaShoppingBasket, FaPlus, FaMinus } from "react-icons/fa";
 
@@ -10,7 +9,6 @@ export default function CartControls({
   onDecrease,
   onOpenCart,
 }) {
-  // find draft item
   const draftItem = useMemo(() => {
     if (!focusedProduct || !cartItems) return null;
     return cartItems.find(
@@ -33,11 +31,10 @@ export default function CartControls({
 
   return (
     <>
-      {/* --- LEFT ACTIONS (ADD / QUANTITY) --- */}
-      {/* position higher: bottom-48 */}
+      {/* LEFT ACTIONS (ADD / QUANTITY) */}
       <div className="absolute bottom-48 left-10 z-40 flex flex-col items-center pointer-events-auto">
         {currentQty > 0 ? (
-          // --- ACTIVE STATE: VERTICAL CAPSULE (DARK & GLASS) ---
+          // ACTIVE STATE: VERTICAL CAPSULE (DARK & GLASS)
           <div className="flex flex-col items-center p-1.5 gap-3 bg-black/60 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-[0_10px_30px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-2 fade-in duration-300">
             {/* positive button */}
             <button
@@ -67,7 +64,7 @@ export default function CartControls({
             </button>
           </div>
         ) : (
-          // --- IDLE STATE: FLOATING MYSTERIOUS BUTTON ---
+          // IDLE STATE: FLOATING MYSTERIOUS BUTTON
           // class animate-float makes the button float up and down
           <button
             type="button"
@@ -86,7 +83,7 @@ export default function CartControls({
         )}
       </div>
 
-      {/* --- RIGHT ACTION (CART) --- */}
+      {/* RIGHT ACTION (CART) */}
       {/* show if there are items - position higher: bottom-48 */}
       {totalCartCount > 0 && (
         <div className="absolute bottom-48 right-6 z-40 pointer-events-auto animate-in zoom-in-50 duration-300">

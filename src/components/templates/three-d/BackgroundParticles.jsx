@@ -1,32 +1,30 @@
 "use client";
-
 import { useRef, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
-// --- 🎛️ تنظیمات کنترل ذرات ---
 const CONFIG = {
-  // 1. تنظیمات ظاهری
-  COUNT: 150, // تعداد ذرات (برای موبایل تا 500 هم اوکیه)
-  COLOR: "#ffffff", // رنگ ذرات
-  OPACITY: 0.6, // شفافیت (0.0 تا 1.0)
-  SIZE: 0.06, // اندازه پایه هر ذره
+  // appearance settings
+  COUNT: 150, // number of particles (for mobile up to 500 is okay)
+  COLOR: "#ffffff", // particle color
+  OPACITY: 0.6, // transparency (0.0 to 1.0)
+  SIZE: 0.06, // base size of each particle
 
-  // 2. تنظیمات پخش شدگی
-  SPREAD_FACTOR: 1.2, // ذرات در چه فضایی پخش بشن؟ (2.0 یعنی دو برابر اندازه صفحه)
-  DEPTH: 15, // عمق صحنه (هرچی بیشتر، فاصله ذرات جلو و عقب بیشتر میشه)
+  // spread settings
+  SPREAD_FACTOR: 1.2, // particles in what space to spread? (2.0 means twice the screen size)
+  DEPTH: 15, // scene depth (the more, the greater the distance between particles in front and back)
 
-  // 3. تنظیمات شناوری (Floating)
-  FLOAT_SPEED: 0.1, // سرعت بالا پایین رفتن خودکار (هرچی کمتر، آروم‌تر)
-  FLOAT_AMPLITUDE: 0.4, // دامنه حرکت (چقدر بالا پایین برن؟)
+  //  floating settings
+  FLOAT_SPEED: 0.1, // automatic up and down speed (the less, the slower)
+  FLOAT_AMPLITUDE: 0.4, // range of motion (how much to go up and down?)
 
-  // 4. تنظیمات تعامل با تاچ (Touch)
-  TOUCH_SMOOTHNESS: 0.03, // نرمی حرکت تاچ (هرچی کمتر، لیز خوردن بیشتر و با تاخیرتر)
-  TOUCH_RADIUS: 3, // شعاع اثر انگشت (چقدر دورتر رو تحت تاثیر قرار بده؟)
-  TOUCH_STRENGTH: 0.05, // قدرت هُل دادن (هرچی بیشتر، ذرات بیشتر فرار میکنن)
+  //  touch interaction settings
+  TOUCH_SMOOTHNESS: 0.03, // touch movement smoothness (the less, the more slippery and delayed)
+  TOUCH_RADIUS: 3, // touch radius (how far to affect?)
+  TOUCH_STRENGTH: 0.05, // push strength (the more, the more particles escape)
 
-  // 5. تنظیمات سنسور گوشی
-  SENSOR_STRENGTH: 0.3, // قدرت جابجایی با تکون دادن گوشی
+  //  phone sensor settings
+  SENSOR_STRENGTH: 0.3, // movement strength with phone shake
 };
 
 export default function BackgroundParticles({ gyroData }) {
@@ -34,14 +32,13 @@ export default function BackgroundParticles({ gyroData }) {
   const smoothTouch = useRef(new THREE.Vector2(0, 0));
   const { viewport } = useThree();
 
-  // --- ساختن ذرات ---
   const { positions, randoms, initialPositions } = useMemo(() => {
     const pos = new Float32Array(CONFIG.COUNT * 3);
     const initPos = new Float32Array(CONFIG.COUNT * 3);
     const rnd = new Float32Array(CONFIG.COUNT * 3);
 
     for (let i = 0; i < CONFIG.COUNT; i++) {
-      // پخش کردن بر اساس SPREAD_FACTOR
+      // spread based on SPREAD_FACTOR
       const x = (Math.random() - 0.5) * viewport.width * CONFIG.SPREAD_FACTOR;
       const y = (Math.random() - 0.5) * viewport.height * CONFIG.SPREAD_FACTOR;
       const z = (Math.random() - 0.5) * CONFIG.DEPTH - 5;
@@ -54,7 +51,7 @@ export default function BackgroundParticles({ gyroData }) {
       initPos[i * 3 + 1] = y;
       initPos[i * 3 + 2] = z;
 
-      // اعداد رندوم برای تنوع حرکت
+      // random numbers for movement variety
       rnd[i * 3] = Math.random();
       rnd[i * 3 + 1] = Math.random();
       rnd[i * 3 + 2] = Math.random();
@@ -68,7 +65,7 @@ export default function BackgroundParticles({ gyroData }) {
     const time = state.clock.getElapsedTime();
     const positionsAttr = pointsRef.current.geometry.attributes.position;
 
-    // --- 1. نرم کردن تاچ ---
+    // smooth touch
     const targetX = state.pointer.x * (viewport.width / 2);
     const targetY = state.pointer.y * (viewport.height / 2);
 
@@ -83,11 +80,11 @@ export default function BackgroundParticles({ gyroData }) {
       CONFIG.TOUCH_SMOOTHNESS
     );
 
-    // --- 2. آفست سنسور ---
+    // sensor offset
     const sensorOffsetX = (gyroData?.y || 0) * CONFIG.SENSOR_STRENGTH;
     const sensorOffsetY = (gyroData?.x || 0) * CONFIG.SENSOR_STRENGTH;
 
-    // --- 3. آپدیت تک‌تک ذرات ---
+    // update particles
     for (let i = 0; i < CONFIG.COUNT; i++) {
       const i3 = i * 3;
 
@@ -95,15 +92,15 @@ export default function BackgroundParticles({ gyroData }) {
       const iy = initialPositions[i3 + 1];
       const iz = initialPositions[i3 + 2];
 
-      const speed = CONFIG.FLOAT_SPEED + randoms[i3] * 0.4; // تنوع سرعت
+      const speed = CONFIG.FLOAT_SPEED + randoms[i3] * 0.4; // speed variation
       const phase = randoms[i3 + 2] * 10;
 
-      // A) حرکت شناور (Floating)
+      // Floating
       const floatX = Math.sin(time * speed + phase) * CONFIG.FLOAT_AMPLITUDE;
       const floatY =
         Math.cos(time * speed * 0.7 + phase) * CONFIG.FLOAT_AMPLITUDE;
 
-      // B) واکنش به تاچ (Repulsion)
+      // Touch Repulsion
       const dx = ix - smoothTouch.current.x;
       const dy = iy - smoothTouch.current.y;
       const distSq = dx * dx + dy * dy;
@@ -112,17 +109,17 @@ export default function BackgroundParticles({ gyroData }) {
       let pushY = 0;
 
       if (distSq < CONFIG.TOUCH_RADIUS) {
-        // هرچی نزدیک‌تر، قدرت بیشتر (بر اساس TOUCH_STRENGTH)
+        // closer = stronger
         const force = (CONFIG.TOUCH_RADIUS - distSq) * CONFIG.TOUCH_STRENGTH;
         pushX = dx * force;
         pushY = dy * force;
       }
 
-      // C) اعمال پوزیشن نهایی
+      // final position
       positionsAttr.array[i3] = ix + floatX - sensorOffsetX + pushX;
       positionsAttr.array[i3 + 1] = iy + floatY + sensorOffsetY + pushY;
 
-      // D) چشمک زدن (Twinkle)
+      // twinkle
       positionsAttr.array[i3 + 2] = iz + Math.sin(time * 1.5 + phase) * 0.8;
     }
 

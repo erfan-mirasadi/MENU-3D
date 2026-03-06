@@ -34,7 +34,6 @@ const styles = `
     50% { opacity: 1; }
     100% { transform: translateX(-20px); opacity: 0; }
   }
-      /* --- انیمیشن جدید با دامنه حرکت بیشتر --- */
   @keyframes float {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-18px); } 
@@ -48,10 +47,7 @@ function SwipeHint() {
   return (
     <div className="absolute bottom-56 left-0 w-full flex justify-center items-center pointer-events-none z-40 animate-in fade-in zoom-in duration-1000">
       <div className="relative flex items-center justify-center">
-        {/* Touch Ripple Effect */}
         <div className="absolute top-2 left-2 w-8 h-8 bg-white/30 rounded-full animate-ping" />
-
-        {/* Hand Icon - Larger & Shadowed */}
         <MdTouchApp
           size={56}
           className="text-white/90 animate-hand-swipe drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] filter"
@@ -77,7 +73,6 @@ export default function UIOverlay({
   removeFromCart,
   submitOrder,
   isLoadingCart,
-  // Nav
   activeIndex,
   setActiveIndex,
   productCount,
@@ -86,7 +81,7 @@ export default function UIOverlay({
   setIsCartOpen,
   session,
   isGuestMode,
-  children, // Added children prop
+  children,
 }) {
   const { language, content, t } = useLanguage();
   const [showHint, setShowHint] = useState(false);
@@ -459,7 +454,7 @@ export default function UIOverlay({
         </div>
       </div>
 
-      {/* --- SERVICE BUTTONS / CHILDREN (Top Layer) --- */}
+      {/*  SERVICE BUTTONS / CHILDREN (Top Layer) */}
       {!isCartOpen && (
         <div className="absolute top-2 left-2 pointer-events-auto z-60">
           {children}

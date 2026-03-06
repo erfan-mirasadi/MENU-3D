@@ -8,15 +8,18 @@ import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
 import { unsubscribeFromPushNotifications } from "@/services/notificationService";
 import { RiLogoutBoxRLine, RiStore2Line } from "react-icons/ri";
+import Loader from "@/components/ui/Loader";
 
 export default function AdminSidebar({ links }) {
   const pathname = usePathname();
   const router = useRouter();
 
   const navItems = links || [];
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
   const handleLogout = async () => {
     try {
+      setIsLoggingOut(true);
       await unsubscribeFromPushNotifications();
       const { error } = await supabase.auth.signOut({ scope: 'local' });
       if (error) throw error;
@@ -27,6 +30,7 @@ export default function AdminSidebar({ links }) {
     } catch (error) {
       console.error("Logout Error:", error);
       toast.error("Failed to log out");
+      setIsLoggingOut(false);
     }
   };
 
@@ -85,9 +89,10 @@ export default function AdminSidebar({ links }) {
       {/* 3. Logout Button (Bottom) */}
       <button
         onClick={handleLogout}
-        className="mt-auto mb-4 text-accent hover:text-white hover:bg-red-500/20 w-12 h-12 rounded-xl flex items-center justify-center transition-colors cursor-pointer"
+        disabled={isLoggingOut}
+        className="mt-auto mb-4 text-accent hover:text-white hover:bg-red-500/20 w-12 h-12 rounded-xl flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
       >
-        <RiLogoutBoxRLine size={24} />
+        {isLoggingOut ? <Loader size="sm" color="white" /> : <RiLogoutBoxRLine size={24} />}
       </button>
     </aside>
   );

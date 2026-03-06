@@ -22,14 +22,21 @@ export default function WaiterDashboard() {
   const { tables, sessions, loading, handleCheckout, isConnected, refetch } = useRestaurantData();
   const { t } = useLanguage();
   const [loadingTransfer, setLoadingTransfer] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter(); 
 
   const handleLogout = async () => {
     if (confirm(t('logoutConfirm'))) {
-      await unsubscribeFromPushNotifications();
-      await supabase.auth.signOut({ scope: 'local' });
-      router.push("/login?role=waiter");
-      toast.success("Logged out successfully");
+      setIsLoggingOut(true);
+      try {
+          await unsubscribeFromPushNotifications();
+          await supabase.auth.signOut({ scope: 'local' });
+          router.push("/login?role=waiter");
+          toast.success("Logged out successfully");
+      } catch (err) {
+          console.error("Logout error", err);
+          setIsLoggingOut(false);
+      }
     }
   };
 
@@ -219,7 +226,7 @@ export default function WaiterDashboard() {
       )}
 
       {/* --- MODERN HEADER (Responsive) --- */}
-      <div className="sticky top-0 z-20 bg-[#1F1D2B]/95 backdrop-blur-xl border-b border-white/5 shadow-2xl transition-all duration-300">
+      <div className="sticky top-0 z-20 bg-[#1F1D2B]/95 backdrop-blur-xl border-b border-white/5 shadow-2xl transition-all duration-300 pt-[env(safe-area-inset-top)]">
         <div className="px-4 py-3 md:py-4">
           
           {/* Top Row: Info + Global Actions */}
@@ -276,10 +283,11 @@ export default function WaiterDashboard() {
                      {/* Logout */}
                      <button 
                         onClick={handleLogout}
-                        className="bg-red-500/10 hover:bg-red-500/20 text-red-500 p-1.5 rounded-lg transition-colors border border-red-500/20"
+                        disabled={isLoggingOut}
+                        className="bg-red-500/10 hover:bg-red-500/20 text-red-500 p-1.5 rounded-lg transition-colors border border-red-500/20 disabled:opacity-50 min-w-[32px] min-h-[32px] flex items-center justify-center"
                         title={t('logout')}
                      >
-                        <RiLogoutBoxRLine size={18} />
+                        {isLoggingOut ? <Loader size="sm" /> : <RiLogoutBoxRLine size={18} />}
                      </button>
                  </div>
                  

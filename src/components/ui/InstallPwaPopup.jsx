@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect, useRef } from 'react';
 import { RiCloseLine, RiDownloadLine, RiShareLine, RiAddLine } from 'react-icons/ri';
 
@@ -151,8 +150,7 @@ export default function InstallPwaPopup() {
           )}
         </div>
       </div>
-
-      {/* Animations */}
+      
       <style jsx>{`
         @keyframes fadeIn {
           from { opacity: 0; }

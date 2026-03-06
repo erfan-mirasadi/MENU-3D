@@ -31,7 +31,6 @@ export default function ThreeDLayout({ restaurant, categories, isGuestMode }) {
     tableId,
   } = useCart(params?.table_id, restaurant.id);
 
-  // --- STATE ---
   const [activeCatId, setActiveCatId] = useState(categories[0]?.id);
   const [activeIndex, setActiveIndex] = useState(0);
   // Start loading immediately (true) so the user sees the loader first thing.
@@ -159,7 +158,7 @@ export default function ThreeDLayout({ restaurant, categories, isGuestMode }) {
     [activeIndex, activeProducts.length, isCartOpen],
   );
 
-  // --- LOGIC: LOCK SCROLL ---
+  // LOCK SCROLL
   useEffect(() => {
     // Save original styles
     const originalBodyOverflow = document.body.style.overflow;
@@ -196,7 +195,7 @@ export default function ThreeDLayout({ restaurant, categories, isGuestMode }) {
         enableEffects={!isLoading}
       />
 
-      <HiddenARLauncher ref={arLauncherRef} />
+      <HiddenARLauncher arRef={arLauncherRef} />
 
       <UIOverlay
         restaurant={restaurant}
@@ -226,7 +225,7 @@ export default function ThreeDLayout({ restaurant, categories, isGuestMode }) {
         {!isGuestMode && (
           <ServiceButtons
             restaurantId={restaurant.id}
-            tableId={tableId} // Use resolved UUID
+            tableId={tableId}
             sessionId={sessionData?.id}
           />
         )}

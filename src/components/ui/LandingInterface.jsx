@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Suggestions from "./Suggestions";
@@ -42,7 +41,7 @@ export default function LandingInterface({
         )}
       </div>
 
-      {/* 1. TOP SECTION (Fixed Height) */}
+      {/* TOP SECTION (Fixed Height) */}
       <div
         className={`relative z-10 shrink-0 flex flex-col items-center justify-center px-6 pt-12 pb-4 transition-all duration-1000 delay-300 ${
           isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
@@ -84,13 +83,12 @@ export default function LandingInterface({
         )}
       </div>
 
-      {/* 2. MIDDLE SECTION (SCROLLABLE AREA) */}
-      {/* نکته: اینجا flex-1 میدیم که بقیه فضا رو بگیره و overflow-hidden رو برمیداریم */}
+      {/* MIDDLE SECTION (SCROLLABLE AREA) */}
       <div className="relative z-10 flex-1 w-full min-h-0">
         <Suggestions products={featuredProducts} />
       </div>
 
-      {/* 3. FIXED BOTTOM BUTTON */}
+      {/*  FIXED BOTTOM BUTTON */}
       <div
         className={`relative z-20 shrink-0 w-full p-6 pb-8 bg-gradient-to-t from-[#1F1D2B] via-[#1F1D2B] to-transparent transition-all duration-1000 delay-700 ${
           isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"

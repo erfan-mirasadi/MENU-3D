@@ -21,7 +21,7 @@ export default function ChefDashboard() {
     const { restaurantId } = useRestaurantData()
     const { t } = useLanguage();
 
-    // 1. Initial Fetch
+    //  Initial Fetch
     useEffect(() => {
         if (!restaurantId) return
 
@@ -40,7 +40,7 @@ export default function ChefDashboard() {
         fetchOrders()
     }, [restaurantId])
 
-    // 2. Realtime Subscription
+    // Realtime Subscription
     useEffect(() => {
         if (!restaurantId) return
 
@@ -181,17 +181,17 @@ export default function ChefDashboard() {
             <Loader active={isLoggingOut} />
 
             {/* Main Content */}
-            <main className="flex-1 p-4 md:p-6 overflow-y-auto h-screen relative">
-                <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                    <div className="flex items-center gap-3">
+            <main className="flex-1 overflow-y-auto h-screen relative bg-dark-900">
+                <header className="sticky top-0 z-30 bg-dark-900/95 backdrop-blur-sm border-b border-dark-800 p-4 md:p-6 pt-[calc(env(safe-area-inset-top)+1rem)] md:pt-[calc(env(safe-area-inset-top)+1.5rem)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
+                    <div className="flex items-center gap-3 w-full md:w-auto">
                         {/* Mobile Sidebar Toggle */}
                         <button 
                             onClick={() => setIsSidebarOpen(prev => !prev)}
-                            className="md:hidden p-2 text-white bg-dark-800 rounded-lg shadow-md border border-dark-700 active:scale-95 transition-transform"
+                            className="md:hidden p-2 text-white bg-dark-800 rounded-lg shadow-md border border-dark-700 active:scale-95 transition-transform shrink-0"
                         >
                             {isSidebarOpen ? <RiMenuFoldLine size={24} /> : <RiMenuUnfoldLine size={24} />}
                         </button>
-                        <div>
+                        <div className="flex-1">
                             <h1 className="text-2xl md:text-4xl font-black text-text-light tracking-tight flex items-center gap-2">
                                 {t('kitchenDisplay')}
                             </h1>
@@ -215,24 +215,26 @@ export default function ChefDashboard() {
                     </div>
                 </header>
 
-                {groupedTickets.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-text-dim">
-                        <p className="text-2xl font-bold text-text-light">{t('allClear')}</p>
-                        <p>{t('noActiveOrders')}</p>
-                    </div>
-                ) : (
-                    <MasonryGrid className="pb-10">
-                        {groupedTickets.map(ticket => (
-                            <KitchenTicket 
-                                key={ticket.session.id} 
-                                session={ticket.session}
-                                orders={ticket.orders}
-                                onUpdateStatus={handleUpdateStatus}
-                                onServeAll={handleServeAll}
-                            />
-                        ))}
-                    </MasonryGrid>
-                )}
+                <div className="p-4 md:p-6 pt-6">
+                    {groupedTickets.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-text-dim">
+                            <p className="text-2xl font-bold text-text-light">{t('allClear')}</p>
+                            <p>{t('noActiveOrders')}</p>
+                        </div>
+                    ) : (
+                        <MasonryGrid className="pb-10">
+                            {groupedTickets.map(ticket => (
+                                <KitchenTicket 
+                                    key={ticket.session.id} 
+                                    session={ticket.session}
+                                    orders={ticket.orders}
+                                    onUpdateStatus={handleUpdateStatus}
+                                    onServeAll={handleServeAll}
+                                />
+                            ))}
+                        </MasonryGrid>
+                    )}
+                </div>
             </main>
         </div>
     )

@@ -7,21 +7,18 @@ export default function SmartMedia({
   alt,
   className,
   autoPlay = true,
-  isVisible: externalIsVisible = null, // اگر از بیرون کنترل بشه
+  isVisible: externalIsVisible = null,
 }) {
   const [internalIsVisible, setInternalIsVisible] = useState(false);
   const mediaRef = useRef(null);
-
   const iosUrl = files?.animation_url_ios;
   const androidUrl = files?.animation_url_android;
   const hasVideo = !!(iosUrl || androidUrl);
-
   const isVisible =
     externalIsVisible !== null ? externalIsVisible : internalIsVisible;
 
   useEffect(() => {
     if (!hasVideo || !autoPlay || externalIsVisible !== null) return;
-
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -59,7 +56,7 @@ export default function SmartMedia({
     );
   }
 
-  // If no valid image URL, render a placeholder
+  // placeholder
   if (!files?.image_url) {
     return (
       <div

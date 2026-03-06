@@ -20,12 +20,10 @@ export default function Suggestions({ products }) {
   };
 
   return (
-    // کانتینر اصلی: اسکرول عمودی فعال، اسکرول بار مخفی
     <div
       className="w-full h-full overflow-y-auto px-6 pb-20 pt-4"
       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
     >
-      {/* تیتر سکشن */}
       <div
         className="flex items-center justify-between mb-6 transition-all duration-700"
         style={{
@@ -53,7 +51,6 @@ export default function Suggestions({ products }) {
               transitionDelay: `${1200 + index * 200}ms`,
             }}
           >
-            {/* 1. لیبل تخفیف (چسبیده بالا راست) */}
             <div className="absolute top-0 right-0 z-20">
               <div className="bg-[#ea7c69] text-white font-black text-sm px-4 py-2 rounded-bl-2xl shadow-lg flex flex-col items-center leading-none">
                 <span>20%</span>
@@ -68,8 +65,6 @@ export default function Suggestions({ products }) {
               priority={index === 0}
               className="object-cover transition-transform duration-700 group-hover:scale-110"
             />
-
-            {/* 3. گرادینت تیره از پایین */}
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90" />
             <div className="absolute bottom-0 left-0 w-full p-5">
               <h3 className="text-white text-2xl font-black leading-none drop-shadow-md mb-1">

@@ -39,10 +39,12 @@ export default function DashboardPage() {
   // Local state for layout changes
   const [localTables, setLocalTables] = useState([])
   const [floorStyle, setFloorStyle] = useState('terazzo') 
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   // Logout (mobile only)
   const handleLogout = async () => {
     try {
+      setIsLoggingOut(true);
       const { error } = await supabase.auth.signOut({ scope: 'local' });
       if (error) throw error;
       toast.success('Logged out');
@@ -51,6 +53,7 @@ export default function DashboardPage() {
     } catch (err) {
       console.error('Logout Error:', err);
       toast.error('Failed to log out');
+      setIsLoggingOut(false);
     }
   };
 
@@ -486,7 +489,7 @@ export default function DashboardPage() {
       )}
 
       {/* UI Overlay */}
-      <div className="absolute inset-0 z-10 pointer-events-none p-3 md:p-6 flex flex-col justify-between">
+      <div className="absolute inset-0 z-10 pointer-events-none px-3 pb-3 px-[env(safe-area-inset-left)] pt-[calc(env(safe-area-inset-top)+0.75rem)] md:px-6 md:pb-6 md:pt-[calc(env(safe-area-inset-top)+1.5rem)] flex flex-col justify-between">
         
         {/* Header */}
         <header className="flex flex-wrap justify-between items-start gap-2 pointer-events-auto">
@@ -677,10 +680,11 @@ export default function DashboardPage() {
                     {/* Logout — mobile only */}
                     <button
                         onClick={handleLogout}
-                        className="md:hidden bg-[#252836]/90 backdrop-blur-md p-2 rounded-xl shadow-lg border border-white/10 text-red-400 hover:bg-red-500/20 active:scale-90 transition-all"
+                        disabled={isLoggingOut}
+                        className="md:hidden bg-[#252836]/90 backdrop-blur-md p-2 rounded-xl shadow-lg border border-white/10 text-red-400 hover:bg-red-500/20 active:scale-90 transition-all disabled:opacity-50 min-w-[36px] min-h-[36px] flex items-center justify-center"
                         title="Logout"
                     >
-                        <RiLogoutBoxRLine size={18} />
+                        {isLoggingOut ? <Loader size="sm" /> : <RiLogoutBoxRLine size={18} />}
                     </button>
                 </div>
             )}

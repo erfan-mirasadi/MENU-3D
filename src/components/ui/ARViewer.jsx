@@ -12,7 +12,6 @@ export default function ARViewer({ modelUrl, posterUrl, alt, children }) {
     if (!isDefined) {
       import("@google/model-viewer")
         .then(() => {
-          // Loaded
         })
         .catch((err) => {
           if (!err.message.includes("already been used")) {
@@ -25,7 +24,6 @@ export default function ARViewer({ modelUrl, posterUrl, alt, children }) {
   if (!isMounted) return null;
 
   return (
-    // @ts-ignore
     <model-viewer
       ref={modelViewerRef}
       src={modelUrl}

@@ -5,7 +5,6 @@ import { useState } from "react";
 export default function LanguageSwitcher() {
   const { language, setLanguage, availableLanguages } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-
   const current = availableLanguages.find((l) => l.code === language);
   if (availableLanguages.length <= 1) return null;
 

@@ -1,27 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { FaConciergeBell, FaFileInvoiceDollar } from "react-icons/fa";
 import { serviceRequestService } from "@/services/serviceRequestService";
 import toast from "react-hot-toast";
-
 import { useRestaurantFeatures } from "@/app/hooks/useRestaurantFeatures";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function ServiceButtons({ restaurantId, tableId, sessionId }) {
-  const [loading, setLoading] = useState(null); // 'call_waiter' | 'bill' | null
-  const [confirming, setConfirming] = useState(null); // 'call_waiter' | 'bill' | null
-  
+  const [loading, setLoading] = useState(null); 
+  const [confirming, setConfirming] = useState(null); 
   const { isEnabled, loading: featuresLoading } = useRestaurantFeatures(); 
   const { t } = useLanguage();
 
   const handleClick = (type) => {
       if (confirming === type) {
-          // Second click: CONFIRM
           handleRequest(type);
       } else {
-          // First click: EXPAND
           setConfirming(type);
       }
   };
@@ -43,7 +38,7 @@ export default function ServiceButtons({ restaurantId, tableId, sessionId }) {
       } else {
         const msg = type === 'bill' ? t('billSent') : t('waiterSent');
         toast.success(msg);
-        setConfirming(null); // Close after success
+        setConfirming(null); 
       }
     } catch (err) {
       console.error("Request failed", err);

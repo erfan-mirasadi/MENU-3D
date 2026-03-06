@@ -1,16 +1,14 @@
 "use client";
+import { useState, useRef, useImperativeHandle } from "react";
 
-import { useState, useRef, forwardRef, useImperativeHandle } from "react";
-
-const HiddenARLauncher = forwardRef((props, ref) => {
+export default function HiddenARLauncher({ arRef }) {
   const [url, setUrl] = useState(null);
   const internalRef = useRef(null);
   const isSetup = useRef(false);
 
-  useImperativeHandle(ref, () => ({
+  useImperativeHandle(arRef, () => ({
     launchAR: async (modelUrl) => {
       try {
-        //  Load library if needed
         if (!customElements.get("model-viewer")) {
            await import("@google/model-viewer");
         }
@@ -22,13 +20,11 @@ const HiddenARLauncher = forwardRef((props, ref) => {
            isSetup.current = true;
         }
 
-        // 3. Set URL to trigger loading
         setUrl(modelUrl);
 
         setTimeout(() => {
            const viewer = internalRef.current;
            if (viewer) {
-             // If the model is not loaded yet
              viewer.activateAR();
            }
         }, 100);
@@ -58,8 +54,4 @@ const HiddenARLauncher = forwardRef((props, ref) => {
         ></model-viewer>
     </div>
   );
-});
-
-HiddenARLauncher.displayName = "HiddenARLauncher";
-
-export default HiddenARLauncher;
+}
