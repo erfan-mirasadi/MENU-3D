@@ -118,9 +118,9 @@ export const RestaurantProvider = ({ children }) => {
       if (!rId) {
         const profile = await getUserProfile(supabase, user.id);
         rId = profile?.restaurant_id;
-        setRestaurantId(rId);
-
+        
         if (rId) {
+            setRestaurantId(rId);
             const restaurantData = await getRestaurantById(rId);
             setRestaurant(restaurantData);
         } else {

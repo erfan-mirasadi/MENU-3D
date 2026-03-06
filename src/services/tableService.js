@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
 
-export async function getTableByNumber(tableNumber, restaurantId) {
+export async function getTableByNumber(tableNumber, restaurantId, signal) {
   if (!restaurantId || !tableNumber) {
       console.error("getTableByNumber called without restaurantId or tableNumber");
       return null;
@@ -11,10 +11,19 @@ export async function getTableByNumber(tableNumber, restaurantId) {
     .select("id, table_number, restaurant_id")
     .ilike("table_number", tableNumber)
     .eq("restaurant_id", restaurantId);
+    
+  if (signal) {
+    query = query.abortSignal(signal);
+  }
+  
   const { data, error } = await query.maybeSingle();
   if (error) {
-    console.error("Error fetching table:", error);
-    toast.error("Failed to fetch table");
+    if (error.name === "AbortError" || error.message?.includes("AbortError")) {
+      console.log("getTableByNumber aborted");
+    } else {
+      console.error("Error fetching table:", error);
+      toast.error("Failed to fetch table");
+    }
     return null;
   }
   return data;

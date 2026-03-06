@@ -1,25 +1,34 @@
 import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
 
-export async function getActiveSession(tableId) {
-  const { data, error } = await supabase
+export async function getActiveSession(tableId, signal) {
+  let query = supabase
     .from("sessions")
     .select("*")
     .eq("table_id", tableId)
     .neq("status", "closed")
     .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(1);
+
+  if (signal) {
+    query = query.abortSignal(signal);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error && error.code !== "PGRST116") {
-    console.error("Error fetching session:", error);
+    if (error.name === "AbortError" || error.message?.includes("AbortError")) {
+       console.log("getActiveSession aborted");
+    } else {
+       console.error("Error fetching session:", error);
+    }
   }
 
   return data;
 }
 
-export async function createSession(tableId, restaurantId) {
-  const { data, error } = await supabase
+export async function createSession(tableId, restaurantId, signal) {
+  let query = supabase
     .from("sessions")
     .insert([
       {
@@ -28,10 +37,19 @@ export async function createSession(tableId, restaurantId) {
         status: "ordering",
       },
     ])
-    .select()
-    .single();
+    .select();
+
+  if (signal) {
+    query = query.abortSignal(signal);
+  }
+
+  const { data, error } = await query.single();
 
   if (error) {
+    if (error.name === "AbortError" || error.message?.includes("AbortError")) {
+      console.log("createSession aborted");
+      return null;
+    }
     console.error("Error creating session:", error);
     toast.error("Failed to create session");
     throw error;

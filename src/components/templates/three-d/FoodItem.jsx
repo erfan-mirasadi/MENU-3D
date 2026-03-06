@@ -101,23 +101,61 @@ function RealModel({ url, productTitle, onLoad }) {
         obj.castShadow = false;
         obj.receiveShadow = false;
         if (obj.material) {
-          // 1. Clone material to prevent WebGL feedback loops (crash fix)
-          obj.material = obj.material.clone();
+          //  Keep a reference to the original material's map (texture)
+          const originalMap = obj.material.map;
           
-          // 2. Disable heavy glass rendering (transmission) for mobile performance
-          if (obj.material.transmission > 0) {
-            obj.material.transparent = true;
-            obj.material.opacity = Math.max(0.6, 1.0 - obj.material.transmission);
-            obj.material.transmission = 0;
+          if (originalMap) {
+            //  Clone the texture so we can safely dispose it without affecting the cached model
+            const clonedMap = originalMap.clone();
+            clonedMap.needsUpdate = true;
+            
+            //  Increase Anisotropy for sharp textures at glancing angles
+            clonedMap.anisotropy = gl.capabilities.getMaxAnisotropy();
+            
+            //  Convert light-heavy Standard materials to cheap Basic materials (since scanned models have baked lighting)
+            obj.material = new THREE.MeshBasicMaterial({
+              map: clonedMap,
+              color: obj.material.color,
+              transparent: true,
+              opacity: obj.material.transmission > 0 ? Math.max(0.6, 1.0 - obj.material.transmission) : obj.material.opacity,
+              side: obj.material.side,
+              alphaTest: obj.material.alphaTest
+            });
+            
+          } else {
+             // Fallback for objects without textures: Just clone and simplify if needed
+             obj.material = new THREE.MeshBasicMaterial({
+                color: obj.material.color,
+                transparent: obj.material.transparent,
+                opacity: obj.material.transmission > 0 ? Math.max(0.6, 1.0 - obj.material.transmission) : obj.material.opacity,
+                side: obj.material.side
+             });
           }
           
-          if (obj.material.map) obj.material.map.needsUpdate = true;
           obj.material.needsUpdate = true;
         }
       }
     });
     return c;
-  }, [scene]);
+  }, [scene, gl]);
+
+  // Clean up cloned materials and textures when this component unmounts
+  useEffect(() => {
+    return () => {
+      if (clone) {
+        clone.traverse((obj) => {
+          if (obj.isMesh && obj.material) {
+             // Dispose of the texture if a map exists
+             if (obj.material.map) {
+                 obj.material.map.dispose();
+             }
+             // Dispose of the top-level material
+             obj.material.dispose();
+          }
+        });
+      }
+    };
+  }, [clone]);
 
   if (error) return <PlaceholderMesh />;
   if (!clone) return <PlaceholderMesh />;

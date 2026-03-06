@@ -19,13 +19,33 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
   const [isLoading, setIsLoading] = useState(true);
   const sessionRef = useRef(null);
 
-  //  Setup Session & Guest
+    // Track initialization to avoid loop
+    const initializationRef = useRef({ tableNumber: null, restaurantId: null, started: false });
+
+    //  Setup Session & Guest
   useEffect(() => {
     if (!tableNumberFromUrl || !restaurantId) {
       setIsLoading(false);
       return;
     }
     
+    // Prevent duplicate triggers for the exact same table & restaurant
+    if (
+        initializationRef.current.started && 
+        initializationRef.current.tableNumber === tableNumberFromUrl &&
+        initializationRef.current.restaurantId === restaurantId
+    ) {
+        return;
+    }
+
+    initializationRef.current = {
+        tableNumber: tableNumberFromUrl,
+        restaurantId: restaurantId,
+        started: true
+    };
+
+    const controller = new AbortController();
+    const signal = controller.signal;
     let ignore = false;
 
     const initializeSession = async () => {
@@ -44,9 +64,10 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
         const tableData = await getTableByNumber(
           tableNumberFromUrl,
           restaurantId,
+          signal
         );
 
-        if (ignore) return;
+        if (ignore || signal.aborted) return;
 
         if (!tableData) {
           console.error("❌ Table not found");
@@ -59,19 +80,19 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
         const realRestaurantId = tableData.restaurant_id;
 
         // Check for active session
-        let session = await getActiveSession(realTableUuid);
-        if (ignore) return;
+        let session = await getActiveSession(realTableUuid, signal);
+        if (ignore || signal.aborted) return;
         if (!session) {
           console.log("🆕 Creating new session...");
-          session = await createSession(realTableUuid, realRestaurantId);
+          session = await createSession(realTableUuid, realRestaurantId, signal);
         } else {
           console.log("✅ Found active session:", session.id);
         }
-        if (ignore) return;
+        if (ignore || signal.aborted) return;
         setSessionId(session?.id);
         sessionRef.current = session?.id;
       } catch (err) {
-        if (!ignore) {
+        if (!ignore && !signal.aborted) {
           console.error("❌ Error init session:", err);
           setIsLoading(false);
         }
@@ -82,7 +103,9 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
 
     return () => {
       ignore = true;
-      console.log("🧹 Cleanup: Ignoring stale session initialization");
+      controller.abort();
+      console.log("🧹 Cleanup: Ignoring stale session initialization and aborting requests");
+      initializationRef.current.started = false; // Reset on cleanup
     };
   }, [tableNumberFromUrl, restaurantId]);
 
