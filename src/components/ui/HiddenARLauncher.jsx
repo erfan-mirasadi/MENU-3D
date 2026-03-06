@@ -24,17 +24,8 @@ export default function HiddenARLauncher({ arRef }) {
         setUrl(modelUrl);
         setIosUrl(modelUrlIos);
 
-        // iOS Fallback check - Using direct page navigation
-        // Safari natively intercepts direct navigation to .usdz/.reality and launches AR Quick Look
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        
-        if (isIOS && modelUrlIos) {
-          window.location.href = modelUrlIos;
-          return; // Skip model-viewer activation on iOS
-        }
-
-        // Default activation (Android / Web) requires a tiny delay for model-viewer to catch up
         setTimeout(() => {
+           // Default activation (Android / Web / iOS via model-viewer)
            const viewer = internalRef.current;
            if (viewer) {
              viewer.activateAR();

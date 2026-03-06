@@ -23,15 +23,6 @@ export default function ARViewer({ modelUrl, modelUrlIos, posterUrl, alt, childr
 
   if (!isMounted) return null;
 
-  const handleARClick = (e) => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if (isIOS && modelUrlIos) {
-      e.preventDefault();
-      e.stopPropagation();
-      window.location.href = modelUrlIos;
-    }
-  };
-
   return (
     <>
       <model-viewer
@@ -52,7 +43,6 @@ export default function ARViewer({ modelUrl, modelUrlIos, posterUrl, alt, childr
         interaction-prompt="auto"
         interaction-prompt-style="wiggle"
         style={{ width: "100%", height: "100%", outline: "none" }}
-        onClick={handleARClick}
       >
         {children}
       </model-viewer>
