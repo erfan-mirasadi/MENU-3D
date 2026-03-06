@@ -48,6 +48,7 @@ export default function ProductForm({
         is_available: initialData.is_available,
         image_url: initialData.image_url || "",
         model_url: initialData.model_url || "",
+        model_url_ios: initialData.model_url_ios || "",
         animation_url_android: initialData.animation_url_android || "",
         animation_url_ios: initialData.animation_url_ios || "",
       };
@@ -65,6 +66,7 @@ export default function ProductForm({
       is_available: true,
       image_url: "",
       model_url: "",
+      model_url_ios: "",
       animation_url_android: "",
       animation_url_ios: "",
     };
@@ -116,6 +118,7 @@ export default function ProductForm({
         is_available: formData.is_available,
         image_url: formData.image_url || null,
         model_url: formData.model_url || null,
+        model_url_ios: formData.model_url_ios || null,
         animation_url_android: formData.animation_url_android || null,
         animation_url_ios: formData.animation_url_ios || null,
       };

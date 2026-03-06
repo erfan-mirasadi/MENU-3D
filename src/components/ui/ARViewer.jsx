@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 
-export default function ARViewer({ modelUrl, posterUrl, alt, children }) {
+export default function ARViewer({ modelUrl, modelUrlIos, posterUrl, alt, children }) {
   const [isMounted, setIsMounted] = useState(false);
   const modelViewerRef = useRef(null);
 
@@ -27,6 +27,7 @@ export default function ARViewer({ modelUrl, posterUrl, alt, children }) {
     <model-viewer
       ref={modelViewerRef}
       src={modelUrl}
+      ios-src={modelUrlIos}
       poster={posterUrl}
       alt={alt}
       ar

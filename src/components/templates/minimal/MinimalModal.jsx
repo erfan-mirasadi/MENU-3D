@@ -30,6 +30,7 @@ export default function MinimalModal({ product, onClose, onAddToCart, isGuestMod
           {product.model_url || product.model_lowpoly_url ? (
             <ARViewer
               modelUrl={product.model_url || product.model_lowpoly_url}
+              modelUrlIos={product.model_url_ios}
               posterUrl={product.image_url}
               alt={content(product.title)}
             >

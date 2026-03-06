@@ -70,7 +70,7 @@ export default function ThreeDLayout({ restaurant, categories, isGuestMode }) {
     // Direct trigger for headless AR
     const urlToUse = currentBlobUrl || focusedProduct?.model_url;
     if (arLauncherRef.current && urlToUse) {
-      arLauncherRef.current.launchAR(urlToUse);
+      arLauncherRef.current.launchAR(urlToUse, focusedProduct?.model_url_ios);
     }
   }, [currentBlobUrl, focusedProduct]);
 

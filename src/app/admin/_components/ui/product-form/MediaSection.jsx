@@ -33,6 +33,16 @@ export default function MediaSection({ formData, setFormData, isEditing, restaur
           restaurantSlug={restaurantSlug}
         />
 
+        {/* iOS 3D Model */}
+        <R2FileUploader
+          label="iOS 3D Model (.glb, .usdz)"
+          accept=".glb, .usdz, .gltf"
+          maxSize={5}
+          value={formData.model_url_ios}
+          onChange={(url) => updateField("model_url_ios", url)}
+          restaurantSlug={restaurantSlug}
+        />
+
         {/* Android Animation */}
         <R2FileUploader
           label="Android Animation (.webm)"

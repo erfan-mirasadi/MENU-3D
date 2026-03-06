@@ -22,6 +22,7 @@ export default function ModernModal({ product, onClose, onAddToCart, isGuestMode
           {product.model_url || product.model_lowpoly_url ? (
             <ARViewer
               modelUrl={product.model_url || product.model_lowpoly_url}
+              modelUrlIos={product.model_url_ios}
               posterUrl={product.image_url}
               alt={content(product.title)}
             >

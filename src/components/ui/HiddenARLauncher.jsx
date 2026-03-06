@@ -3,11 +3,12 @@ import { useState, useRef, useImperativeHandle } from "react";
 
 export default function HiddenARLauncher({ arRef }) {
   const [url, setUrl] = useState(null);
+  const [iosUrl, setIosUrl] = useState(null);
   const internalRef = useRef(null);
   const isSetup = useRef(false);
 
   useImperativeHandle(arRef, () => ({
-    launchAR: async (modelUrl) => {
+    launchAR: async (modelUrl, modelUrlIos) => {
       try {
         if (!customElements.get("model-viewer")) {
            await import("@google/model-viewer");
@@ -21,6 +22,7 @@ export default function HiddenARLauncher({ arRef }) {
         }
 
         setUrl(modelUrl);
+        setIosUrl(modelUrlIos);
 
         setTimeout(() => {
            const viewer = internalRef.current;
@@ -42,6 +44,7 @@ export default function HiddenARLauncher({ arRef }) {
         <model-viewer
           ref={internalRef}
           src={url}
+          ios-src={iosUrl}
           ar
           ar-modes="webxr scene-viewer quick-look"
           ar-scale="auto"
