@@ -25,6 +25,18 @@ export default function HiddenARLauncher({ arRef }) {
         setIosUrl(modelUrlIos);
 
         setTimeout(() => {
+           // iOS Fallback check
+           const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+           
+           if (isIOS && modelUrlIos) {
+             const iosLink = document.getElementById('ios-ar-quicklook-link');
+             if (iosLink) {
+               iosLink.click();
+               return; // Skip model-viewer activation on iOS if direct link works
+             }
+           }
+
+           // Default activation (Android / Web)
            const viewer = internalRef.current;
            if (viewer) {
              viewer.activateAR();
@@ -40,21 +52,35 @@ export default function HiddenARLauncher({ arRef }) {
   if (!url) return null;
 
   return (
-    <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
-        <model-viewer
-          ref={internalRef}
-          src={url}
-          {...(iosUrl ? { "ios-src": iosUrl } : {})}
-          ar
-          ar-modes="webxr scene-viewer quick-look"
-          ar-scale="auto"
-          ar-placement="floor"
-          ktx2-transcoder-path="/libs/basis/" 
-          meshopt-decoder-path="/libs/meshopt/meshopt_decoder.js"
-          loading="eager" 
-          camera-controls
-          onError={(e) => console.error("ModelViewer Error:", e)}
-        ></model-viewer>
-    </div>
+    <>
+      <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
+          <model-viewer
+            ref={internalRef}
+            src={url}
+            {...(iosUrl ? { "ios-src": iosUrl } : {})}
+            ar
+            ar-modes="webxr scene-viewer quick-look"
+            ar-scale="auto"
+            ar-placement="floor"
+            ktx2-transcoder-path="/libs/basis/" 
+            meshopt-decoder-path="/libs/meshopt/meshopt_decoder.js"
+            loading="eager" 
+            camera-controls
+            onError={(e) => console.error("ModelViewer Error:", e)}
+          ></model-viewer>
+      </div>
+      
+      {/* iOS Direct Quick Look Fallback Container */}
+      {iosUrl && (
+        <a 
+          id="ios-ar-quicklook-link" 
+          rel="ar" 
+          href={iosUrl} 
+          style={{ display: 'none' }}
+        >
+          <img src="" alt="AR trigger" />
+        </a>
+      )}
+    </>
   );
 }

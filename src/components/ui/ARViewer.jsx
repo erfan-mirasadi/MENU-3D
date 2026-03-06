@@ -23,27 +23,54 @@ export default function ARViewer({ modelUrl, modelUrlIos, posterUrl, alt, childr
 
   if (!isMounted) return null;
 
+  const handleARClick = (e) => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS && modelUrlIos) {
+      e.preventDefault();
+      e.stopPropagation();
+      const iosLink = document.getElementById(`ios-ar-quicklook-link-viewer-${modelUrl}`);
+      if (iosLink) {
+        iosLink.click();
+      }
+    }
+  };
+
   return (
-    <model-viewer
-      ref={modelViewerRef}
-      src={modelUrl}
-      {...(modelUrlIos ? { "ios-src": modelUrlIos } : {})}
-      poster={posterUrl}
-      alt={alt}
-      ar
-      ar-modes="webxr scene-viewer quick-look"
-      ar-scale="auto"
-      ar-placement="floor"
-      camera-controls
-      auto-rotate
-      shadow-intensity="1"
-      shadow-softness="0.8"
-      tone-mapping="commerce"
-      interaction-prompt="auto"
-      interaction-prompt-style="wiggle"
-      style={{ width: "100%", height: "100%", outline: "none" }}
-    >
-      {children}
-    </model-viewer>
+    <>
+      <model-viewer
+        ref={modelViewerRef}
+        src={modelUrl}
+        {...(modelUrlIos ? { "ios-src": modelUrlIos } : {})}
+        poster={posterUrl}
+        alt={alt}
+        ar
+        ar-modes="webxr scene-viewer quick-look"
+        ar-scale="auto"
+        ar-placement="floor"
+        camera-controls
+        auto-rotate
+        shadow-intensity="1"
+        shadow-softness="0.8"
+        tone-mapping="commerce"
+        interaction-prompt="auto"
+        interaction-prompt-style="wiggle"
+        style={{ width: "100%", height: "100%", outline: "none" }}
+        onClick={handleARClick}
+      >
+        {children}
+      </model-viewer>
+      
+      {/* iOS Direct Quick Look Fallback Container */}
+      {modelUrlIos && (
+        <a 
+          id={`ios-ar-quicklook-link-viewer-${modelUrl}`}
+          rel="ar" 
+          href={modelUrlIos} 
+          style={{ display: 'none' }}
+        >
+          <img src="" alt="AR trigger" />
+        </a>
+      )}
+    </>
   );
 }
