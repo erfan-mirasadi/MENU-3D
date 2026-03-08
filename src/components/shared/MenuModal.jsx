@@ -76,12 +76,15 @@ export default function MenuModal({
     });
   }, [products, searchTerm, selectedCategory]);
 
-  // Helper to find quantity in cart
+  // Helper to find quantity in cart (only pending/draft items — not items already in kitchen)
   const getQty = (productId) => {
-    const item = cartItems.find(
-      (i) => i.product_id === productId || i.product?.id === productId
-    );
-    return item ? item.quantity : 0;
+    return cartItems
+      .filter(
+        (i) =>
+          (i.product_id === productId || i.product?.id === productId) &&
+          i.status === "pending"
+      )
+      .reduce((sum, i) => sum + i.quantity, 0);
   };
 
   if (!isOpen) return null;

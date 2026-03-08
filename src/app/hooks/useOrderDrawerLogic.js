@@ -102,10 +102,12 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
   const confirmedItems = localItems.filter((i) => i.status === "confirmed");
   const activeItems = localItems.filter((i) => ["preparing", "ready", "served"].includes(i.status));
 
-  const totalAmount = localItems.reduce(
-    (sum, item) => sum + (item.unit_price_at_order || 0) * item.quantity,
-    0
-  );
+  const totalAmount = localItems
+    .filter((item) => ['confirmed', 'preparing', 'ready', 'served'].includes(item.status))
+    .reduce(
+      (sum, item) => sum + (item.unit_price_at_order || 0) * item.quantity,
+      0
+    );
 
   // Handlers
 

@@ -25,7 +25,6 @@ import React from 'react';
 const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
   const { t, language } = useLanguage();
   const { restaurant } = useRestaurantData();
-  /* ... (existing state) */
   const [activeTab, setActiveTab] = useState("FULL"); 
   const [processing, setProcessing] = useState(false);
   const [splitMode, setSplitMode] = useState("PEOPLE");
@@ -36,7 +35,6 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [mixedCash, setMixedCash] = useState("");
   const [mixedCard, setMixedCard] = useState("");
-
   // Adjustment State
   const [showAdjModal, setShowAdjModal] = useState(false);
   const [adjData, setAdjData] = useState({ title: '', amount: '', type: 'charge' });
@@ -88,7 +86,9 @@ const PaymentModal = ({ isOpen, onClose, session, onCheckout, onRefetch }) => {
   /* ... (data logic remains same) */
   // ... (orderItems, totalOrderAmount definition) ...
   const orderItems = useMemo(() => {
-    return session?.order_items?.filter(item => item.status !== 'cancelled') || [];
+    return session?.order_items?.filter(item => 
+      ['confirmed', 'preparing', 'ready', 'served'].includes(item.status)
+    ) || [];
   }, [session]);
 
   const totalOrderAmount = useMemo(() => {
