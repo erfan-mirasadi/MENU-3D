@@ -1,12 +1,9 @@
 "use client";
 import { useEffect } from "react";
 import { FaPrint } from "react-icons/fa";
-// Hooks
 import { useOrderDrawerLogic } from "@/app/hooks/useOrderDrawerLogic";
 import { useLanguage } from "@/context/LanguageContext";
-// Animation Hook
-import { useMountTransition } from "@/app/hooks/useMountTransition";
-// Sub-Components
+import useMountTransition from "@/app/hooks/useMountTransition";
 import DrawerHeader from "./DrawerHeader";
 import DrawerFooter from "./DrawerFooter";
 import DrawerEmptyState from "./DrawerEmptyState";
@@ -14,7 +11,6 @@ import PendingOrderList from "./PendingOrderList";
 import ConfirmedOrderList from "./ConfirmedOrderList";
 import ActiveOrderList from "./ActiveOrderList";
 import ReceiptTemplate from "../ReceiptTemplate";
-// Shared Modals (Outside of this folder)
 import MenuModal from "../MenuModal";
 import PaymentModal from "../PaymentModal";
 import VoidReasonModal from "../VoidReasonModal";
@@ -106,7 +102,7 @@ export default function OrderDrawer({
                         />
                     ) : (
                         <>
-                            {/* 1. Pending Items (Both roles see them differently) */}
+                            {/* Pending Items (Both roles see them differently) */}
                             <PendingOrderList
                                 items={pendingItems}
                                 role={role}
@@ -121,7 +117,7 @@ export default function OrderDrawer({
                                 }
                             />
 
-                            {/* 2. Confirmed Items (Cashier specific usually) */}
+                            {/*Confirmed Items (Cashier specific usually) */}
                             {isBatchEditing === 'confirmed' ? (
                                 <ActiveOrderList
                                     items={[]}
@@ -152,7 +148,7 @@ export default function OrderDrawer({
                                 />
                             )}
 
-                            {/* 3.1. In Kitchen Items (Yellow) */}
+                            {/* In Kitchen Items (Yellow) */}
                             {isBatchEditing === 'kitchen' ? (
                                 <ActiveOrderList
                                     items={[]}
@@ -258,8 +254,12 @@ export default function OrderDrawer({
                 onClose={() => setters.setIsPaymentModalOpen(false)}
                 session={session ? {...session, table } : null}
                 onCheckout={async (sid, method, amt) => {
-                    const success = await actions.handleCheckoutWrapper(sid, method, amt);
-                    if (success) onClose();
+                    const res = await actions.handleCheckoutWrapper(sid, method, amt);
+                    if (res?.success && res?.fullyPaid) {
+                        setters.setIsPaymentModalOpen(false);
+                        onClose();
+                    }
+                    return res;
                 }}
                 onRefetch={onRefetch}
             />

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { FaSearch, FaTimes, FaPlus, FaMinus } from "react-icons/fa";
-import { getMenuProducts } from "@/services/waiterService";
+import { getMenuProducts } from "@/services/staffService";
 import { getCategories } from "@/services/categoryService";
 import SmartMedia from "@/components/ui/SmartMedia";
 import Loader from "@/components/ui/Loader";

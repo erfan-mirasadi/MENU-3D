@@ -1,19 +1,17 @@
 "use client";
 import { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { supabase } from "@/lib/supabase";
 import { playNotificationSound } from "@/lib/sound";
-import { getUserProfile } from "@/services/userService";
-import { getRestaurantById, getRestaurantByOwnerId } from "@/services/restaurantService";
+import { getCurrentUser, subscribeToAuthState, getCurrentUserProfile } from "@/services/authService";
+import { getRestaurantById, getRestaurantByOwnerId, getOperationalTables, getOperationalSessions, getRestaurantRealtimeChannel, cleanupRestaurantRealtimeChannel } from "@/services/restaurantService";
 import toast from "react-hot-toast";
 import { RiNotification3Line, RiCheckDoubleLine } from "react-icons/ri";
+import { processPaymentLogic } from "@/services/paymentService";
 
-// --- CONTEXT DEFINITION ---
 const RestaurantContext = createContext(null);
 
-// --- PROVIDER COMPONENT ---
 // This acts as a Singleton for data fetching.
 // It should be wrapped around the root of the application (e.g. layout.js)
-export const RestaurantProvider = ({ children }) => {
+export default function RestaurantProvider({ children }) {
   const [tables, setTables] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,9 +29,9 @@ export const RestaurantProvider = ({ children }) => {
     sessionsRef.current = sessions;
   }, [sessions]);
 
-  // 1. Auth Listener — handles both initial session and post-login navigation
+  // Auth Listener — handles both initial session and post-login navigation
   useEffect(() => {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {  
+      const subscription = subscribeToAuthState((event, session) => {  
           if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
               if (session?.user) {
                   fetchData();
@@ -53,22 +51,26 @@ export const RestaurantProvider = ({ children }) => {
       return () => subscription.unsubscribe();
   }, []);
 
-  // 1a. Fetch Operational Data (Tables & Sessions) - Efficient re-fetcher
+  // Fetch Operational Data (Tables & Sessions) - Efficient re-fetcher
   const fetchOperationalData = useCallback(async (rId) => {
 
 
     try {
         console.log(`📡 [useRestaurantData] Fetching Operational Data for Restaurant ID: ${rId} ...`);
         
-        // Fetch Tables
-        const { data: tablesData, error: tablesError } = await supabase
-            .from("tables")
-            .select("id, restaurant_id, table_number, qr_token, layout_data") 
-            .eq("restaurant_id", rId)
-            .order("table_number", { ascending: true });
-
-        if (tablesError) console.error("❌ Table Fetch Error:", tablesError);
-        console.log("📊 Raw Tables Data:", tablesData);
+        // Fetch Tables and Sessions concurrently
+        const [tablesData, sessionsData] = await Promise.all([
+            getOperationalTables(rId).catch(err => {
+                console.error("❌ Table Fetch Error:", err);
+                return [];
+            }),
+            getOperationalSessions(rId).catch(err => {
+                console.error("❌ Session fetch error:", err);
+                return [];
+            })
+        ]);
+        
+        console.log(`✅ [useRestaurantData] Data Loaded. Tables: ${tablesData?.length || 0}, Sessions: ${sessionsData?.length || 0}`);
         
         // Flatten layout_data to top-level properties (x, y, width, etc.)
         const formattedTables = (tablesData || []).map(table => ({
@@ -77,46 +79,23 @@ export const RestaurantProvider = ({ children }) => {
         }));
 
         setTables(formattedTables);
-
-        // Fetch Sessions
-        const { data: sessionsData, error } = await supabase
-            .from("sessions")
-            .select(`
-            id, created_at, status, table_id, restaurant_id, note,
-            tables (id, table_number),
-            bills (id, total_amount, paid_amount, remaining_amount, status, adjustments),
-            order_items (
-                id, status, quantity, unit_price_at_order, created_at, product_id, session_id, added_by_guest_id,
-                product:products ( title, price, image_url ) 
-            ),
-            service_requests ( id, status, request_type )
-            `)
-            .eq("restaurant_id", rId)
-            .neq("status", "closed");
-
-        if (error) console.error("❌ Session fetch error:", error);
-
-        console.log(`✅ [useRestaurantData] Data Loaded. Tables: ${formattedTables.length}, Sessions: ${sessionsData?.length || 0}`);
-        
         setSessions(sessionsData || []);
     } catch (error) {
         console.error("Error fetching operational data:", error);
     }
   }, []);
 
-  // 1b. Fetch All Data (Initial Setup)
+  // Fetch All Data (Initial Setup)
   const fetchData = useCallback(async () => {
     try {
       // Fetching Data (Singleton Context)... 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) return;
 
       // Ensure we have the restaurant ID
       let rId = restaurantId;
       if (!rId) {
-        const profile = await getUserProfile(supabase, user.id);
+        const profile = await getCurrentUserProfile(user.id);
         rId = profile?.restaurant_id;
         
         if (rId) {
@@ -151,12 +130,12 @@ export const RestaurantProvider = ({ children }) => {
     }
   }, [restaurantId, fetchOperationalData]);
 
-  // 2. Initial Fetch
+  // Initial Fetch
   useEffect(() => {
     fetchData();
   }, []);
 
-  // 3. Setup Realtime Listener (High-Performance Version)
+  // Setup Realtime Listener (High-Performance Version)
   useEffect(() => {
     if (!restaurantId) return;
 
@@ -164,7 +143,7 @@ export const RestaurantProvider = ({ children }) => {
     // Admin pages (Dashboard, Tables, etc.) do not need live order updates.
     // They rely on manual refetching (swr-style) or page reloads.
     if (window.location.pathname.includes('/admin')) return;
-    const channel = supabase.channel(`restaurant-${restaurantId}`);
+    const channel = getRestaurantRealtimeChannel(restaurantId);
 
     const handleUpdate = () => {
        // Disable Realtime for Admin
@@ -174,7 +153,7 @@ export const RestaurantProvider = ({ children }) => {
        timeoutRef.current = setTimeout(() => {
            console.log("⏱️ Debounce Trigger: Fetching Data...");
            fetchOperationalData(restaurantId);
-       }, 500); // 500ms debounce
+       }, 500);
     };
 
     channel
@@ -228,7 +207,7 @@ export const RestaurantProvider = ({ children }) => {
              const currentSessions = sessionsRef.current;
              const sessionId = payload.new?.session_id || payload.old?.session_id;
 
-             // [NEW] Notification Logic
+             // Notification Logic
              if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
                 const newStatus = payload.new?.status;
                 const pathname = window.location.pathname;
@@ -281,7 +260,7 @@ export const RestaurantProvider = ({ children }) => {
                     shouldPlay = true;
                 }
 
-                // B) Cashier Notification ONLY: Waiter Confirms Order (Pending -> Confirmed)
+                // Cashier Notification ONLY: Waiter Confirms Order (Pending -> Confirmed)
                 if (
                     pathname.includes('/cashier') &&
                     newStatus === 'confirmed'
@@ -289,7 +268,7 @@ export const RestaurantProvider = ({ children }) => {
                      shouldPlay = true;
                 }
 
-                // C) Chef Notification: Order Status changes to Preparing
+                // Chef Notification: Order Status changes to Preparing
                 if (
                     pathname.includes('/chef') &&
                     newStatus === 'preparing'
@@ -297,7 +276,7 @@ export const RestaurantProvider = ({ children }) => {
                      shouldPlay = true;
                 }
 
-                // D) Waiter/Cashier Notification: Order Served
+                //Waiter/Cashier Notification: Order Served
                 // User Request: ONLY 'served' status, and use 'bell.mp3'
                 if (
                     (pathname.includes('/waiter') || pathname.includes('/cashier')) && 
@@ -359,21 +338,20 @@ export const RestaurantProvider = ({ children }) => {
     return () => {
        // Context: Cleanup Unsubscribing
       setIsConnected(false);
-      supabase.removeChannel(channel);
+      cleanupRestaurantRealtimeChannel(channel);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, [restaurantId, fetchOperationalData]); // Dependencies: only external IDs and stable fetch function
 
-  // 4. Checkout Logic
+  // Checkout Logic
   const handleCheckout = async (sessionId, type, data) => {
       try {
-           const { cashierService } = await import("@/services/cashierService");
-           const result = await cashierService.processPayment(sessionId, type, data);
+           const result = await processPaymentLogic(sessionId, type, data);
            
            if (result.success) {
-               // Efficiently update tables/sessions without touching restaurant profile
-               fetchOperationalData(restaurantId);
-               return { success: true };
+               // Await refetch so callers get fresh data
+               await fetchOperationalData(restaurantId);
+               return { success: true, fullyPaid: result.fullyPaid };
            }
       } catch (error) {
           console.error("Checkout validation failed:", error);
@@ -381,7 +359,7 @@ export const RestaurantProvider = ({ children }) => {
       }
   };
 
-  // 5. Calculate Features (Stable & Unique)
+  // Calculate Features (Stable & Unique)
   // We use a Ref to ensure we don't return a new object (and trigger re-renders) 
   // if the features content hasn't actually changed.
   const prevFeaturesRef = useRef(null);
@@ -422,7 +400,7 @@ export const RestaurantProvider = ({ children }) => {
       loading, 
       restaurantId, 
       restaurant, 
-      features, // Exported to context
+      features,
       refetch: fetchData, 
       handleCheckout, 
       isConnected 
@@ -431,8 +409,8 @@ export const RestaurantProvider = ({ children }) => {
   return <RestaurantContext.Provider value={value}>{children}</RestaurantContext.Provider>;
 };
 
-// --- SINGLETON HOOK ---
-export const useRestaurantData = () => {
+
+export function useRestaurantData() {
     const context = useContext(RestaurantContext);
     if (!context) {
         // Fallback for pages that might not be wrapped yet or during migration
@@ -440,4 +418,4 @@ export const useRestaurantData = () => {
         return { loading: true, tables: [], sessions: [] }; 
     }
     return context;
-};
+}

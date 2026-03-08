@@ -9,7 +9,7 @@ import {
   addOrderItem,
   startPreparingOrder,
   serveConfirmedOrders
-} from "@/services/waiterService";
+} from "@/services/staffService";
 import { voidOrderItem, updateOrderItemSecurely } from "@/services/orderService";
 import { useRestaurantFeatures } from "./useRestaurantFeatures";
 import { useLanguage } from "@/context/LanguageContext";
@@ -19,29 +19,21 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
   const { features } = useRestaurantFeatures();
   const { t } = useLanguage();
   const [loadingOp, setLoadingOp] = useState(null); // 'START_SESSION', 'CLOSE_TABLE', etc.
-  
   // State 1: Local Drafts (New additions not yet sent to DB)
   const [draftItems, setDraftItems] = useState([]);
-
   // State 2: Session Items (Synced from DB)
   const [sessionItems, setSessionItems] = useState([]);
-
   // Combined View for UI
   const [localItems, setLocalItems] = useState([]);
-
   // Optimistic locking state (Replaces useRef for cleaner React philosophy)
   const [optimisticLock, setOptimisticLock] = useState(null); // { targetStatus: 'confirmed'|'preparing', count: 5 }
-
-
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isVoidModalOpen, setIsVoidModalOpen] = useState(false);
-
   // Void/Edit State
   const [itemToVoid, setItemToVoid] = useState(null);
   const [isBatchEditing, setIsBatchEditing] = useState(false);
   const [batchItems, setBatchItems] = useState([]);
-  
   // State 3: Confirmed Edits (Local Quantity Adjustments for Confirmed Items)
   const [confirmedEdits, setConfirmedEdits] = useState({});
 
@@ -395,7 +387,7 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
   const handleStartPreparing = async () => {
       setLoadingOp('PREPARE_ORDER');
       try {
-          // 0. Flush Confirmed Edits
+          //Flush Confirmed Edits
           const editKeys = Object.keys(confirmedEdits);
           if (editKeys.length > 0) {
               // Flush updates to server
@@ -403,9 +395,9 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
                   const qty = confirmedEdits[id];
                   return updateOrderItemSecurely(id, qty, qty, "Quantity Update before Kitchen"); 
                   // Using secure update or just standard update? 
-                  // Standard updateOrderItem is imported from waiterService. updateOrderItemSecurely is from orderService.
-                  // Let's use updateOrderItem from waiterService as it matches onUpdateQty original logic.
-                  // But wait, original onUpdateQty used updateOrderItem (waiterService).
+                  // Standard updateOrderItem is imported from staffService. updateOrderItemSecurely is from orderService.
+                  // Let's use updateOrderItem from staffService as it matches onUpdateQty original logic.
+                  // But wait, original onUpdateQty used updateOrderItem (staffService).
                   // Let's stick to that.
                   // Actually, better use Promise.all waiting.
                   return updateOrderItem(id, { quantity: qty });
@@ -750,15 +742,14 @@ export const useOrderDrawerLogic = (session, table, onCheckout, role = "waiter",
             if (onCheckout) {
                 const res = await onCheckout(sessionId, type, data);
                 if (res?.success) {
-                    setIsPaymentModalOpen(false);
-                    return true; 
+                    return { success: true, fullyPaid: res.fullyPaid };
                 } else {
                     toast.error(t('checkoutFailed') + ": " + (res?.error?.message || "Unknown"));
-                    return false;
+                    return { success: false };
                 }
             } else {
                 toast.error("Checkout function not provided");
-                return false;
+                return { success: false };
             }
         } finally {
             setLoadingOp(null);

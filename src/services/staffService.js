@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { ORDER_STATUS, SESSION_STATUS } from "@/lib/constants";
 
-// 1. Confirm Orders (Convert Pending -> Confirmed)
+// Confirm Orders (Convert Pending -> Confirmed)
 export async function confirmOrderItems(sessionId, destinationStatus = ORDER_STATUS.CONFIRMED) {
   const { data, error } = await supabase
     .from("order_items")
@@ -14,7 +14,7 @@ export async function confirmOrderItems(sessionId, destinationStatus = ORDER_STA
   return data;
 }
 
-// 1.5. Prepare Orders (Convert Confirmed -> Served/Kitchen) 
+// Prepare Orders (Convert Confirmed -> Served/Kitchen) 
 // NOTE: DB Constraint only allows 'pending', 'confirmed', 'served'. 
 // We use 'served' to represent "Active/In Progress" after confirmation.
 export async function startPreparingOrder(sessionId) {
@@ -29,7 +29,7 @@ export async function startPreparingOrder(sessionId) {
   return data;
 }
 
-// 1.6 Serve Confirmed Orders (Directly Serve from Confirmed, skipping Preparing)
+// Serve Confirmed Orders (Directly Serve from Confirmed, skipping Preparing)
 // Used when Kitchen module is disabled but we want to clear the queue
 export async function serveConfirmedOrders(sessionId) {
   const { data, error } = await supabase
@@ -45,7 +45,7 @@ export async function serveConfirmedOrders(sessionId) {
   return data;
 }
 
-// 2. Close Table & Session (Convert Active -> Closed)
+// Close Table & Session (Convert Active -> Closed)
 export async function closeTableSession(sessionId) {
   // Close the session
   const { error: sessionError } = await supabase
@@ -66,7 +66,7 @@ export async function closeTableSession(sessionId) {
   return true;
 }
 
-// 3. Update Item (e.g., Change Quantity)
+// Update Item (e.g., Change Quantity)
 export async function updateOrderItem(itemId, updates) {
   const { data, error } = await supabase
     .from("order_items")
@@ -78,7 +78,7 @@ export async function updateOrderItem(itemId, updates) {
   return data;
 }
 
-// 4. Delete Item (Remove from order)
+// Delete Item (Remove from order)
 export async function deleteOrderItem(itemId) {
   const { error } = await supabase
     .from("order_items")
@@ -89,7 +89,7 @@ export async function deleteOrderItem(itemId) {
   return true;
 }
 
-// 5. Add Item (Add to order)
+// Add Item (Add to order)
 export async function addOrderItem(item) {
   const { data, error } = await supabase
     .from("order_items")
@@ -128,7 +128,7 @@ export async function startTableSession(tableId, restaurantId) {
     .insert({
       table_id: tableId,
       restaurant_id: restaurantId,
-      status: SESSION_STATUS.ACTIVE, // or 'active'
+      status: SESSION_STATUS.ACTIVE, 
     })
     .select()
     .single();
@@ -149,16 +149,16 @@ export const moveSession = async (sessionId, newTableId) => {
   return data;
 };
 
-// 7. Merge Sessions (Combine)
+// Merge Sessions (Combine)
 export const mergeSessions = async (sourceSessionId, targetSessionId) => {
-  // 1. Move all order_items from Source to Target
+  // Move all order_items from Source to Target
   const { error: itemError } = await supabase
     .from('order_items')
     .update({ session_id: targetSessionId })
     .eq('session_id', sourceSessionId);
   if (itemError) throw itemError;
 
-  // 2. Close the Source Session (mark as merged)
+  // Close the Source Session (mark as merged)
   const { error: sessionError } = await supabase
     .from('sessions')
     .update({ 

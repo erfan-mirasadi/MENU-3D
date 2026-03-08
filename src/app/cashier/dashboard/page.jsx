@@ -14,7 +14,7 @@ import Loader from '@/components/ui/Loader'
 import { useRestaurantFeatures } from '@/app/hooks/useRestaurantFeatures';
 import { useLanguage } from '@/context/LanguageContext';
 import TableGrid from '@/components/shared/TableView/TableGrid';
-import { moveSession, mergeSessions } from "@/services/waiterService";
+import { moveSession, mergeSessions } from "@/services/staffService";
 import { serviceRequestService } from "@/services/serviceRequestService";
 import { FaList, FaCube } from 'react-icons/fa';
 

@@ -1,7 +1,7 @@
 import { Geist, Geist_Mono, Gulzar } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
-import { RestaurantProvider } from "@/app/hooks/useRestaurantData";
+import RestaurantProvider from "@/app/hooks/useRestaurantData";
 import { LanguageProvider } from "@/context/LanguageContext";
 
 const geistSans = Geist({

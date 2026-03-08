@@ -13,7 +13,7 @@ import { useRestaurantFeatures } from "@/app/hooks/useRestaurantFeatures";
 
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
-import { moveSession, mergeSessions } from "@/services/waiterService";
+import { moveSession, mergeSessions } from "@/services/staffService";
 import { serviceRequestService } from "@/services/serviceRequestService";
 import { unsubscribeFromPushNotifications } from "@/services/notificationService";
 import toast from "react-hot-toast";

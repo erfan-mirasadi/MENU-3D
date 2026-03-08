@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { reportService } from "@/services/reportService";
-import Image from "next/image";
 import { RiCloseLine, RiMoneyDollarCircleLine, RiFileList3Line, RiBankCardLine, RiUser3Line, RiTimeLine } from "react-icons/ri";
-import { useMountTransition } from "@/app/hooks/useMountTransition";
+import useMountTransition from "@/app/hooks/useMountTransition";
 import { useLanguage } from "@/context/LanguageContext";
 
 const TransactionDetailsModal = ({ transaction, onClose }) => {
