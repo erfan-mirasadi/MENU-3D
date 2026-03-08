@@ -7,7 +7,7 @@ import { useLanguage } from '@/context/LanguageContext'
 import { useRestaurantData } from '@/app/hooks/useRestaurantData'
 
     // Single Item Row Component
-    function TicketItem({ item, onUpdateStatus }) {
+    function TicketItem({ item, onUpdateStatus, isNew }) {
         const { language } = useLanguage()
         const { restaurant } = useRestaurantData()
         const [loading, setLoading] = useState(false)
@@ -71,6 +71,11 @@ import { useRestaurantData } from '@/app/hooks/useRestaurantData'
                          <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
                             {item.status === 'confirmed' ? 'NEW' : item.status}
                          </span>
+                         {isNew && (
+                             <span className="ml-1 px-1.5 py-0.5 bg-orange-500 text-white text-[10px] font-black rounded-full leading-none">
+                                 new
+                             </span>
+                         )}
                     </div>
                 </div>
 
@@ -109,7 +114,7 @@ import { useRestaurantData } from '@/app/hooks/useRestaurantData'
         )
     }
 
-    export default function KitchenTicket({ session, orders, onUpdateStatus, onServeAll }) {
+    export default function KitchenTicket({ session, orders, onUpdateStatus, onServeAll, newItemIds = new Set() }) {
         const { t } = useLanguage()
         const [loading, setLoading] = useState(false)
 
@@ -211,7 +216,8 @@ import { useRestaurantData } from '@/app/hooks/useRestaurantData'
                         <TicketItem 
                             key={item.ids[0]} // Use first ID as key for stability
                             item={item} 
-                            onUpdateStatus={onUpdateStatus} 
+                            onUpdateStatus={onUpdateStatus}
+                            isNew={item.ids.some(id => newItemIds.has(id))}
                         />
                     ))}
                 </div>

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { RiMenuFoldLine, RiMenuUnfoldLine } from 'react-icons/ri';
 import { supabase } from '@/lib/supabase'
 import { getKitchenOrders, updateOrderItemStatus } from '@/services/orderService'
@@ -18,6 +18,8 @@ export default function ChefDashboard() {
     const [loading, setInitialLoading] = useState(true)
     const [isLoggingOut, setIsLoggingOut] = useState(false)
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+    const [newItemIds, setNewItemIds] = useState(new Set())
+    const knownOrderIds = useRef(null)
     const { restaurantId } = useRestaurantData()
     const { t } = useLanguage();
 
@@ -29,6 +31,7 @@ export default function ChefDashboard() {
             try {
                 const data = await getKitchenOrders(restaurantId)
                 setOrders(data)
+                knownOrderIds.current = new Set(data.map(o => o.id))
             } catch (err) {
                 console.error("Failed to load orders", err)
                 toast.error("Failed to load orders")
@@ -58,6 +61,23 @@ export default function ChefDashboard() {
                      // Adding delay to ensure DB replication is caught up
                      setTimeout(() => {
                          getKitchenOrders(restaurantId).then(data => {
+                             // Detect newly arrived items for existing tables
+                             if (knownOrderIds.current) {
+                                 const existingSessionIds = new Set(
+                                     data.filter(o => knownOrderIds.current.has(o.id)).map(o => o.session_id)
+                                 )
+                                 const freshIds = data
+                                     .filter(o => !knownOrderIds.current.has(o.id) && existingSessionIds.has(o.session_id))
+                                     .map(o => o.id)
+                                 if (freshIds.length > 0) {
+                                     setNewItemIds(prev => {
+                                         const next = new Set(prev)
+                                         freshIds.forEach(id => next.add(id))
+                                         return next
+                                     })
+                                 }
+                             }
+                             knownOrderIds.current = new Set(data.map(o => o.id))
                              setOrders(data)
                          })
                      }, 1000)
@@ -230,6 +250,7 @@ export default function ChefDashboard() {
                                     orders={ticket.orders}
                                     onUpdateStatus={handleUpdateStatus}
                                     onServeAll={handleServeAll}
+                                    newItemIds={newItemIds}
                                 />
                             ))}
                         </MasonryGrid>
