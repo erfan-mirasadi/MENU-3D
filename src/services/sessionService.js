@@ -92,3 +92,41 @@ export async function updateSessionNote(sessionId, noteText) {
   return data;
 }
 
+export async function getSessionWithOrders(sessionId) {
+  const { data, error } = await supabase
+    .from("sessions")
+    .select(`
+      *,
+      order_items(*, product:products(*))
+    `)
+    .eq("id", sessionId)
+    .single();
+
+  if (error) {
+    if (error.code !== "PGRST116") {
+      console.error("Error fetching session with orders:", error);
+    }
+    return null;
+  }
+  return data;
+}
+
+export function subscribeToClientSession(sessionId, onSessionUpdate, onOrderUpdate) {
+  const channel = supabase
+    .channel(`client_session_${sessionId}`)
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "sessions", filter: `id=eq.${sessionId}` },
+      (payload) => { onSessionUpdate(payload.new); }
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "order_items", filter: `session_id=eq.${sessionId}` },
+      () => { onOrderUpdate(); }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}

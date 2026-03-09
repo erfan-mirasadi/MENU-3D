@@ -14,7 +14,7 @@ export default function ConfirmedOrderList({
     onDelete, 
     onStartPreparing,
     onEditOrder,
-    isBatchEditing 
+    isEditingGroup 
 }) {
     const { features } = useRestaurantFeatures();
     const { t } = useLanguage();
@@ -80,7 +80,7 @@ export default function ConfirmedOrderList({
                 accentColor="yellow"
                 icon={<FaFire />}
                 action={
-                    !isBatchEditing && onEditOrder && (
+                    !isEditingGroup && onEditOrder && (
                         <button
                             onClick={onEditOrder}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${

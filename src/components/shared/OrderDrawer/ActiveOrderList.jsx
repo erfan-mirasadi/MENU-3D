@@ -7,13 +7,13 @@ import { useLanguage } from "@/context/LanguageContext";
 export default function ActiveOrderList({ 
     items, 
     role, 
-    isBatchEditing,
+    isEditingGroup,
     onEditOrder,
     onCancelEdit,
     onSaveEdit,
-    batchItems,
-    onUpdateBatchQty,
-    onDeleteBatchItem,
+    groupedItems,
+    onUpdateGroupQty,
+    onDeleteGroupItem,
     onUpdateQty,
     onDelete,
     loading,
@@ -21,11 +21,8 @@ export default function ActiveOrderList({
 }) {
     const { t } = useLanguage();
 
-    if (items.length === 0 && !isBatchEditing) return null;
-    
-    // Unified View
-    // GROUPING LOGIC: Aggregate items by product_id
-    const groupedItems = Object.values(items.reduce((acc, item) => {
+    // Aggregate items by product_id
+    const displayGroups = Object.values(items.reduce((acc, item) => {
         const key = item.product_id || item.product?.id;
         if (!acc[key]) {
             acc[key] = { 
@@ -45,19 +42,19 @@ export default function ActiveOrderList({
     const allServed = items.length > 0 && items.every(i => i.status === 'served');
 
     const getTitle = () => {
-        if (isBatchEditing) return t('editingOrders') || "Editing Orders";
+        if (isEditingGroup) return t('editingOrders') || "Editing Orders";
         if (allServed) return t('served');
         return t('inKitchen');
     };
 
     const getIcon = () => {
-        if (isBatchEditing) return <FaPen />;
+        if (isEditingGroup) return <FaPen />;
         if (allServed) return <FaCheckDouble />;
         return <FaFire />;
     };
 
     const getAccentColor = () => {
-        if (isBatchEditing) return "orange";
+        if (isEditingGroup) return "orange";
         if (allServed) return "green";
         return "yellow";
     };
@@ -65,11 +62,11 @@ export default function ActiveOrderList({
     return (
         <OrderSection
             title={getTitle()}
-            count={groupedItems.length} // Count unique groups now
+            count={displayGroups.length}
             accentColor={getAccentColor()}
             icon={getIcon()}
             action={
-            !isBatchEditing && onEditOrder && (
+            !isEditingGroup && onEditOrder && (
                 <button 
                     onClick={onEditOrder} 
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
@@ -83,16 +80,16 @@ export default function ActiveOrderList({
             )
             }
         >
-        {isBatchEditing ? (
+        {isEditingGroup ? (
             <div className="space-y-4">
                 <div className="space-y-3">
-                    {batchItems.map(item => (
+                    {groupedItems.map(item => (
                         <SwipeableOrderItem
                             key={item.virtualId || item.id}
                             item={item}
                             isPending={false}
-                            onUpdateQty={onUpdateBatchQty}
-                            onDelete={onDeleteBatchItem}
+                            onUpdateQty={onUpdateGroupQty}
+                            onDelete={onDeleteGroupItem}
                             allowIncrease={false}
                             showReadyBadge={false}
                         />
@@ -107,7 +104,7 @@ export default function ActiveOrderList({
                             loading ? "opacity-70 cursor-not-allowed" : "cursor-pointer hover:bg-green-500"
                         }`}
                     >
-                        {loadingOp === 'BATCH_UPDATE' ? (
+                        {loadingOp === 'GROUPED_UPDATE' ? (
                              <Loader active={true} variant="inline" className="h-5 w-5" />
                         ) : t('saveChanges')}
                     </button>
@@ -115,7 +112,7 @@ export default function ActiveOrderList({
             </div>
         ) : (
             <div className="space-y-3 opacity-90">
-                {groupedItems.map(item => (
+                {displayGroups.map(item => (
                     <SwipeableOrderItem 
                         key={item.virtualId} 
                         item={item} 
