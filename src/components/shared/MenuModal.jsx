@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, useMemo } from "react";
 import { FaSearch, FaTimes, FaPlus, FaMinus } from "react-icons/fa";
 import { getMenuProducts } from "@/services/staffService";
@@ -57,7 +56,6 @@ export default function MenuModal({
     return [allOption, ...categories];
   }, [categories]);
 
-  // --- FILTER LOGIC ---
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       // Search in English and Turkish

@@ -5,7 +5,7 @@ import ModernCard from "./ModernCard";
 import ModernHeader from "./ModernHeader";
 import ModernCart from "./ModernCart";
 import ModernModal from "./ModernModal";
-import ModernCartDrawer from "./ModernCartDrawer";
+import ClientCartDrawer from "@/components/shared/ClientCart/ClientCartDrawer";
 import { useCart } from "@/app/hooks/useCart";
 
 export default function ModernMenu({ restaurant, categories, tableId, isGuestMode }) {
@@ -86,7 +86,7 @@ export default function ModernMenu({ restaurant, categories, tableId, isGuestMod
       />
 
       {!isGuestMode && (
-        <ModernCartDrawer
+        <ClientCartDrawer
           isOpen={isCartOpen}
           onClose={() => setIsCartOpen(false)}
           cartItems={cartItems}

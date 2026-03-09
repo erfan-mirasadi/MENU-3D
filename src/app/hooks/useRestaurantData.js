@@ -139,7 +139,7 @@ export default function RestaurantProvider({ children }) {
   useEffect(() => {
     if (!restaurantId) return;
 
-    // [OPTIMIZATION] Disable Realtime for Admin Panel
+    // OPTIMIZATION Disable Realtime for Admin Panel
     // Admin pages (Dashboard, Tables, etc.) do not need live order updates.
     // They rely on manual refetching (swr-style) or page reloads.
     if (window.location.pathname.includes('/admin')) return;
@@ -252,13 +252,6 @@ export default function RestaurantProvider({ children }) {
                 let shouldPlay = false;
                 let soundParams = {}; // Default to standard sound
 
-                // Waiter: Pending (Draft -> Pending)
-                if (
-                    pathname.includes('/waiter') &&
-                    newStatus === 'pending'
-                ) {
-                    shouldPlay = true;
-                }
 
                 // Cashier Notification ONLY: Waiter Confirms Order (Pending -> Confirmed)
                 if (
@@ -276,10 +269,10 @@ export default function RestaurantProvider({ children }) {
                      shouldPlay = true;
                 }
 
-                //Waiter/Cashier Notification: Order Served
-                // User Request: ONLY 'served' status, and use 'bell.mp3'
+                // Cashier Notification: Order Served
+                // Removed Waiter from here as PWA handles native notifications now
                 if (
-                    (pathname.includes('/waiter') || pathname.includes('/cashier')) && 
+                    pathname.includes('/cashier') && 
                     newStatus === 'served'
                 ) {
                     shouldPlay = true;
@@ -291,7 +284,6 @@ export default function RestaurantProvider({ children }) {
                 if (shouldPlay && (now - lastNotificationTimeRef.current > 2000)) {
                     // Play specific sound if defined, otherwise default
                     playNotificationSound(soundParams.sound);
-                    // --- TOAST LOGIC ---
                     const getTableNumber = (sId) => {
                          const session = sessionsRef.current.find(s => s.id === sId);
                          return session?.tables?.table_number || "?";
@@ -310,9 +302,9 @@ export default function RestaurantProvider({ children }) {
                              }
                         });
                     }
-                    // Waiter/Cashier Toast: Order Served
-                    if ((pathname.includes('/waiter') || pathname.includes('/cashier')) && 
-                        newStatus === 'served') {
+                    // Cashier Toast: Order Served
+                    // Removed Waiter here too.
+                    if (pathname.includes('/cashier') && newStatus === 'served') {
                         // "Hazer mishe" -> Food Ready (mapped to served status)
                         toast.success(`Table ${tableNum}: Food Ready!`, {
                             icon: <RiCheckDoubleLine className="text-green-500" />,

@@ -8,7 +8,7 @@ import { MdViewInAr, MdTouchApp } from "react-icons/md";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import CartControls from "./CartControls";
 
-const ModernCartDrawer = dynamic(() => import("../modern/ModernCartDrawer"), {
+const ClientCartDrawer = dynamic(() => import("@/components/shared/ClientCart/ClientCartDrawer"), {
   ssr: false,
 });
 
@@ -158,7 +158,7 @@ export default function UIOverlay({
 
       {/* --- DRAWER --- */}
       {!isGuestMode && shouldLoadCartDrawer && (
-        <ModernCartDrawer
+        <ClientCartDrawer
           isOpen={isCartOpen}
           onClose={() => setIsCartOpen(false)}
           cartItems={cartItems || []}

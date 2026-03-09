@@ -1,107 +1,13 @@
 "use client";
-
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { useLanguage } from "@/context/LanguageContext";
 import FeatureGuard from "@/components/shared/FeatureGuard";
 import { updateSessionNote } from "@/services/sessionService";
+import SwipeableCartItem from "./SwipeableCartItem";
+import OrderedCartItem from "./OrderedCartItem";
+import CartOrderNote from "./CartOrderNote";
 
-import { useDrag } from "@use-gesture/react";
-import { MdDeleteOutline, MdOutlineMessage } from "react-icons/md";
-
-function SwipeableItem({ item, onRemove, t, content }) {
-  const [x, setX] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
-  // Threshold increased to roughly 80% of width (assuming ~350px width -> -280)
-  const threshold = -250; 
-
-  const bind = useDrag(
-    ({ movement: [mx], down, cancel }) => {
-      if (isDeleting) return;
-      
-      // Allow swipe up to -310px
-      const newX = Math.min(0, Math.max(-310, mx));
-      
-      if (down) {
-        setX(newX);
-      } else {
-        if (mx < threshold) {
-          // Trigger delete
-          setIsDeleting(true);
-          setX(-400); 
-          setTimeout(() => onRemove(item.id), 300);
-        } else {
-          // Snap back
-          setX(0);
-        }
-      }
-    },
-    { axis: "x", filterTaps: true }
-  );
-
-  if (isDeleting) return null;
-
-  return (
-    <div className="relative group touch-pan-y select-none mb-3">
-      {/* BACKGROUND (DELETE ACTION) - PEEKING */}
-      <div className="absolute inset-y-1 right-0 w-full bg-red-500/20 rounded-2xl flex items-center justify-end pr-4 overflow-hidden border border-red-500/30 z-0">
-         <div className="flex flex-col items-center justify-center text-red-500 gap-1 animate-pulse scale-125 origin-right">
-           <MdDeleteOutline size={28} />
-           <span className="text-[10px] font-bold uppercase tracking-wider">{t("remove")}</span>
-        </div>
-      </div>
-
-      {/* FOREGROUND (CARD) */}
-      <div
-        {...bind()}
-        style={{ transform: `translateX(${x}px)`, touchAction: "pan-y" }}
-        className="relative flex items-center gap-3 bg-[#252836] backdrop-blur-xl p-3 rounded-2xl border border-white/5 z-10 transition-transform duration-100 ease-out active:cursor-grabbing cursor-grab shadow-lg mr-2 " 
-      >
-        
-        {/* Image - No Frame, Larger */}
-        <div className="relative w-22 h-22 rounded-2xl overflow-hidden shrink-0 pointer-events-none shadow-md bg-[#1F1D2B] flex items-center justify-center">
-          {item.product?.image_url ? (
-            <Image
-              src={item.product?.image_url}
-              alt={content(item.product?.title) || "Product image"}
-              fill
-              sizes="120px"
-              className="object-cover"
-            />
-          ) : (
-             <span className="text-white/20 text-[10px] uppercase font-bold tracking-widest text-center px-1 leading-tight">No Img</span>
-          )}
-        </div>
-
-        {/* Info */}
-        <div className="flex-1 min-w-0 pointer-events-none pr-2">
-          <h4 className="text-white font-black text-md truncate leading-tight">
-            {content(item.product?.title)}
-          </h4>
-          <p className="text-[#ea7c69] text-md font-bold mt-1">
-            {Number(item.unit_price_at_order).toLocaleString()}{" "}
-            {t("currency")}
-          </p>
-        </div>
-
-        {/* Actions (Static Quantity - Premium Pill Style) */}
-        <div className="shrink-0 pointer-events-none flex flex-col items-center justify-center pl-3">
-          <div className="flex items-baseline gap-1 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl px-2 py-1 shadow-md">
-             <span className="text-sm text-[#ea7c69] font-bold">x</span>
-             <span className="text-white/90 font-mono font-black text-xl leading-none tracking-tighter">
-              {item.quantity}
-             </span>
-          </div>
-        </div>
-        
-        {/* Red Peek Indicator Strip (Visual Cue) */}
-        <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-red-500/50 rounded-l-md pointer-events-none" />
-      </div>
-    </div>
-  );
-}
-
-export default function ModernCartDrawer({
+export default function ClientCartDrawer({
   isOpen,
   onClose,
   cartItems,
@@ -121,33 +27,41 @@ export default function ModernCartDrawer({
   }, [session?.note]);
 
   useEffect(() => {
+    let timer;
     if (isOpen) {
       document.body.style.overflow = "hidden";
       setShouldRender(true);
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         setIsAnimating(true);
       }, 50);
-      return () => clearTimeout(timer);
     } else {
       document.body.style.overflow = "";
       setIsAnimating(false);
-      // Wait for animation to finish
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         setShouldRender(false);
       }, 500);
-      return () => clearTimeout(timer);
     }
 
     return () => {
+      clearTimeout(timer);
       document.body.style.overflow = "";
     };
   }, [isOpen]);
 
   if (!shouldRender) return null;
 
-  // Separate Items
   const draftItems = cartItems.filter((item) => item.status === "draft");
   const orderedItems = cartItems.filter((item) => item.status !== "draft");
+
+  // Group items that have already been sent to the kitchen so duplicates sum quantities together
+  const groupedOrderedItems = Object.values(orderedItems.reduce((acc, item) => {
+    const key = item.product_id || item.product?.id;
+    if (!acc[key]) {
+      acc[key] = { ...item, quantity: 0 };
+    }
+    acc[key].quantity += item.quantity;
+    return acc;
+  }, {}));
 
   const totalAmount = cartItems.reduce(
     (sum, item) => sum + item.unit_price_at_order * item.quantity,
@@ -156,7 +70,7 @@ export default function ModernCartDrawer({
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col justify-end sm:justify-center sm:items-center">
-      {/* Backdrop (Back click closes) */}
+
       <div
         onClick={onClose}
         className={`absolute inset-0 backdrop-blur-sm bg-black/20 transition-opacity duration-500 ${
@@ -188,7 +102,7 @@ export default function ModernCartDrawer({
           </button>
         </div>
 
-        {/* --- SCROLLABLE LIST --- */}
+
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           {cartItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 opacity-50">
@@ -197,7 +111,7 @@ export default function ModernCartDrawer({
             </div>
           ) : (
             <>
-              {/* SECTION 1: DRAFT ITEMS (Swipeable) */}
+              {/* DRAFT ITEMS (Swipeable) */}
               {draftItems.length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 mb-4">
@@ -208,7 +122,7 @@ export default function ModernCartDrawer({
                   </div>
 
                   {draftItems.map((item) => (
-                    <SwipeableItem 
+                    <SwipeableCartItem 
                       key={item.id} 
                       item={item} 
                       onRemove={onRemove}
@@ -217,7 +131,7 @@ export default function ModernCartDrawer({
                     />
                   ))}
                   
-                  {/* Hint Text */}
+
                   <div className="text-center">
                     <p className="text-[10px] text-white/20 uppercase tracking-widest">
                        ← {t("swipeToDelete")}
@@ -225,25 +139,12 @@ export default function ModernCartDrawer({
                   </div>
                 </div>
               )}
-
-              {/* --- NOTE SECTION (Always visible if session exists) --- */}
+              
               {session && (
-               <div className="pt-6 border-t border-white/10 mx-1">
-                 <label className="text-[#ea7c69] text-xs font-bold uppercase tracking-widest mb-3 block flex items-center gap-2">
-                   <MdOutlineMessage size={18} />
-                   {t("orderNote")}
-                 </label>
-                 <textarea
-                   className="w-full bg-[#252836] border border-white/20 rounded-xl p-4 text-white text-base focus:outline-none focus:border-[#ea7c69] focus:ring-1 focus:ring-[#ea7c69] placeholder:text-white/30 resize-none transition-all shadow-inner"
-                   rows={3}
-                   placeholder={t("notePlaceholder") || "Allergies, extra spicy, etc..."}
-                   value={note}
-                   onChange={(e) => setNote(e.target.value)}
-                 />
-               </div>
-             )}
+                 <CartOrderNote t={t} note={note} setNote={setNote} />
+              )}
 
-              {/* SECTION 2: ORDERED ITEMS (Already Sent) */}
+              {/* ORDERED ITEMS (Already Sent) */}
               {orderedItems.length > 0 && (
                 <div className="space-y-4 pt-4 border-t border-white/5 opacity-70 grayscale-[0.3]">
                   <div className="flex items-center gap-2 mb-4">
@@ -253,33 +154,8 @@ export default function ModernCartDrawer({
                     </span>
                   </div>
 
-                  {orderedItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-4 p-2 rounded-xl"
-                    >
-                      <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 grayscale bg-[#1F1D2B] flex items-center justify-center">
-                        {item.product?.image_url ? (
-                          <Image
-                            src={item.product?.image_url}
-                            alt={content(item.product?.title) || "Product image"}
-                            fill
-                            sizes="50px"
-                            className="object-cover"
-                          />
-                        ) : (
-                           <span className="text-white/20 text-[8px] uppercase tracking-wider font-bold">No Img</span>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-gray-300 font-medium text-xs truncate">
-                          {content(item.product?.title)}
-                        </h4>
-                      </div>
-                      <span className="text-gray-500 text-xs font-mono">
-                        x{item.quantity}
-                      </span>
-                    </div>
+                  {groupedOrderedItems.map((item) => (
+                    <OrderedCartItem key={item.id} item={item} content={content} />
                   ))}
                 </div>
               )}
@@ -319,7 +195,6 @@ export default function ModernCartDrawer({
             </FeatureGuard>
           ) : (
              <>
-               {/* If no new items but note changed, allow saving note? */}
                {session && note !== session.note ? (
                  <button
                  onClick={async () => {
@@ -342,4 +217,3 @@ export default function ModernCartDrawer({
     </div>
   );
 }
-

@@ -28,6 +28,16 @@ export default function ClassicCartDrawer({
 
   const draftItems = cartItems.filter((i) => i.status === "draft");
   const orderedItems = cartItems.filter((i) => i.status !== "draft");
+
+  const groupedOrderedItems = Object.values(orderedItems.reduce((acc, item) => {
+    const key = item.product_id || item.product?.id;
+    if (!acc[key]) {
+      acc[key] = { ...item, quantity: 0 };
+    }
+    acc[key].quantity += item.quantity;
+    return acc;
+  }, {}));
+
   const total = cartItems.reduce(
     (a, b) => a + b.unit_price_at_order * b.quantity,
     0
@@ -106,7 +116,7 @@ export default function ClassicCartDrawer({
               <h3 className="text-xs uppercase tracking-[0.2em] text-[#5C504A] border-b border-[#5C504A] pb-2">
                 Kitchen Preparing
               </h3>
-              {orderedItems.map((item) => (
+              {groupedOrderedItems.map((item) => (
                 <div key={item.id} className="flex gap-4 grayscale">
                   <div className="relative w-12 h-12 border border-[#E5E0D8]">
                     <Image
