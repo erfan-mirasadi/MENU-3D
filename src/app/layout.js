@@ -1,5 +1,5 @@
-import { Geist, Geist_Mono, Gulzar } from "next/font/google";
 import "./globals.css";
+import { Geist, Geist_Mono, Gulzar } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import RestaurantProvider from "@/app/hooks/useRestaurantData";
 import { LanguageProvider } from "@/context/LanguageContext";
@@ -71,12 +71,10 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body
         suppressHydrationWarning={true}
-        className={`${geistSans.variable} ${geistMono.variable} ${gulzarFont.variable} antialiased bg-[#1f1d2b] text-white`}
+        className={`${geistSans.variable} ${geistMono.variable} ${gulzarFont.variable} antialiased bg-dark-900 text-white`}
       >
         <RestaurantProvider>
-            <LanguageProvider>
-                {children}
-            </LanguageProvider>
+          <LanguageProvider>{children}</LanguageProvider>
         </RestaurantProvider>
 
         <Toaster
@@ -85,7 +83,7 @@ export default function RootLayout({ children }) {
           toastOptions={{
             duration: 4000,
             style: {
-              background: "#252836", 
+              background: "#252836",
               color: "#fff",
               border: "1px solid #2d303e",
               padding: "16px",
@@ -93,13 +91,13 @@ export default function RootLayout({ children }) {
             },
             success: {
               iconTheme: {
-                primary: "#10B981", 
+                primary: "#10B981",
                 secondary: "#fff",
               },
             },
             error: {
               iconTheme: {
-                primary: "#EF4444", 
+                primary: "#EF4444",
                 secondary: "#fff",
               },
             },

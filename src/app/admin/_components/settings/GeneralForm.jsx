@@ -1,14 +1,17 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
-import { useRestaurantData } from "@/app/hooks/useRestaurantData"; 
-import { updateRestaurantImage, updateRestaurant } from "@/services/restaurantService";
+import { useRestaurantData } from "@/app/hooks/useRestaurantData";
+import {
+  updateRestaurantImage,
+  updateRestaurant,
+} from "@/services/restaurantService";
 import toast from "react-hot-toast";
 import { RiCloseLine, RiUploadCloud2Line } from "react-icons/ri";
 import Loader from "@/components/ui/Loader";
 
 export default function GeneralForm() {
-  const { restaurant, loading: contextLoading, refetch } = useRestaurantData(); 
+  const { restaurant, loading: contextLoading, refetch } = useRestaurantData();
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -22,7 +25,6 @@ export default function GeneralForm() {
   // State for upload progress
   const [logoUploading, setLogoUploading] = useState(false);
   const [bgUploading, setBgUploading] = useState(false);
-
   const logoInputRef = useRef(null);
   const bgInputRef = useRef(null);
 
@@ -41,10 +43,8 @@ export default function GeneralForm() {
   }, [restaurant]);
 
   const handleUpload = async (file, field) => {
-    // 1. Validate
     if (!file) return;
     const isLogo = field === "logo";
-    
     // Size check (2MB for logo, 5MB for bg)
     const maxSize = isLogo ? 2 : 5;
     if (file.size > maxSize * 1024 * 1024) {
@@ -62,9 +62,9 @@ export default function GeneralForm() {
     else setBgUploading(true);
 
     try {
-      // 2. Get Presigned URL
+      // Get Presigned URL
       const subfolderName = isLogo ? "logo" : "background";
-      
+
       const res = await fetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -79,24 +79,22 @@ export default function GeneralForm() {
       if (!res.ok) throw new Error("Failed to get upload URL");
       const { uploadUrl, publicUrl } = await res.json();
 
-      // 3. Upload to R2
+      // Upload to R2
       const xhr = new XMLHttpRequest();
       xhr.open("PUT", uploadUrl, true);
       xhr.setRequestHeader("Content-Type", file.type);
-      
+
       xhr.onload = async () => {
         if (xhr.status === 200) {
-          setFormData(prev => ({ ...prev, [field]: publicUrl }));
-          
-          //Auto-update Supabase immediately via Service
-          try {
-             await updateRestaurantImage(restaurant?.owner_id, field, publicUrl);
-             toast.success("Image uploaded and saved!");
-             refetch(restaurant.id); // Refresh global context
-          } catch (error) {
-             toast.error("Uploaded but failed to save to database");
-          }
+          setFormData((prev) => ({ ...prev, [field]: publicUrl }));
 
+          try {
+            await updateRestaurantImage(restaurant?.owner_id, field, publicUrl);
+            toast.success("Image uploaded and saved!");
+            refetch(restaurant.id); // Refresh global context
+          } catch (error) {
+            toast.error("Uploaded but failed to save to database");
+          }
         } else {
           toast.error("Upload failed.");
         }
@@ -111,7 +109,6 @@ export default function GeneralForm() {
       };
 
       xhr.send(file);
-
     } catch (err) {
       console.error(err);
       toast.error("Error starting upload.");
@@ -121,7 +118,7 @@ export default function GeneralForm() {
   };
 
   const handleRemoveImage = (field) => {
-    setFormData(prev => ({ ...prev, [field]: "" }));
+    setFormData((prev) => ({ ...prev, [field]: "" }));
   };
 
   const [saving, setSaving] = useState(false);
@@ -142,92 +139,93 @@ export default function GeneralForm() {
     };
 
     const savePromise = updateRestaurant(restaurant?.owner_id, {
-        name: formData.name,
-        slug: formData.slug,
-        wifi_pass: formData.wifi_pass,
-        social_links: socialJson,
-        logo: formData.logo,
-        bg_image: formData.bg_image,
+      name: formData.name,
+      slug: formData.slug,
+      wifi_pass: formData.wifi_pass,
+      social_links: socialJson,
+      logo: formData.logo,
+      bg_image: formData.bg_image,
     });
 
-    toast.promise(savePromise, {
-      loading: "Updating restaurant info...",
-      success: "Changes saved successfully!",
-      error: "Error updating information.",
-    })
-    .then(() => {
-        refetch(restaurant.id); // Update global context
-    })
-    .finally(() => setSaving(false));
+    toast
+      .promise(savePromise, {
+        loading: "Updating restaurant info...",
+        success: "Changes saved successfully!",
+        error: "Error updating information.",
+      })
+      .then(() => {
+        refetch(restaurant.id);
+      })
+      .finally(() => setSaving(false));
   };
 
-  if (contextLoading) return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-dark-900/50 backdrop-blur-sm">
-      <Loader />
-    </div>
-  );
+  if (contextLoading)
+    return (
+      <div className="absolute inset-0 z-50 flex items-center justify-center bg-dark-900/50 backdrop-blur-sm">
+        <Loader />
+      </div>
+    );
 
   return (
     <form onSubmit={handleSave} className="space-y-8">
       {/* Images Section */}
       <div className="flex gap-6 items-end">
-        
         {/* LOGO UPLOAD */}
         <div className="relative group">
-           <div 
-             onClick={() => logoInputRef.current?.click()}
-             className={`
+          <div
+            onClick={() => logoInputRef.current?.click()}
+            className={`
                w-24 h-24 rounded-full overflow-hidden shrink-0 cursor-pointer relative transition-all
-               ${formData.logo ? 'border-4 border-dark-800' : 'border-2 border-dashed border-gray-600 hover:border-primary hover:bg-dark-800'}
+               ${formData.logo ? "border-4 border-dark-800" : "border-2 border-dashed border-gray-600 hover:border-primary hover:bg-dark-800"}
              `}
-           >
-             {formData.logo ? (
-                <Image
-                  src={formData.logo}
-                  alt="Restaurant Logo"
-                  fill
-                  className="object-cover"
-                  sizes="96px"
-                />
-             ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-xs text-gray-500 gap-1">
-                  {logoUploading ? (
-                    <Loader variant="inline" className="w-5 h-5 text-gray-500" />
-                  ) : (
-                    <>
-                      <RiUploadCloud2Line className="text-xl" />
-                      <span>Logo</span>
-                    </>
-                  )}
-                </div>
-             )}
-             
-             {/* Upload Overlay on Hover (if image exists) */}
-             {formData.logo && !logoUploading && (
-               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                  <RiUploadCloud2Line className="text-white text-xl" />
-               </div>
-             )}
-           </div>
-           
-           {/* Remove Button */}
-           {formData.logo && (
-             <button
-               type="button"
-               onClick={() => handleRemoveImage('logo')}
-               className="absolute -top-1 -right-1 bg-gray-700 text-gray-300 p-1 rounded-full shadow-lg hover:bg-gray-600 hover:text-white transition-transform hover:scale-110 border border-gray-600"
-             >
-               <RiCloseLine size={14} />
-             </button>
-           )}
+          >
+            {formData.logo ? (
+              <Image
+                src={formData.logo}
+                alt="Restaurant Logo"
+                fill
+                className="object-cover"
+                sizes="96px"
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-xs text-gray-500 gap-1">
+                {logoUploading ? (
+                  <Loader variant="inline" className="w-5 h-5 text-gray-500" />
+                ) : (
+                  <>
+                    <RiUploadCloud2Line className="text-xl" />
+                    <span>Logo</span>
+                  </>
+                )}
+              </div>
+            )}
 
-           <input 
-             ref={logoInputRef}
-             type="file" 
-             accept="image/png, image/jpeg, image/webp"
-             className="hidden"
-             onChange={(e) => handleUpload(e.target.files[0], 'logo')}
-           />
+            {/* Upload Overlay on Hover (if image exists) */}
+            {formData.logo && !logoUploading && (
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <RiUploadCloud2Line className="text-white text-xl" />
+              </div>
+            )}
+          </div>
+
+          {/* Remove Button */}
+          {formData.logo && (
+            <button
+              type="button"
+              onClick={() => handleRemoveImage("logo")}
+              className="absolute -top-1 -right-1 bg-gray-700 text-gray-300 p-1 rounded-full shadow-lg hover:bg-gray-600 hover:text-white transition-transform hover:scale-110 border border-gray-600"
+            >
+              <RiCloseLine size={14} />
+            </button>
+          )}
+
+          <input
+            ref={logoInputRef}
+            type="file"
+            accept="image/png, image/jpeg, image/webp"
+            className="hidden"
+            onChange={(e) => handleUpload(e.target.files[0], "logo")}
+          />
         </div>
 
         {/* COVER IMAGE UPLOAD */}
@@ -235,12 +233,12 @@ export default function GeneralForm() {
           <label className="block text-sm font-medium mb-2 text-gray-400">
             Cover Image
           </label>
-          
-          <div 
+
+          <div
             onClick={() => bgInputRef.current?.click()}
             className={`
                h-24 w-full rounded-xl overflow-hidden relative border transition-colors cursor-pointer
-               ${formData.bg_image ? 'border-gray-700 bg-gray-800' : 'border-dashed border-gray-600 hover:border-primary hover:bg-dark-800'}
+               ${formData.bg_image ? "border-gray-700 bg-gray-800" : "border-dashed border-gray-600 hover:border-primary hover:bg-dark-800"}
             `}
           >
             {formData.bg_image ? (
@@ -253,45 +251,45 @@ export default function GeneralForm() {
               />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-xs text-gray-500 gap-2">
-                 {bgUploading ? (
-                    <Loader variant="inline" className="w-6 h-6 text-gray-500" />
-                 ) : (
-                    <>
-                       <RiUploadCloud2Line className="text-2xl" />
-                       <span>Upload Cover Image (Max 5MB)</span>
-                    </>
-                 )}
+                {bgUploading ? (
+                  <Loader variant="inline" className="w-6 h-6 text-gray-500" />
+                ) : (
+                  <>
+                    <RiUploadCloud2Line className="text-2xl" />
+                    <span>Upload Cover Image (Max 5MB)</span>
+                  </>
+                )}
               </div>
             )}
 
-             {/* Upload Overlay on Hover (if image exists) */}
-             {formData.bg_image && !bgUploading && (
-               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="bg-black/50 px-3 py-1 rounded-full text-white text-xs flex items-center gap-2">
-                     <RiUploadCloud2Line /> Change Cover
-                  </div>
-               </div>
-             )}
+            {/* Upload Overlay on Hover (if image exists) */}
+            {formData.bg_image && !bgUploading && (
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="bg-black/50 px-3 py-1 rounded-full text-white text-xs flex items-center gap-2">
+                  <RiUploadCloud2Line /> Change Cover
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Remove Button */}
           {formData.bg_image && (
-             <button
-               type="button"
-               onClick={() => handleRemoveImage('bg_image')}
-               className="absolute top-2 right-2 bg-gray-700/80 backdrop-blur-sm text-gray-300 p-1.5 rounded-full shadow-lg hover:bg-gray-600 hover:text-white transition-transform hover:scale-110 z-10 border border-gray-600"
-             >
-               <RiCloseLine size={16} />
-             </button>
-           )}
+            <button
+              type="button"
+              onClick={() => handleRemoveImage("bg_image")}
+              className="absolute top-2 right-2 bg-gray-700/80 backdrop-blur-sm text-gray-300 p-1.5 rounded-full shadow-lg hover:bg-gray-600 hover:text-white transition-transform hover:scale-110 z-10 border border-gray-600"
+            >
+              <RiCloseLine size={16} />
+            </button>
+          )}
 
-          <input 
-             ref={bgInputRef}
-             type="file" 
-             accept="image/png, image/jpeg, image/webp"
-             className="hidden"
-             onChange={(e) => handleUpload(e.target.files[0], 'bg_image')}
-           />
+          <input
+            ref={bgInputRef}
+            type="file"
+            accept="image/png, image/jpeg, image/webp"
+            className="hidden"
+            onChange={(e) => handleUpload(e.target.files[0], "bg_image")}
+          />
         </div>
       </div>
 
@@ -391,7 +389,11 @@ export default function GeneralForm() {
           disabled={saving}
           className="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-600 transition shadow-lg shadow-primary/20 active:scale-95 border-2 border-gray-500 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          {saving ? <Loader variant="inline" className="w-5 h-5 text-white" /> : "Save Changes"}
+          {saving ? (
+            <Loader variant="inline" className="w-5 h-5 text-white" />
+          ) : (
+            "Save Changes"
+          )}
         </button>
       </div>
     </form>

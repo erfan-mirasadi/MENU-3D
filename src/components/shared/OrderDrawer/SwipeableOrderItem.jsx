@@ -11,18 +11,16 @@ export default function SwipeableOrderItem({
   onDelete,
   readOnly = false,
   allowIncrease = true,
-  showReadyBadge = true
+  showReadyBadge = true,
 }) {
   const [translateX, setTranslateX] = useState(0);
   const startX = useRef(0);
   const isDragging = useRef(false);
   const rowRef = useRef(null);
   const { content, t } = useLanguage();
-
   // Helper for title extraction
   const title = content(item.product?.title) || "Unknown";
-
-  // --- Touch Logic ---
+  // Touch Logic
   const handleTouchStart = (e) => {
     if (readOnly) return;
     startX.current = e.touches[0].clientX;
@@ -54,7 +52,7 @@ export default function SwipeableOrderItem({
   };
 
   return (
-    <div className="relative h-24 w-full select-none overflow-hidden rounded-xl bg-[#252836]">
+    <div className="relative h-24 w-full select-none overflow-hidden rounded-xl bg-dark-800">
       {/* Background Action (Delete) */}
       <div className="absolute inset-y-0 right-0 w-full bg-red-600 flex items-center justify-end px-6 rounded-xl">
         <FaTrash className="text-white text-2xl animate-pulse" />
@@ -63,7 +61,7 @@ export default function SwipeableOrderItem({
       {/* Foreground Content */}
       <div
         ref={rowRef}
-        className="absolute inset-0 bg-[#252836] flex items-center justify-between p-3 rounded-xl border border-white/5 z-10"
+        className="absolute inset-0 bg-dark-800 flex items-center justify-between p-3 rounded-xl border border-white/5 z-10"
         style={{ transform: `translateX(${translateX}px)` }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -74,7 +72,7 @@ export default function SwipeableOrderItem({
           <div className="w-16 h-16 shrink-0 bg-black/30 rounded-lg overflow-hidden border border-white/5">
             <SmartMedia files={item.product} alt={title} autoPlay={false} />
           </div>
-            <div className="flex flex-col min-w-0">
+          <div className="flex flex-col min-w-0">
             <span
               className={`font-bold text-lg truncate ${
                 isPending ? "text-white" : "text-gray-300"
@@ -83,23 +81,23 @@ export default function SwipeableOrderItem({
               {title}
             </span>
             <div className="flex items-center gap-2">
-                <span className="text-[#ea7c69] font-mono text-sm">
+              <span className="text-accent font-mono text-sm">
                 {item.unit_price_at_order} ₺
-                </span>
-                
-                {/* READY (Chef Finished) */}
-                {item.status === 'ready' && (
-                    <span className="text-[10px] font-black bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/50 uppercase tracking-wider">
-                        {t('ready') || "Ready"}
-                    </span>
-                )}
+              </span>
 
-                {/* SERVED (Delivered) */}
-                {showReadyBadge && item.status === 'served' && (
-                    <span className="text-[10px] font-black bg-green-500/20 text-green-400 px-2 py-0.5 rounded border border-green-500/50 uppercase tracking-wider">
-                        {t('served')}
-                    </span>
-                )}
+              {/* READY (Chef Finished) */}
+              {item.status === "ready" && (
+                <span className="text-[10px] font-black bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/50 uppercase tracking-wider">
+                  {t("ready") || "Ready"}
+                </span>
+              )}
+
+              {/* SERVED (Delivered) */}
+              {showReadyBadge && item.status === "served" && (
+                <span className="text-[10px] font-black bg-green-500/20 text-green-400 px-2 py-0.5 rounded border border-green-500/50 uppercase tracking-wider">
+                  {t("served")}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -107,36 +105,35 @@ export default function SwipeableOrderItem({
         {/* Controls */}
         <div className="flex items-center gap-1 pl-2">
           {!readOnly && (
-              <button
-                onClick={() => {
-                    if (item.quantity === 1) {
-                        onDelete(item.id);
-                    } else {
-                        onUpdateQty(item.id, item.quantity - 1);
-                    }
-                }}
-                className={`w-10 h-10 border border-white/10 rounded-lg flex items-center justify-center active:scale-90 transition-all ${
-                    item.quantity === 1 
-                        ? "bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20" 
-                        : "bg-[#1F1D2B] text-gray-400"
-                }`}
-              >
-                {item.quantity === 1 ? <FaTrash size={14} /> : <FaMinus />}
-              </button>
+            <button
+              onClick={() => {
+                if (item.quantity === 1) {
+                  onDelete(item.id);
+                } else {
+                  onUpdateQty(item.id, item.quantity - 1);
+                }
+              }}
+              className={`w-10 h-10 border border-white/10 rounded-lg flex items-center justify-center active:scale-90 transition-all ${
+                item.quantity === 1
+                  ? "bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20"
+                  : "bg-[#1F1D2B] text-gray-400"
+              }`}
+            >
+              {item.quantity === 1 ? <FaTrash size={14} /> : <FaMinus />}
+            </button>
           )}
-          
+
           <div className="w-10 text-center font-black text-xl text-white">
             {item.quantity}
           </div>
 
-
           {!readOnly && allowIncrease && (
-              <button
-                onClick={() => onUpdateQty(item.id, item.quantity + 1)}
-                className="w-10 h-10 bg-[#1F1D2B] border border-white/10 rounded-lg flex items-center justify-center text-gray-400 active:scale-90 transition-all"
-              >
-                <FaPlus />
-              </button>
+            <button
+              onClick={() => onUpdateQty(item.id, item.quantity + 1)}
+              className="w-10 h-10 bg-dark-900 border border-white/10 rounded-lg flex items-center justify-center text-gray-400 active:scale-90 transition-all"
+            >
+              <FaPlus />
+            </button>
           )}
         </div>
       </div>

@@ -1,262 +1,272 @@
-'use client'
-import { useState, useEffect, useMemo, useRef } from 'react'
-import { RiMenuFoldLine, RiMenuUnfoldLine } from 'react-icons/ri';
-import { supabase } from '@/lib/supabase'
-import { getKitchenOrders, updateOrderItemStatus } from '@/services/orderService'
-import { useRestaurantData } from '@/app/hooks/useRestaurantData'
-import KitchenTicket from '../_components/KitchenTicket'
-import KitchenSummaryBar from '../_components/KitchenSummaryBar'
-import MasonryGrid from '../_components/MasonryGrid'
-import Loader from '@/components/ui/Loader'
-import { useRestaurantFeatures } from '@/app/hooks/useRestaurantFeatures';
-import toast from 'react-hot-toast'
+"use client";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { RiMenuFoldLine, RiMenuUnfoldLine } from "react-icons/ri";
+import {
+  getKitchenOrders,
+  subscribeToKitchenUpdates,
+  updateOrderItemStatus,
+} from "@/services/orderService";
+import { useRestaurantData } from "@/app/hooks/useRestaurantData";
+import KitchenTicket from "../_components/KitchenTicket";
+import KitchenSummaryBar from "../_components/KitchenSummaryBar";
+import MasonryGrid from "../_components/MasonryGrid";
+import Loader from "@/components/ui/Loader";
+import { useRestaurantFeatures } from "@/app/hooks/useRestaurantFeatures";
+import toast from "react-hot-toast";
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 
 export default function ChefDashboard() {
-    const [orders, setOrders] = useState([])
-    const [loading, setInitialLoading] = useState(true)
-    const [isLoggingOut, setIsLoggingOut] = useState(false)
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-    const [newItemIds, setNewItemIds] = useState(new Set())
-    const knownOrderIds = useRef(null)
-    const { restaurantId } = useRestaurantData()
-    const { t } = useLanguage();
+  const [orders, setOrders] = useState([]);
+  const [loading, setInitialLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [newItemIds, setNewItemIds] = useState(new Set());
+  const knownOrderIds = useRef(null);
+  const { restaurantId } = useRestaurantData();
+  const { t } = useLanguage();
 
-    //  Initial Fetch
-    useEffect(() => {
-        if (!restaurantId) return
+  //  Initial Fetch
+  useEffect(() => {
+    if (!restaurantId) return;
 
-        const fetchOrders = async () => {
-            try {
-                const data = await getKitchenOrders(restaurantId)
-                setOrders(data)
-                knownOrderIds.current = new Set(data.map(o => o.id))
-            } catch (err) {
-                console.error("Failed to load orders", err)
-                toast.error("Failed to load orders")
-            } finally {
-                setInitialLoading(false)
+    const fetchOrders = async () => {
+      try {
+        const data = await getKitchenOrders(restaurantId);
+        setOrders(data);
+        knownOrderIds.current = new Set(data.map((o) => o.id));
+      } catch (err) {
+        console.error("Failed to load orders", err);
+        toast.error("Failed to load orders");
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [restaurantId]);
+
+  // Realtime Subscription
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const refreshKitchenOrders = () => {
+      setTimeout(() => {
+        getKitchenOrders(restaurantId).then((data) => {
+          // Detect newly arrived items for existing tables
+          if (knownOrderIds.current) {
+            const existingSessionIds = new Set(
+              data
+                .filter((o) => knownOrderIds.current.has(o.id))
+                .map((o) => o.session_id),
+            );
+            const freshIds = data
+              .filter(
+                (o) =>
+                  !knownOrderIds.current.has(o.id) &&
+                  existingSessionIds.has(o.session_id),
+              )
+              .map((o) => o.id);
+            if (freshIds.length > 0) {
+              setNewItemIds((prev) => {
+                const next = new Set(prev);
+                freshIds.forEach((id) => next.add(id));
+                return next;
+              });
             }
-        }
+          }
+          knownOrderIds.current = new Set(data.map((o) => o.id));
+          setOrders(data);
+        });
+      }, 1000);
+    };
 
-        fetchOrders()
-    }, [restaurantId])
+    return subscribeToKitchenUpdates(refreshKitchenOrders);
+  }, [restaurantId]);
 
-    // Realtime Subscription
-    useEffect(() => {
-        if (!restaurantId) return
+  // Updates status of a single item
+  const handleUpdateStatus = async (itemId, newStatus) => {
+    // Optimistic Update
+    setOrders((prev) =>
+      prev.map((o) => (o.id === itemId ? { ...o, status: newStatus } : o)),
+    );
 
-        const channel = supabase
-            .channel('chef-kitchen-updates')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'order_items'
-                },
-                (payload) => {
-                     // Robust re-fetch on any change for now
-                     // Adding delay to ensure DB replication is caught up
-                     setTimeout(() => {
-                         getKitchenOrders(restaurantId).then(data => {
-                             // Detect newly arrived items for existing tables
-                             if (knownOrderIds.current) {
-                                 const existingSessionIds = new Set(
-                                     data.filter(o => knownOrderIds.current.has(o.id)).map(o => o.session_id)
-                                 )
-                                 const freshIds = data
-                                     .filter(o => !knownOrderIds.current.has(o.id) && existingSessionIds.has(o.session_id))
-                                     .map(o => o.id)
-                                 if (freshIds.length > 0) {
-                                     setNewItemIds(prev => {
-                                         const next = new Set(prev)
-                                         freshIds.forEach(id => next.add(id))
-                                         return next
-                                     })
-                                 }
-                             }
-                             knownOrderIds.current = new Set(data.map(o => o.id))
-                             setOrders(data)
-                         })
-                     }, 1000)
-                }
-            )
-            .subscribe()
+    try {
+      await updateOrderItemStatus(itemId, newStatus);
 
-        return () => {
-             supabase.removeChannel(channel)
-        }
-    }, [restaurantId])
+      if (newStatus === "served") {
+        // Do not remove immediately. Let it persist for context until the whole ticket is cleared.
+        // setOrders(prev => prev.filter(o => o.id !== itemId))
+      }
 
-
-    // 3. Actions
-    // Updates status of a single item
-    const handleUpdateStatus = async (itemId, newStatus) => {
-        // Optimistic Update
-        setOrders(prev => prev.map(o => 
-            o.id === itemId ? { ...o, status: newStatus } : o
-        ))
-
-        try {
-            await updateOrderItemStatus(itemId, newStatus)
-            
-            if (newStatus === 'served') {
-                 // Do not remove immediately. Let it persist for context until the whole ticket is cleared.
-                 // setOrders(prev => prev.filter(o => o.id !== itemId))
-            }
-
-            const icon = newStatus === 'preparing' ? '👨‍🍳' : '✅'
-            toast.success(`Order ${newStatus}`, { icon })
-        } catch (err) {
-           toast.error("Action failed")
-           // Revert on error
-           getKitchenOrders(restaurantId).then(setOrders)
-        }
+      const icon = newStatus === "preparing" ? "👨‍🍳" : "✅";
+      toast.success(`Order ${newStatus}`, { icon });
+    } catch (err) {
+      toast.error("Action failed");
+      // Revert on error
+      getKitchenOrders(restaurantId).then(setOrders);
     }
+  };
 
-    // 4. Grouping Logic
-    const groupedTickets = useMemo(() => {
-        const groups = {}
-        
-        orders.forEach(order => {
-            const sessionId = order.session_id || order.session?.id
-            if (!groups[sessionId]) {
-                groups[sessionId] = {
-                    session: order.session, // Contains table info
-                    orders: []
-                }
-            }
-            groups[sessionId].orders.push(order)
-        })
+  const groupedTickets = useMemo(() => {
+    const groups = {};
 
-        // Sort groups by oldest pending order time?
-        // Or essentially any active order.
-        // Sort by FIFO
-        const sortedGroups = Object.values(groups).sort((a,b) => {
-             const timeA = Math.min(...a.orders.map(o => new Date(o.created_at).getTime()))
-             const timeB = Math.min(...b.orders.map(o => new Date(o.created_at).getTime()))
-             return timeA - timeB
-        })
+    orders.forEach((order) => {
+      const sessionId = order.session_id || order.session?.id;
+      if (!groups[sessionId]) {
+        groups[sessionId] = {
+          session: order.session, // Contains table info
+          orders: [],
+        };
+      }
+      groups[sessionId].orders.push(order);
+    });
 
-        // Filter out tickets that are completely 'served' (no active items)
-        return sortedGroups.filter(group => {
-            const hasActive = group.orders.some(o => o.status !== 'served' && o.status !== 'cancelled')
-            return hasActive
-        })
-    }, [orders])
+    // Sort groups by oldest pending order time?
+    // Or essentially any active order.
+    // Sort by FIFO
+    const sortedGroups = Object.values(groups).sort((a, b) => {
+      const timeA = Math.min(
+        ...a.orders.map((o) => new Date(o.created_at).getTime()),
+      );
+      const timeB = Math.min(
+        ...b.orders.map((o) => new Date(o.created_at).getTime()),
+      );
+      return timeA - timeB;
+    });
 
-    // Bulk Serve Action
-    const handleServeAll = async (ordersToServe) => {
-        // Optimistic Update
-        const ids = ordersToServe.map(o => o.id)
-        setOrders(prev => prev.map(o => 
-            ids.includes(o.id) ? { ...o, status: 'served' } : o
-        ))
+    // Filter out tickets that are completely 'served' (no active items)
+    return sortedGroups.filter((group) => {
+      const hasActive = group.orders.some(
+        (o) => o.status !== "served" && o.status !== "cancelled",
+      );
+      return hasActive;
+    });
+  }, [orders]);
 
-        try {
-            // Update all in parallel
-            await Promise.all(ids.map(id => updateOrderItemStatus(id, 'served')))
-            toast.success("Ticket Served!")
-        } catch (err) {
-            toast.error("Bulk action failed")
-            getKitchenOrders(restaurantId).then(setOrders)
-        }
+  // Bulk Serve Action
+  const handleServeAll = async (ordersToServe) => {
+    // Optimistic Update
+    const ids = ordersToServe.map((o) => o.id);
+    setOrders((prev) =>
+      prev.map((o) => (ids.includes(o.id) ? { ...o, status: "served" } : o)),
+    );
+
+    try {
+      // Update all in parallel
+      await Promise.all(ids.map((id) => updateOrderItemStatus(id, "served")));
+      toast.success("Ticket Served!");
+    } catch (err) {
+      toast.error("Bulk action failed");
+      getKitchenOrders(restaurantId).then(setOrders);
     }
+  };
 
-    const { isEnabled } = useRestaurantFeatures();
+  const { isEnabled } = useRestaurantFeatures();
 
-    // 5. Render
-    if (loading) {
-        return (
-            <div className="flex h-screen items-center justify-center bg-gray-900">
-                <Loader />
-            </div>
-        )
-    }
-
-    if (!isEnabled("kitchen")) {
-        return (
-            <div className="flex h-screen items-center justify-center bg-[#1f1d2b] text-white">
-                <div className="text-center space-y-4">
-                <h1 className="text-3xl font-bold text-gray-500">Kitchen Display Disabled</h1>
-                <p className="text-gray-400">This module is currently turned off in settings.</p>
-                </div>
-            </div>
-        );
-    }
-
+  if (loading) {
     return (
-        <div className="min-h-screen bg-dark-900 flex overflow-hidden">
-            {/* Left Sidebar: Summary */}
-            <KitchenSummaryBar 
-                orders={orders} 
-                isOpen={isSidebarOpen} 
-                onClose={() => setIsSidebarOpen(false)}
-                isLoggingOut={isLoggingOut}
-                setIsLoggingOut={setIsLoggingOut}
-            />
-            
-            <Loader active={isLoggingOut} />
+      <div className="flex h-screen items-center justify-center bg-gray-900">
+        <Loader />
+      </div>
+    );
+  }
 
-            {/* Main Content */}
-            <main className="flex-1 overflow-y-auto h-screen relative bg-dark-900">
-                <header className="sticky top-0 z-30 bg-dark-900/95 backdrop-blur-sm border-b border-dark-800 p-4 md:p-6 pt-[calc(env(safe-area-inset-top)+1rem)] md:pt-[calc(env(safe-area-inset-top)+1.5rem)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
-                    <div className="flex items-center gap-3 w-full md:w-auto">
-                        {/* Mobile Sidebar Toggle */}
-                        <button 
-                            onClick={() => setIsSidebarOpen(prev => !prev)}
-                            className="md:hidden p-2 text-white bg-dark-800 rounded-lg shadow-md border border-dark-700 active:scale-95 transition-transform shrink-0"
-                        >
-                            {isSidebarOpen ? <RiMenuFoldLine size={24} /> : <RiMenuUnfoldLine size={24} />}
-                        </button>
-                        <div className="flex-1">
-                            <h1 className="text-2xl md:text-4xl font-black text-text-light tracking-tight flex items-center gap-2">
-                                {t('kitchenDisplay')}
-                            </h1>
-                            <p className="text-text-dim mt-1 font-medium text-sm md:text-base">
-                                {groupedTickets.length} {t('activeTickets')} • {orders.filter(o => o.status === 'preparing').reduce((sum, o) => sum + (o.quantity || 1), 0)} {t('items')}
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 w-full justify-end md:w-auto">
-                        <LanguageSwitcher />
-
-                        {/* Connection Status Indicator */}
-                        <div className="flex items-center gap-2 bg-dark-800 px-4 py-2 rounded-full shadow-lg border border-dark-700">
-                            <span className="relative flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                            </span>
-                            <span className="text-emerald-400 text-sm font-bold">LIVE</span>
-                        </div>
-                    </div>
-                </header>
-
-                <div className="p-4 md:p-6 pt-6">
-                    {groupedTickets.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-text-dim">
-                            <p className="text-2xl font-bold text-text-light">{t('allClear')}</p>
-                            <p>{t('noActiveOrders')}</p>
-                        </div>
-                    ) : (
-                        <MasonryGrid className="pb-10">
-                            {groupedTickets.map(ticket => (
-                                <KitchenTicket 
-                                    key={ticket.session.id} 
-                                    session={ticket.session}
-                                    orders={ticket.orders}
-                                    onUpdateStatus={handleUpdateStatus}
-                                    onServeAll={handleServeAll}
-                                    newItemIds={newItemIds}
-                                />
-                            ))}
-                        </MasonryGrid>
-                    )}
-                </div>
-            </main>
+  if (!isEnabled("kitchen")) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-dark-900 text-white">
+        <div className="text-center space-y-4">
+          <h1 className="text-3xl font-bold text-gray-500">
+            Kitchen Display Disabled
+          </h1>
+          <p className="text-gray-400">
+            This module is currently turned off in settings.
+          </p>
         </div>
-    )
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-dark-900 flex overflow-hidden">
+      {/* Left Sidebar: Summary */}
+      <KitchenSummaryBar
+        orders={orders}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        isLoggingOut={isLoggingOut}
+        setIsLoggingOut={setIsLoggingOut}
+      />
+
+      <Loader active={isLoggingOut} />
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto h-screen relative bg-dark-900">
+        <header className="sticky top-0 z-30 bg-dark-900/95 backdrop-blur-sm border-b border-dark-800 p-4 md:p-6 pt-[calc(env(safe-area-inset-top)+1rem)] md:pt-[calc(env(safe-area-inset-top)+1.5rem)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            {/* Mobile Sidebar Toggle */}
+            <button
+              onClick={() => setIsSidebarOpen((prev) => !prev)}
+              className="md:hidden p-2 text-white bg-dark-800 rounded-lg shadow-md border border-dark-700 active:scale-95 transition-transform shrink-0"
+            >
+              {isSidebarOpen ? (
+                <RiMenuFoldLine size={24} />
+              ) : (
+                <RiMenuUnfoldLine size={24} />
+              )}
+            </button>
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-4xl font-black text-text-light tracking-tight flex items-center gap-2">
+                {t("kitchenDisplay")}
+              </h1>
+              <p className="text-text-dim mt-1 font-medium text-sm md:text-base">
+                {groupedTickets.length} {t("activeTickets")} •{" "}
+                {orders
+                  .filter((o) => o.status === "preparing")
+                  .reduce((sum, o) => sum + (o.quantity || 1), 0)}{" "}
+                {t("items")}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 w-full justify-end md:w-auto">
+            <LanguageSwitcher />
+
+            {/* Connection Status Indicator */}
+            <div className="flex items-center gap-2 bg-dark-800 px-4 py-2 rounded-full shadow-lg border border-dark-700">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
+              <span className="text-emerald-400 text-sm font-bold">LIVE</span>
+            </div>
+          </div>
+        </header>
+
+        <div className="p-4 md:p-6 pt-6">
+          {groupedTickets.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-text-dim">
+              <p className="text-2xl font-bold text-text-light">
+                {t("allClear")}
+              </p>
+              <p>{t("noActiveOrders")}</p>
+            </div>
+          ) : (
+            <MasonryGrid className="pb-10">
+              {groupedTickets.map((ticket) => (
+                <KitchenTicket
+                  key={ticket.session.id}
+                  session={ticket.session}
+                  orders={ticket.orders}
+                  onUpdateStatus={handleUpdateStatus}
+                  onServeAll={handleServeAll}
+                  newItemIds={newItemIds}
+                />
+              ))}
+            </MasonryGrid>
+          )}
+        </div>
+      </main>
+    </div>
+  );
 }

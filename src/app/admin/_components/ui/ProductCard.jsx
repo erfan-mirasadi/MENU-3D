@@ -28,7 +28,6 @@ export default function ProductCard({ product, onEdit, defaultLang = "en" }) {
 
   return (
     <div className="bg-dark-900 rounded-2xl p-6 flex flex-col items-center text-center shadow-lg relative mt-10 border border-gray-800 hover:border-primary/50 transition-colors h-full group">
-      {/* Media Display - Cleaner Look (No heavy borders/bg) */}
       <div className="absolute -top-13 w-38 h-38 rounded-full shadow-2xl shadow-black/50 overflow-hidden z-10 transition-transform group-hover:scale-105 duration-300">
         <SmartMedia
           files={mediaFiles}

@@ -1,7 +1,6 @@
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import WaiterLayoutClient from "./WaiterLayoutClient";
-import { getUserProfile } from "@/services/userService";
+import { getServerAuthContext } from "@/services/authServerService";
 
 export const metadata = {
   title: "Menu 3D — Waiter",
@@ -23,13 +22,7 @@ export const viewport = {
 };
 
 export default async function WaiterLayout({ children }) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // 1. Strict Role Check: Only 'waiter'
-  const profile = await getUserProfile(supabase, user?.id);
+  const { profile } = await getServerAuthContext();
 
   if (!profile || (profile.role !== "waiter" && profile.role !== "owner")) {
     redirect("/login");

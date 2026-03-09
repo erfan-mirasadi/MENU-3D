@@ -4,10 +4,12 @@
   --color-dark-900: #1f1d2b;
   --color-dark-800: #252836;
   --color-dark-700: #2d303e;
+  --color-dark-600: #393c49;
 
   --color-accent: #ea7c69;
   --color-accent-hover: #e06854;
   --color-accent-light: #f8b5a9;
+  --color-accent-soft: #ffb194;
 
   --color-text-light: #e0e6e9;
   --color-text-dim: #abbbc2;
@@ -16,7 +18,8 @@
 }
 
 /* ── PWA Native Feel ── */
-html, body {
+html,
+body {
   /* Prevent pull-to-refresh and overscroll bounce */
   overscroll-behavior: none;
 
@@ -57,7 +60,6 @@ html, body {
   }
 }
 
-
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -78,9 +80,15 @@ html, body {
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 }
 
 .animate-float {

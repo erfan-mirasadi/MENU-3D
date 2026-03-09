@@ -4,8 +4,8 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
+import { signOutLocal } from "@/services/authService";
 import { unsubscribeFromPushNotifications } from "@/services/notificationService";
 import { RiLogoutBoxRLine, RiStore2Line } from "react-icons/ri";
 import Loader from "@/components/ui/Loader";
@@ -21,8 +21,7 @@ export default function AdminSidebar({ links }) {
     try {
       setIsLoggingOut(true);
       await unsubscribeFromPushNotifications();
-      const { error } = await supabase.auth.signOut({ scope: 'local' });
-      if (error) throw error;
+      await signOutLocal();
 
       toast.success("Logged out successfully");
       router.push("/login?role=owner");
@@ -38,14 +37,14 @@ export default function AdminSidebar({ links }) {
     <aside className="hidden md:flex w-28 h-full bg-dark-900 flex-col items-center py-6 z-50 border-r border-dark-800">
       <div className="mb-10">
         <div className="flex items-center justify-center pointer-events-none select-none">
-          <Image 
-            src="/logo-web.png" 
-            alt="logo" 
-            width={0} 
-            height={0} 
+          <Image
+            src="/logo-web.png"
+            alt="logo"
+            width={0}
+            height={0}
             sizes="100vw"
-            className="object-contain drop-shadow-[0_0_8px_rgba(234,124,105,0.7)]" 
-            style={{ width: '60px', height: 'auto' }}
+            className="object-contain drop-shadow-[0_0_8px_rgba(234,124,105,0.7)]"
+            style={{ width: "60px", height: "auto" }}
             priority
           />
         </div>
@@ -92,7 +91,11 @@ export default function AdminSidebar({ links }) {
         disabled={isLoggingOut}
         className="mt-auto mb-4 text-accent hover:text-white hover:bg-red-500/20 w-12 h-12 rounded-xl flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
       >
-        {isLoggingOut ? <Loader size="sm" color="white" /> : <RiLogoutBoxRLine size={24} />}
+        {isLoggingOut ? (
+          <Loader size="sm" color="white" />
+        ) : (
+          <RiLogoutBoxRLine size={24} />
+        )}
       </button>
     </aside>
   );

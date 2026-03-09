@@ -264,7 +264,8 @@ const DICTIONARY = {
     byItems: "By Items",
     custom: "Custom",
     splitCount: "Split Count",
-    selectItemsHint: "Select items from the list on the left to calculate total.",
+    selectItemsHint:
+      "Select items from the list on the left to calculate total.",
     fullPayment: "FULL PAYMENT",
     splitPayment: "SPLIT / PARTIAL",
     adjustments: "Adjustments",
@@ -829,7 +830,6 @@ const DICTIONARY = {
     statusSource: "Источник",
     orderNote: "Заметка к заказу",
     notePlaceholder: "Аллергии, поострее и т.д...",
-
   },
   fa: {
     addToCart: "افزودن به سبد",
@@ -1015,7 +1015,8 @@ const DICTIONARY = {
     byItems: "بر اساس اقلام",
     custom: "دستی",
     splitCount: "تعداد نفرات",
-    selectItemsHint: "موارد را از لیست سمت راست انتخاب کنید تا مجموع محاسبه شود.",
+    selectItemsHint:
+      "موارد را از لیست سمت راست انتخاب کنید تا مجموع محاسبه شود.",
     fullPayment: "پرداخت کامل",
     splitPayment: "تقسیم / جزئی",
     adjustments: "تعدیلات",
@@ -1468,7 +1469,7 @@ const DICTIONARY = {
     activeTickets: "Aktive Tickets",
     allClear: "Alles erledigt, Chef!",
     noActiveOrders: "Keine aktiven Bestellungen.",
-     // Report Columns
+    // Report Columns
     billId: "Rechnungs-ID",
     method: "Methode",
     staff: "Personal",
@@ -1602,10 +1603,11 @@ const DICTIONARY = {
 const LanguageContext = createContext();
 
 export const LanguageProvider = ({ children, dbSettings }) => {
-  const supportedCodes = dbSettings?.supported_languages || ALL_LANGUAGES.map(l => l.code);
+  const supportedCodes =
+    dbSettings?.supported_languages || ALL_LANGUAGES.map((l) => l.code);
 
   const availableLanguages = ALL_LANGUAGES.filter((lang) =>
-    supportedCodes.includes(lang.code)
+    supportedCodes.includes(lang.code),
   );
 
   const { restaurant } = useRestaurantData();
@@ -1618,10 +1620,7 @@ export const LanguageProvider = ({ children, dbSettings }) => {
     return dbSettings?.default_language || restaurant?.default_language || "tr";
   });
 
-  const [isLoaded, setIsLoaded] = useState(false);
-
   useEffect(() => {
-    setIsLoaded(true);
     localStorage.setItem("app-lang", language);
 
     const currentLangConfig = ALL_LANGUAGES.find((l) => l.code === language);
@@ -1629,7 +1628,7 @@ export const LanguageProvider = ({ children, dbSettings }) => {
 
     document.documentElement.dir = dir;
     document.documentElement.lang = language;
-  }, [language, restaurant]); // Added restaurant to dependency array to re-evaluate if it loads later
+  }, [language, restaurant]);
 
   const t = (key) =>
     DICTIONARY[language]?.[key] || DICTIONARY["tr"][key] || key;
@@ -1643,8 +1642,6 @@ export const LanguageProvider = ({ children, dbSettings }) => {
           Object.values(data)[0]
       : data;
   };
-
-  if (!isLoaded) return null;
 
   return (
     <LanguageContext.Provider

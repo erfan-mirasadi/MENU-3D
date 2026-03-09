@@ -3,6 +3,11 @@ import { useRef, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
+const pseudoRandom = (seed) => {
+  const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453123;
+  return x - Math.floor(x);
+};
+
 const CONFIG = {
   // appearance settings
   COUNT: 150, // number of particles (for mobile up to 500 is okay)
@@ -36,25 +41,31 @@ export default function BackgroundParticles({ gyroData }) {
     const pos = new Float32Array(CONFIG.COUNT * 3);
     const initPos = new Float32Array(CONFIG.COUNT * 3);
     const rnd = new Float32Array(CONFIG.COUNT * 3);
+    const baseSeed = viewport.width * 1000 + viewport.height * 100;
 
     for (let i = 0; i < CONFIG.COUNT; i++) {
+      const i3 = i * 3;
+      const rx = pseudoRandom(baseSeed + i3 + 1);
+      const ry = pseudoRandom(baseSeed + i3 + 2);
+      const rz = pseudoRandom(baseSeed + i3 + 3);
+
       // spread based on SPREAD_FACTOR
-      const x = (Math.random() - 0.5) * viewport.width * CONFIG.SPREAD_FACTOR;
-      const y = (Math.random() - 0.5) * viewport.height * CONFIG.SPREAD_FACTOR;
-      const z = (Math.random() - 0.5) * CONFIG.DEPTH - 5;
+      const x = (rx - 0.5) * viewport.width * CONFIG.SPREAD_FACTOR;
+      const y = (ry - 0.5) * viewport.height * CONFIG.SPREAD_FACTOR;
+      const z = (rz - 0.5) * CONFIG.DEPTH - 5;
 
-      pos[i * 3] = x;
-      pos[i * 3 + 1] = y;
-      pos[i * 3 + 2] = z;
+      pos[i3] = x;
+      pos[i3 + 1] = y;
+      pos[i3 + 2] = z;
 
-      initPos[i * 3] = x;
-      initPos[i * 3 + 1] = y;
-      initPos[i * 3 + 2] = z;
+      initPos[i3] = x;
+      initPos[i3 + 1] = y;
+      initPos[i3 + 2] = z;
 
       // random numbers for movement variety
-      rnd[i * 3] = Math.random();
-      rnd[i * 3 + 1] = Math.random();
-      rnd[i * 3 + 2] = Math.random();
+      rnd[i3] = pseudoRandom(baseSeed + i3 + 11);
+      rnd[i3 + 1] = pseudoRandom(baseSeed + i3 + 12);
+      rnd[i3 + 2] = pseudoRandom(baseSeed + i3 + 13);
     }
     return { positions: pos, initialPositions: initPos, randoms: rnd };
   }, [viewport.width, viewport.height]);
@@ -72,12 +83,12 @@ export default function BackgroundParticles({ gyroData }) {
     smoothTouch.current.x = THREE.MathUtils.lerp(
       smoothTouch.current.x,
       targetX,
-      CONFIG.TOUCH_SMOOTHNESS
+      CONFIG.TOUCH_SMOOTHNESS,
     );
     smoothTouch.current.y = THREE.MathUtils.lerp(
       smoothTouch.current.y,
       targetY,
-      CONFIG.TOUCH_SMOOTHNESS
+      CONFIG.TOUCH_SMOOTHNESS,
     );
 
     // sensor offset

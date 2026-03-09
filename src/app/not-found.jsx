@@ -9,10 +9,10 @@ export const metadata = {
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen bg-[#1f1d2b] text-white selection:bg-[#ea7c69] selection:text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <main className="min-h-screen bg-dark-900 text-white selection:bg-accent selection:text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Background Ambience */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#ea7c69] rounded-full blur-[120px] opacity-10 animate-pulse"></div>
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-accent rounded-full blur-[120px] opacity-10 animate-pulse"></div>
         <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] bg-purple-600 rounded-full blur-[120px] opacity-10 animate-pulse delay-1000"></div>
       </div>
 
@@ -27,23 +27,24 @@ export default function NotFound() {
             priority
           />
         </div>
-        
-        <h1 className="text-8xl md:text-9xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-600">
+
+        <h1 className="text-8xl md:text-9xl font-black tracking-tighter text-transparent bg-clip-text bg-linear-to-b from-white to-gray-600">
           404
         </h1>
-        
+
         <div className="space-y-4">
           <h2 className="text-3xl md:text-4xl font-bold text-white">
             Page Not Found
           </h2>
           <p className="text-lg md:text-xl text-gray-400 leading-relaxed max-w-lg mx-auto">
-            Oops! It looks like the page you are looking for has been moved, deleted, or never existed in the first place.
+            Oops! It looks like the page you are looking for has been moved,
+            deleted, or never existed in the first place.
           </p>
         </div>
 
         <Link
           href="/"
-          className="group relative inline-flex items-center justify-center px-8 py-4 bg-[#ea7c69] hover:bg-[#ff8f7d] text-white font-bold text-lg rounded-xl transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(234,124,105,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(234,124,105,0.6)] hover:-translate-y-1 active:scale-95 gap-2 mt-8"
+          className="group relative inline-flex items-center justify-center px-8 py-4 bg-accent hover:bg-[#ff8f7d] text-white font-bold text-lg rounded-xl transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(234,124,105,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(234,124,105,0.6)] hover:-translate-y-1 active:scale-95 gap-2 mt-8"
         >
           <RiArrowLeftLine className="text-2xl group-hover:-translate-x-1 transition-transform" />
           Back to Home

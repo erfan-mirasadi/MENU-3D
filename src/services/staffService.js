@@ -2,7 +2,10 @@ import { supabase } from "@/lib/supabase";
 import { ORDER_STATUS, SESSION_STATUS } from "@/lib/constants";
 
 // Confirm Orders (Convert Pending -> Confirmed)
-export async function confirmOrderItems(sessionId, destinationStatus = ORDER_STATUS.CONFIRMED) {
+export async function confirmOrderItems(
+  sessionId,
+  destinationStatus = ORDER_STATUS.CONFIRMED,
+) {
   const { data, error } = await supabase
     .from("order_items")
     .update({ status: destinationStatus })
@@ -14,8 +17,8 @@ export async function confirmOrderItems(sessionId, destinationStatus = ORDER_STA
   return data;
 }
 
-// Prepare Orders (Convert Confirmed -> Served/Kitchen) 
-// NOTE: DB Constraint only allows 'pending', 'confirmed', 'served'. 
+// Prepare Orders (Convert Confirmed -> Served/Kitchen)
+// NOTE: DB Constraint only allows 'pending', 'confirmed', 'served'.
 // We use 'served' to represent "Active/In Progress" after confirmation.
 export async function startPreparingOrder(sessionId) {
   const { data, error } = await supabase
@@ -36,9 +39,9 @@ export async function serveConfirmedOrders(sessionId) {
     .from("order_items")
     .update({ status: ORDER_STATUS.SERVED })
     .eq("session_id", sessionId)
-    // We update 'confirmed' items. 
+    // We update 'confirmed' items.
     // If we also want to catch 'preparing' items (in case they got there somehow), we could use IN operator, but usually it's just confirmed.
-    .eq("status", ORDER_STATUS.CONFIRMED) 
+    .eq("status", ORDER_STATUS.CONFIRMED)
     .select();
 
   if (error) throw error;
@@ -54,8 +57,6 @@ export async function closeTableSession(sessionId) {
     .eq("id", sessionId);
 
   if (sessionError) throw sessionError;
-
-
 
   // Resolve pending service requests
   await supabase
@@ -101,17 +102,17 @@ export async function addOrderItem(item) {
 }
 
 export async function getMenuProducts(restaurantId) {
-      if (!restaurantId) {
-            console.error("getMenuProducts called without restaurantId");
-            return [];
-      }
+  if (!restaurantId) {
+    console.error("getMenuProducts called without restaurantId");
+    return [];
+  }
   const { data, error } = await supabase
     .from("products")
     .select(
       `
       *,
       category:categories(id, title, sort_order)
-    `
+    `,
     )
     .eq("restaurant_id", restaurantId)
     .eq("is_deleted", false)
@@ -128,7 +129,7 @@ export async function startTableSession(tableId, restaurantId) {
     .insert({
       table_id: tableId,
       restaurant_id: restaurantId,
-      status: SESSION_STATUS.ACTIVE, 
+      status: SESSION_STATUS.ACTIVE,
     })
     .select()
     .single();
@@ -137,13 +138,12 @@ export async function startTableSession(tableId, restaurantId) {
   return data;
 }
 
-// 6. Move Session (Transfer)
 export const moveSession = async (sessionId, newTableId) => {
   // Update the session's table_id reference
   const { data, error } = await supabase
-    .from('sessions')
+    .from("sessions")
     .update({ table_id: newTableId })
-    .eq('id', sessionId)
+    .eq("id", sessionId)
     .select();
   if (error) throw error;
   return data;
@@ -153,19 +153,19 @@ export const moveSession = async (sessionId, newTableId) => {
 export const mergeSessions = async (sourceSessionId, targetSessionId) => {
   // Move all order_items from Source to Target
   const { error: itemError } = await supabase
-    .from('order_items')
+    .from("order_items")
     .update({ session_id: targetSessionId })
-    .eq('session_id', sourceSessionId);
+    .eq("session_id", sourceSessionId);
   if (itemError) throw itemError;
 
   // Close the Source Session (mark as merged)
   const { error: sessionError } = await supabase
-    .from('sessions')
-    .update({ 
-        status: SESSION_STATUS.CLOSED, 
+    .from("sessions")
+    .update({
+      status: SESSION_STATUS.CLOSED,
     })
-    .eq('id', sourceSessionId);
-    
+    .eq("id", sourceSessionId);
+
   if (sessionError) throw sessionError;
   return true;
 };

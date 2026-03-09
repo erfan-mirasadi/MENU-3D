@@ -41,7 +41,7 @@ export default function MenuModal({
           }
         } catch (error) {
           console.error(error);
-          toast.error(t('menuLoadFailed'));
+          toast.error(t("menuLoadFailed"));
         } finally {
           setLoading(false);
         }
@@ -80,7 +80,7 @@ export default function MenuModal({
       .filter(
         (i) =>
           (i.product_id === productId || i.product?.id === productId) &&
-          i.status === "pending"
+          i.status === "pending",
       )
       .reduce((sum, i) => sum + i.quantity, 0);
   };
@@ -88,17 +88,18 @@ export default function MenuModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col  bg-[#1F1D2B] animate-in slide-in-from-bottom duration-300"
-         style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    <div
+      className="fixed inset-0 z-60 flex flex-col  bg-[#1F1D2B] animate-in slide-in-from-bottom duration-300"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       {/* HEADER */}
-      <div className="p-4 bg-[#252836] border-b border-white/10 flex gap-3 items-center shadow-md shrink-0 safe-area-top">
+      <div className="p-4 bg-dark-800 border-b border-white/10 flex gap-3 items-center shadow-md shrink-0 safe-area-top">
         <div className="relative flex-1">
           <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
           <input
             type="text"
             placeholder="Search items..."
-            className="w-full bg-[#1F1D2B] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-[#ea7c69]"
+            className="w-full bg-[#1F1D2B] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-accent"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -125,8 +126,8 @@ export default function MenuModal({
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all cursor-pointer ${
                   selectedCategory === cat.id
-                    ? "bg-[#ea7c69] text-white shadow-lg shadow-orange-900/20"
-                    : "bg-[#252836] text-gray-400 border border-white/5"
+                    ? "bg-accent text-white shadow-lg shadow-orange-900/20"
+                    : "bg-dark-800 text-gray-400 border border-white/5"
                 }`}
               >
                 {title}
@@ -137,10 +138,10 @@ export default function MenuModal({
       </div>
 
       {/* PRODUCTS GRID */}
-      <div className="flex-1 overflow-y-auto p-4 bg-[#1F1D2B]">
+      <div className="flex-1 overflow-y-auto p-4 bg-dark-900">
         {loading ? (
           <div className="flex justify-center mt-20">
-             <Loader/>
+            <Loader />
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pb-20">
@@ -149,8 +150,8 @@ export default function MenuModal({
               return (
                 <div
                   key={product.id}
-                  className={`bg-[#252836] rounded-2xl p-3 border transition-all flex flex-col ${
-                    qty > 0 ? "border-[#ea7c69]/50" : "border-white/5"
+                  className={`bg-dark-800 rounded-2xl p-3 border transition-all flex flex-col ${
+                    qty > 0 ? "border-accent/50" : "border-white/5"
                   }`}
                 >
                   {/* Image */}
@@ -162,7 +163,7 @@ export default function MenuModal({
                     />
                     {/* Badge if in cart */}
                     {qty > 0 && (
-                      <div className="absolute top-2 right-2 bg-[#ea7c69] text-white text-xs font-bold px-2 py-1 rounded-md shadow-md">
+                      <div className="absolute top-2 right-2 bg-accent text-white text-xs font-bold px-2 py-1 rounded-md shadow-md">
                         {qty}x
                       </div>
                     )}
@@ -173,7 +174,7 @@ export default function MenuModal({
                     <h3 className="text-white font-bold text-sm truncate leading-tight">
                       {product.title?.en || product.title?.tr || "Unknown"}
                     </h3>
-                    <p className="text-[#ea7c69] font-mono text-xs mt-1">
+                    <p className="text-accent font-mono text-xs mt-1">
                       {product.price} ₺
                     </p>
                   </div>
@@ -194,7 +195,7 @@ export default function MenuModal({
 
                     <button
                       onClick={() => onAdd(product)}
-                      className="flex-1 h-full bg-[#ea7c69] hover:bg-[#d96b58] text-white rounded-lg flex items-center justify-center shadow-lg shadow-orange-900/20 active:scale-95 transition-all cursor-pointer"
+                      className="flex-1 h-full bg-accent hover:bg-[#d96b58] text-white rounded-lg flex items-center justify-center shadow-lg shadow-orange-900/20 active:scale-95 transition-all cursor-pointer"
                     >
                       <FaPlus size={12} />
                     </button>

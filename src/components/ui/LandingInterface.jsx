@@ -19,8 +19,8 @@ export default function LandingInterface({
   if (!restaurant) return null;
 
   return (
-    <div className="relative h-[100dvh] w-full bg-[#1F1D2B] overflow-hidden font-sans selection:bg-[#ea7c69] selection:text-white flex flex-col">
-      {/* --- BACKGROUND LAYER --- */}
+    <div className="relative h-dvh w-full bg-dark-900 overflow-hidden font-sans selection:bg-accent selection:text-white flex flex-col">
+      {/* BACKGROUND LAYER */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         {restaurant.bg_image ? (
           <>
@@ -34,10 +34,10 @@ export default function LandingInterface({
                 isLoaded ? "scale-105" : "scale-100"
               }`}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#1F1D2B] via-[#1F1D2B]/90 to-black/30" />
+            <div className="absolute inset-0 bg-linear-to-t from-dark-900 via-dark-900/90 to-black/30" />
           </>
         ) : (
-          <div className="w-full h-full bg-[#1F1D2B]" />
+          <div className="w-full h-full bg-dark-900" />
         )}
       </div>
 
@@ -49,9 +49,9 @@ export default function LandingInterface({
       >
         {/* LOGO */}
         <div className="relative mb-4 group">
-          <div className="absolute -inset-4 bg-[#ea7c69]/20 rounded-full blur-xl animate-pulse"></div>
+          <div className="absolute -inset-4 bg-accent/20 rounded-full blur-xl animate-pulse"></div>
           {restaurant.logo ? (
-            <div className="relative w-24 h-24 rounded-[2rem] border border-white/10 p-1 bg-[#252836]/50 backdrop-blur-xl shadow-2xl">
+            <div className="relative w-24 h-24 rounded-2xl border border-white/10 p-1 bg-dark-800/50 backdrop-blur-xl shadow-2xl">
               <Image
                 src={restaurant.logo}
                 alt={restaurant.name}
@@ -61,7 +61,7 @@ export default function LandingInterface({
               />
             </div>
           ) : (
-            <div className="w-24 h-24 rounded-[2rem] bg-[#252836] border border-white/10 flex items-center justify-center text-4xl font-bold text-[#ea7c69] shadow-2xl">
+            <div className="w-24 h-24 rounded-2xl bg-dark-800 border border-white/10 flex items-center justify-center text-4xl font-bold text-accent shadow-2xl">
               {restaurant.name?.charAt(0)}
             </div>
           )}
@@ -75,7 +75,7 @@ export default function LandingInterface({
           <div className="bg-white/5 border border-white/10 backdrop-blur-md px-3 py-1 rounded-full mt-2">
             <p className="text-gray-400 text-[9px] font-mono uppercase tracking-[0.2em]">
               Table{" "}
-              <span className="text-[#ea7c69] font-bold text-[10px]">
+              <span className="text-accent font-bold text-[10px]">
                 {tableId}
               </span>
             </p>
@@ -90,15 +90,15 @@ export default function LandingInterface({
 
       {/*  FIXED BOTTOM BUTTON */}
       <div
-        className={`relative z-20 shrink-0 w-full p-6 pb-8 bg-gradient-to-t from-[#1F1D2B] via-[#1F1D2B] to-transparent transition-all duration-1000 delay-700 ${
+        className={`relative z-20 shrink-0 w-full p-6 pb-8 bg-linear-to-t from-dark-900 via-dark-900 to-transparent transition-all duration-1000 delay-700 ${
           isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
         }`}
       >
         <button
           onClick={onEnter}
-          className="group w-full bg-[#ea7c69] hover:bg-[#ff8f7d] text-white h-16 rounded-2xl shadow-[0_20px_40px_-10px_rgba(234,124,105,0.4)] flex items-center justify-center gap-3 active:scale-[0.98] transition-all border border-white/20 relative overflow-hidden"
+          className="group w-full bg-accent hover:bg-accent/80 text-white h-16 rounded-2xl shadow-[0_20px_40px_-10px_rgba(234,124,105,0.4)] flex items-center justify-center gap-3 active:scale-[0.98] transition-all border border-white/20 relative overflow-hidden"
         >
-          <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent z-0"></div>
+          <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-linear-to-r from-transparent via-white/20 to-transparent z-0"></div>
           <span className="text-lg font-bold tracking-wide relative z-10">
             Enter Menu
           </span>

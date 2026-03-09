@@ -15,33 +15,37 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
   const [cartItems, setCartItems] = useState([]);
   const [sessionId, setSessionId] = useState(null);
   const [guestId, setGuestId] = useState(null);
-  const [tableId, setTableId] = useState(null); // Local state for resolved UUID
-  const [isLoading, setIsLoading] = useState(true);
+  const [tableId, setTableId] = useState(null);
+  const [isLoading, setIsLoading] = useState(
+    () => !!(tableNumberFromUrl && restaurantId),
+  );
   const sessionRef = useRef(null);
+  // Track initialization to avoid loop
+  const initializationRef = useRef({
+    tableNumber: null,
+    restaurantId: null,
+    started: false,
+  });
 
-    // Track initialization to avoid loop
-    const initializationRef = useRef({ tableNumber: null, restaurantId: null, started: false });
-
-    //  Setup Session & Guest
+  //  Setup Session & Guest
   useEffect(() => {
     if (!tableNumberFromUrl || !restaurantId) {
-      setIsLoading(false);
       return;
     }
-    
+
     // Prevent duplicate triggers for the exact same table & restaurant
     if (
-        initializationRef.current.started && 
-        initializationRef.current.tableNumber === tableNumberFromUrl &&
-        initializationRef.current.restaurantId === restaurantId
+      initializationRef.current.started &&
+      initializationRef.current.tableNumber === tableNumberFromUrl &&
+      initializationRef.current.restaurantId === restaurantId
     ) {
-        return;
+      return;
     }
 
     initializationRef.current = {
-        tableNumber: tableNumberFromUrl,
-        restaurantId: restaurantId,
-        started: true
+      tableNumber: tableNumberFromUrl,
+      restaurantId: restaurantId,
+      started: true,
     };
 
     const controller = new AbortController();
@@ -64,7 +68,7 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
         const tableData = await getTableByNumber(
           tableNumberFromUrl,
           restaurantId,
-          signal
+          signal,
         );
 
         if (ignore || signal.aborted) return;
@@ -84,7 +88,11 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
         if (ignore || signal.aborted) return;
         if (!session) {
           console.log("🆕 Creating new session...");
-          session = await createSession(realTableUuid, realRestaurantId, signal);
+          session = await createSession(
+            realTableUuid,
+            realRestaurantId,
+            signal,
+          );
         } else {
           console.log("✅ Found active session:", session.id);
         }
@@ -104,21 +112,24 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
     return () => {
       ignore = true;
       controller.abort();
-      console.log("🧹 Cleanup: Ignoring stale session initialization and aborting requests");
+      console.log(
+        "🧹 Cleanup: Ignoring stale session initialization and aborting requests",
+      );
       initializationRef.current.started = false; // Reset on cleanup
     };
   }, [tableNumberFromUrl, restaurantId]);
 
-  //  Use Optimized Client Session Hook
   const { orders: realtimeOrders, sessionData } = useClientSession(sessionId);
 
-  // Sync realtime orders to local cartItems state
-  useEffect(() => {
+  // Sync realtime orders to local cartItems state (adjust during render)
+  const [prevRealtimeOrders, setPrevRealtimeOrders] = useState(realtimeOrders);
+  if (realtimeOrders !== prevRealtimeOrders) {
+    setPrevRealtimeOrders(realtimeOrders);
     if (realtimeOrders) {
       setCartItems(realtimeOrders);
       setIsLoading(false);
     }
-  }, [realtimeOrders]);
+  }
 
   // (Removed manual fetchCartItems and manual subscription)
   const addToCart = async (product) => {
@@ -232,11 +243,14 @@ export const useCart = (tableNumberFromUrl, restaurantId) => {
   const submitOrder = async () => {
     if (!sessionId) return;
     await submitDraftOrders(sessionId);
-
     // Fetch the table to get the table number for the notification
     const tableData = await getTableByNumber(tableNumberFromUrl, restaurantId);
-    if(tableData) {
-       triggerStaffPushNotification('NEW_ORDER', restaurantId, tableData.table_number);
+    if (tableData) {
+      triggerStaffPushNotification(
+        "NEW_ORDER",
+        restaurantId,
+        tableData.table_number,
+      );
     }
   };
 

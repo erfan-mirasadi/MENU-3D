@@ -1,36 +1,31 @@
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { getCategories } from "@/services/categoryService";
 import { getProducts } from "@/services/productService";
-import { getRestaurantByOwnerId, getRestaurantById } from "@/services/restaurantService";
-import { getUserProfile } from "@/services/userService";
+import {
+  getRestaurantByOwnerId,
+  getRestaurantById,
+} from "@/services/restaurantService";
+import { getServerAuthContext } from "@/services/authServerService";
 import ProductsView from "@/app/admin/_components/ui/ProductsView";
 import { redirect } from "next/navigation";
 import Image from "next/image";
-
-// Ensure page is always fresh (no cache)
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, profile } = await getServerAuthContext();
+
+  if (!user) {
+    redirect("/login");
+  }
 
   let restaurant = null;
   if (user) {
     restaurant = await getRestaurantByOwnerId(user.id);
-    
-    if (!restaurant) {
-       const profile = await getUserProfile(supabase, user.id);
-       if (profile?.restaurant_id) {
-          restaurant = await getRestaurantById(profile.restaurant_id);
-       }
-    }
-  }
 
-  if (authError || !user) {
-    redirect("/login");
+    if (!restaurant) {
+      if (profile?.restaurant_id) {
+        restaurant = await getRestaurantById(profile.restaurant_id);
+      }
+    }
   }
 
   if (!restaurant) {

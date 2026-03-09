@@ -188,10 +188,6 @@ export const reportService = {
 
   async getTopSellingItems(range) {
      const { currentStart } = getDateRanges(range);
-     
-     // Supabase doesn't support aggregate "SUM(quantity) GROUP BY product_id" easily with SDK without RPC.
-     // We'll fetch items and aggregate in JS for simplicity unless dataset is huge (Cashier dashboard implies daily active usage, shouldn't be massive in one day/week for client side agg).
-     
      const { data, error } = await supabase
        .from("order_items")
        .select(`
@@ -238,13 +234,9 @@ export const reportService = {
       };
   },
 
-  // --- Financial Reporting ---
 
   async getFinancialStats(range) {
     const { currentStart, previousStart, previousEnd } = getDateRanges(range);
-    
-    // Helper to fetch data for a given period
-    // Helper to fetch data for a given period
     const fetchPeriodData = async (start, end) => {
         // Bills (Gross Sales, Adjustments)
         const { data: bills } = await supabase
@@ -262,9 +254,6 @@ export const reportService = {
         let discounts = 0;
 
         bills?.forEach(b => {
-             // Only count adjustments for PAID bills? Or all? 
-             // Usually financial reports track accrual or cash basis. 
-             // If we count gross sales only for PAID, we should probably align adjustments to PAID too.
              if (b.status?.toUpperCase() === 'PAID' && b.adjustments && Array.isArray(b.adjustments)) {
                  b.adjustments.forEach(adj => {
                      const amt = parseFloat(adj.amount) || 0;
@@ -274,7 +263,6 @@ export const reportService = {
              }
         });
 
-        // Transactions (Net Cash/Card)
         const { data: transactions } = await supabase
             .from("transactions")
             .select("amount, method")
@@ -365,7 +353,6 @@ export const reportService = {
          return [];
      }
 
-     // Fetch staff profiles manually to be safe against missing FK relations
      const userIds = [...new Set(data.map(t => t.recorded_by).filter(id => id))];
      let profilesMap = {};
 

@@ -7,7 +7,6 @@ import {
   archiveProduct,
 } from "@/services/productService";
 import toast from "react-hot-toast";
-
 import CategorySelect from "./product-form/CategorySelect";
 import LanguageTabs from "./product-form/LanguageTabs";
 import ProductDetails from "./product-form/ProductDetails";
@@ -28,15 +27,10 @@ export default function ProductForm({
   const [activeLang, setActiveLang] = useState(defaultLang);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
-  // به جای useEffect، مقدار اولیه را همینجا محاسبه می‌کنیم.
-  // این کار باعث می‌شود در اولین رندر، فرم پر باشد و نیازی به رندر مجدد نباشد.
-
   const [hasDiscount, setHasDiscount] = useState(() => {
     return initialData && initialData.original_price ? true : false;
   });
-
-  // 2. Update the Lazy Initialization logic
+  // Update the Lazy Initialization logic
   const [formData, setFormData] = useState(() => {
     if (initialData) {
       return {
@@ -166,10 +160,9 @@ export default function ProductForm({
       onClose();
       window.location.reload();
     } catch (deleteError) {
-      // 3. اگر ارور داشت، بررسی می‌کنیم که آیا به خاطر محدودیت کلید خارجی است یا نه
       if (deleteError.code === "23503") {
         const confirmArchive = window.confirm(
-          "This product has order history and cannot be fully deleted. Do you want to archive it instead?"
+          "This product has order history and cannot be fully deleted. Do you want to archive it instead?",
         );
 
         if (confirmArchive) {

@@ -74,7 +74,7 @@ export default function ThreeDLayout({ restaurant, categories, isGuestMode }) {
     }
   }, [currentBlobUrl, focusedProduct]);
 
-  // --- LOGIC: GYROSCOPE ---
+  // LOGIC: GYROSCOPE
   useEffect(() => {
     const handleOrientation = (event) => {
       gyroData.x = (event.beta || 0) / GYRO_INTENSITY;
@@ -120,7 +120,7 @@ export default function ThreeDLayout({ restaurant, categories, isGuestMode }) {
     };
   }, []);
 
-  // --- LOGIC: TOUCH GESTURES ---
+  //LOGIC: TOUCH GESTURES
   const handleTouchStart = useCallback(
     (e) => {
       if (isCartOpen) return;
@@ -213,11 +213,11 @@ export default function ThreeDLayout({ restaurant, categories, isGuestMode }) {
         submitOrder={submitOrder}
         isLoadingCart={isLoadingCart}
         session={sessionData}
-        /* --- NAVIGATION PROPS --- */
+        /*NAVIGATION PROPS*/
         activeIndex={activeIndex}
         setActiveIndex={setActiveIndex}
         productCount={activeProducts.length}
-        /* --- CART STATE --- */
+        /* CART STATE*/
         isCartOpen={isCartOpen}
         setIsCartOpen={setIsCartOpen}
         isGuestMode={isGuestMode}

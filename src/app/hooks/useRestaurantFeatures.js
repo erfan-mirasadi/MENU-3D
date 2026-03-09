@@ -2,17 +2,17 @@ import { useRestaurantData } from "./useRestaurantData";
 import { useCallback } from "react";
 
 export const useRestaurantFeatures = () => {
-    // Now just a consumer of the pre-calculated singleton state
-    const { features, loading } = useRestaurantData();
+  const { features, loading } = useRestaurantData();
+  const isEnabled = useCallback(
+    (feature) => {
+      return !!features[feature];
+    },
+    [features],
+  );
 
-    // Stable helper function
-    const isEnabled = useCallback((feature) => {
-        return !!features[feature];
-    }, [features]);
-
-    return {
-        features,
-        loading,
-        isEnabled
-    };
+  return {
+    features,
+    loading,
+    isEnabled,
+  };
 };

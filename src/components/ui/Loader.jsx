@@ -1,5 +1,3 @@
-"use client";
-
 const styles = `
   @keyframes liquid-pulse {
     0%, 100% { transform: scale(1); opacity: 0.5; }
@@ -23,25 +21,30 @@ const styles = `
   }
 `;
 
-export default function Loader({ className = "", active = true, variant = "overlay" }) {
+export default function Loader({
+  className = "",
+  active = true,
+  variant = "overlay",
+}) {
   if (!active) return null;
 
   if (variant === "inline") {
-      return (
-          <div className={`flex items-center justify-center ${className}`}>
-             <div className="relative w-5 h-5 flex items-center justify-center">
-                <div className="absolute inset-0 border-2 border-t-white/80 border-r-white/20 border-b-white/20 border-l-white/50 rounded-full animate-spin duration-1000" />
-             </div>
-          </div>
-      );
+    return (
+      <div className={`flex items-center justify-center ${className}`}>
+        <div className="relative w-5 h-5 flex items-center justify-center">
+          <div className="absolute inset-0 border-2 border-t-white/80 border-r-white/20 border-b-white/20 border-l-white/50 rounded-full animate-spin duration-1000" />
+        </div>
+      </div>
+    );
   }
 
   return (
     <>
       <style>{styles}</style>
-      <div className={`fixed inset-0 z-[200] flex items-center justify-center pointer-events-none ${className}`}>
+      <div
+        className={`fixed inset-0 z-200] flex items-center justify-center pointer-events-none ${className}`}
+      >
         <div className="relative bg-black/30 backdrop-blur-3xl border border-white/20 rounded-[30px] p-8 shadow-2xl flex flex-col items-center gap-6 overflow-hidden">
-          
           <div className="relative w-16 h-16 flex items-center justify-center">
             <div className="absolute inset-0 border-4 border-t-white/80 border-r-white/20 border-b-white/20 border-l-white/50 rounded-full animate-spin duration-1000" />
             <div className="absolute w-8 h-8 bg-white/80 rounded-full blur-md liquid-blob shadow-[0_0_20px_rgba(255,255,255,0.5)]" />

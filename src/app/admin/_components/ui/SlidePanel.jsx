@@ -7,23 +7,30 @@ export default function SlidePanel({ isOpen, onClose, title, children }) {
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
+    let showTimer;
+    let animateTimer;
+
     if (isOpen) {
-      setShow(true);
       document.body.style.overflow = "hidden";
-      const timer = setTimeout(() => setAnimate(true), 10);
-      return () => clearTimeout(timer);
+      showTimer = setTimeout(() => setShow(true), 0);
+      animateTimer = setTimeout(() => setAnimate(true), 10);
     } else {
-      setAnimate(false);
       document.body.style.overflow = "unset";
-      const timer = setTimeout(() => setShow(false), 300);
-      return () => clearTimeout(timer);
+      animateTimer = setTimeout(() => setAnimate(false), 0);
+      showTimer = setTimeout(() => setShow(false), 300);
     }
+
+    return () => {
+      document.body.style.overflow = "unset";
+      clearTimeout(showTimer);
+      clearTimeout(animateTimer);
+    };
   }, [isOpen]);
 
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex justify-end">
+    <div className="fixed inset-0 z-100 flex justify-end">
       <div
         className={`fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${
           animate ? "opacity-100" : "opacity-0"

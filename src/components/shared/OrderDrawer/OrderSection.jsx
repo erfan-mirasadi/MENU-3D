@@ -4,27 +4,35 @@ export default function OrderSection({
   children,
   accentColor,
   icon,
-  action
+  action,
 }) {
   const colorClass =
-    accentColor === "orange" ? "text-[#ea7c69]" 
-    : accentColor === "yellow" ? "text-yellow-400"
-    : accentColor === "green" ? "text-emerald-400"
-    : "text-blue-400";
+    accentColor === "orange"
+      ? "text-[#ea7c69]"
+      : accentColor === "yellow"
+        ? "text-yellow-400"
+        : accentColor === "green"
+          ? "text-emerald-400"
+          : "text-blue-400";
   const borderClass =
-    accentColor === "orange" ? "border-[#ea7c69]" 
-    : accentColor === "yellow" ? "border-yellow-400"
-    : accentColor === "green" ? "border-emerald-500"
-    : "border-blue-500/50";
+    accentColor === "orange"
+      ? "border-[#ea7c69]"
+      : accentColor === "yellow"
+        ? "border-yellow-400"
+        : accentColor === "green"
+          ? "border-emerald-500"
+          : "border-blue-500/50";
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className={`flex items-center justify-between mb-3 px-1 ${colorClass}`}>
+      <div
+        className={`flex items-center justify-between mb-3 px-1 ${colorClass}`}
+      >
         <div className="flex items-center gap-2">
-            {icon}
-            <h3 className="font-bold text-xs uppercase tracking-widest">
+          {icon}
+          <h3 className="font-bold text-xs uppercase tracking-widest">
             {title} ({count})
-            </h3>
+          </h3>
         </div>
         {action}
       </div>

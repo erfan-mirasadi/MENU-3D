@@ -1,8 +1,4 @@
-import {
-  RiApps2Line, // Dashboard (3D/Grid feel)
-  RiPieChart2Line, // Analytics
-  RiFileList3Line, // Reports
-} from "react-icons/ri";
+import { RiApps2Line, RiPieChart2Line, RiFileList3Line } from "react-icons/ri";
 
 export const CASHIER_LINKS = [
   {

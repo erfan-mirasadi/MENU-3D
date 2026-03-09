@@ -1,13 +1,6 @@
 import { supabase } from "@/lib/supabase";
 
 export const serviceRequestService = {
-  /**
-   * Create a new service request
-   * @param {string} restaurantId
-   * @param {string} tableId
-   * @param {string} sessionId
-   * @param {'call_waiter' | 'bill'} type
-   */
   async createRequest(restaurantId, tableId, sessionId, type) {
     if (!restaurantId || !tableId) {
       console.error("Missing required fields for service request");
@@ -20,7 +13,7 @@ export const serviceRequestService = {
         {
           restaurant_id: restaurantId,
           table_id: tableId,
-          session_id: sessionId, // Can be null if no active session, but usually linked
+          session_id: sessionId,
           request_type: type,
           status: "pending",
         },
@@ -36,10 +29,6 @@ export const serviceRequestService = {
     return { data };
   },
 
-  /**
-   * Get pending requests for a restaurant
-   * @param {string} restaurantId
-   */
   async getPendingRequests(restaurantId) {
     const { data, error } = await supabase
       .from("service_requests")
@@ -54,10 +43,6 @@ export const serviceRequestService = {
     return data;
   },
 
-  /**
-   * Resolve a request
-   * @param {string} requestId
-   */
   async resolveRequest(requestId) {
     const { data, error } = await supabase
       .from("service_requests")

@@ -1,19 +1,22 @@
-import { useEffect, useState } from "react";
-import { getSessionWithOrders, subscribeToClientSession } from "@/services/sessionService";
+import { useEffect, useState, useCallback } from "react";
+import {
+  getSessionWithOrders,
+  subscribeToClientSession,
+} from "@/services/sessionService";
 
 export const useClientSession = (sessionId) => {
   const [sessionData, setSessionData] = useState(null);
   const [orders, setOrders] = useState([]);
 
-  const fetchSession = async () => {
+  const fetchSession = useCallback(async () => {
     if (!sessionId) return;
     const data = await getSessionWithOrders(sessionId);
-    
+
     if (data) {
-        setSessionData(data);
-        setOrders(data.order_items || []);
+      setSessionData(data);
+      setOrders(data.order_items || []);
     }
-  };
+  }, [sessionId]);
 
   useEffect(() => {
     fetchSession();
@@ -21,19 +24,19 @@ export const useClientSession = (sessionId) => {
     if (!sessionId) return;
 
     const unsubscribe = subscribeToClientSession(
-        sessionId,
-        (newSession) => {
-            setSessionData(prev => ({...prev, ...newSession}));
-        },
-        () => {
-            fetchSession();
-        }
+      sessionId,
+      (newSession) => {
+        setSessionData((prev) => ({ ...prev, ...newSession }));
+      },
+      () => {
+        fetchSession();
+      },
     );
 
     return () => {
       unsubscribe();
     };
-  }, [sessionId]);
+  }, [sessionId, fetchSession]);
 
   return { sessionData, orders };
 };

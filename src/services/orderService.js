@@ -4,8 +4,6 @@ import { ORDER_STATUS } from "@/lib/constants";
 
 export async function getOrderItems(sessionId) {
   if (!sessionId) return [];
-
-  // 1. Gereftan hameye order ha baraye in session (miz)
   const { data, error } = await supabase
     .from("order_items")
     .select(`*, product:products (title, price, image_url)`)
@@ -92,141 +90,145 @@ export async function submitDraftOrders(sessionId) {
 
 // Helper to get IP
 async function getClientIP() {
-    try {
-        const res = await fetch('https://api.ipify.org?format=json');
-        const data = await res.json();
-        return data.ip;
-    } catch (e) {
-        console.warn("Failed to get IP", e);
-        return null;
-    }
+  try {
+    const res = await fetch("https://api.ipify.org?format=json");
+    const data = await res.json();
+    return data.ip;
+  } catch (e) {
+    console.warn("Failed to get IP", e);
+    return null;
+  }
 }
 
 export async function voidOrderItem(itemId, reason) {
-    if (!itemId) throw new Error("Item ID is required");
-    // 1. Get User ID (Assuming authenticated)
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    // 2. Fetch current item details (Snapshot) + Restaurant ID via Session
-    const { data: item, error: fetchError } = await supabase
-        .from("order_items")
-        .select(`
+  if (!itemId) throw new Error("Item ID is required");
+  // Get User ID (Assuming authenticated)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Fetch current item details (Snapshot) + Restaurant ID via Session
+  const { data: item, error: fetchError } = await supabase
+    .from("order_items")
+    .select(
+      `
             *,
             products (title),
             session:sessions (restaurant_id)
-        `)
-        .eq("id", itemId)
-        .single();
-    
-    if (fetchError || !item) {
-        throw new Error("Item not found");
-    }
+        `,
+    )
+    .eq("id", itemId)
+    .single();
 
-    const restaurantId = item.session?.restaurant_id;
-    const ipAddress = await getClientIP();
+  if (fetchError || !item) {
+    throw new Error("Item not found");
+  }
 
-    // 3. Log Activity
-    const { error: logError } = await supabase
-        .from("activity_logs")
-        .insert({
-            action: "VOID_ITEM",
-            resource: "order_items",
-            resource_id: itemId,
-            user_id: user?.id,
-            restaurant_id: restaurantId,
-            ip_address: ipAddress,
-            details: {
-                reason,
-                voided_at: new Date().toISOString(),
-                snapshot: {
-                    product_title: item.products?.title,
-                    quantity: item.quantity,
-                    price: item.unit_price_at_order,
-                    status_at_void: item.status
-                }
-            }
-        });
-    
-    if (logError) {
-        console.error("Failed to log activity", logError);
-        // We might choose to proceed or block. Blocking is safer for audit.
-        throw new Error("Audit log failed. Cannot void.");
-    }
+  const restaurantId = item.session?.restaurant_id;
+  const ipAddress = await getClientIP();
 
-    // 4. Cancel Item
-    const { error } = await supabase
-        .from("order_items")
-        .update({ status: ORDER_STATUS.CANCELLED })
-        .eq("id", itemId);
+  // Log Activity
+  const { error: logError } = await supabase.from("activity_logs").insert({
+    action: "VOID_ITEM",
+    resource: "order_items",
+    resource_id: itemId,
+    user_id: user?.id,
+    restaurant_id: restaurantId,
+    ip_address: ipAddress,
+    details: {
+      reason,
+      voided_at: new Date().toISOString(),
+      snapshot: {
+        product_title: item.products?.title,
+        quantity: item.quantity,
+        price: item.unit_price_at_order,
+        status_at_void: item.status,
+      },
+    },
+  });
 
-    if (error) {
-        throw error;
-    }
-    
-    return true;
+  if (logError) {
+    console.error("Failed to log activity", logError);
+    // We might choose to proceed or block. Blocking is safer for audit.
+    throw new Error("Audit log failed. Cannot void.");
+  }
+
+  // Cancel Item
+  const { error } = await supabase
+    .from("order_items")
+    .update({ status: ORDER_STATUS.CANCELLED })
+    .eq("id", itemId);
+
+  if (error) {
+    throw error;
+  }
+
+  return true;
 }
-
 
 // Secure Update Function
 export async function updateOrderItemSecurely(itemId, newQty, oldQty, reason) {
-    if (!itemId) throw new Error("Item ID is required");
-    const { data: { user } } = await supabase.auth.getUser();
+  if (!itemId) throw new Error("Item ID is required");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    // 1. If logic determines this is a "Void" (Reduction), Log it.
-    if (newQty < oldQty) {
-        // Fetch snapshot for detail
-         const { data: item } = await supabase
-            .from("order_items")
-            .select('products(title), unit_price_at_order, session:sessions(restaurant_id)')
-            .eq("id", itemId)
-            .single();
+  // If logic determines this is a "Void" (Reduction), Log it.
+  if (newQty < oldQty) {
+    // Fetch snapshot for detail
+    const { data: item } = await supabase
+      .from("order_items")
+      .select(
+        "products(title), unit_price_at_order, session:sessions(restaurant_id)",
+      )
+      .eq("id", itemId)
+      .single();
 
-         const restaurantId = item?.session?.restaurant_id;
-         const ipAddress = await getClientIP();
+    const restaurantId = item?.session?.restaurant_id;
+    const ipAddress = await getClientIP();
 
-         const { error: logError } = await supabase
-            .from("activity_logs")
-            .insert({
-                action: "PARTIAL_VOID",
-                resource: "order_items",
-                resource_id: itemId,
-                user_id: user?.id,
-                restaurant_id: restaurantId,
-                ip_address: ipAddress,
-                details: {
-                    reason,
-                    voided_quantity: oldQty - newQty,
-                    new_quantity: newQty,
-                    timestamp: new Date().toISOString(),
-                    snapshot: {
-                        product: item?.products?.title,
-                        price: item?.unit_price_at_order
-                    }
-                }
-            });
-         
-         if (logError) throw new Error("Audit log failed");
-    }
+    const { error: logError } = await supabase.from("activity_logs").insert({
+      action: "PARTIAL_VOID",
+      resource: "order_items",
+      resource_id: itemId,
+      user_id: user?.id,
+      restaurant_id: restaurantId,
+      ip_address: ipAddress,
+      details: {
+        reason,
+        voided_quantity: oldQty - newQty,
+        new_quantity: newQty,
+        timestamp: new Date().toISOString(),
+        snapshot: {
+          product: item?.products?.title,
+          price: item?.unit_price_at_order,
+        },
+      },
+    });
 
-    // 2. Perform Update
-    const { data, error } = await supabase
-        .from("order_items")
-        .update({ quantity: newQty })
-        .eq("id", itemId)
-        .select()
-        .single();
-    
-    if (error) throw error;
-    return data;
+    if (logError) throw new Error("Audit log failed");
+  }
+
+  // Perform Update
+  const { data, error } = await supabase
+    .from("order_items")
+    .update({ quantity: newQty })
+    .eq("id", itemId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }
 
 // Chef Dashboard Logic
 export async function getKitchenOrders(restaurantId) {
-    if (!restaurantId) return [];
+  if (!restaurantId) return [];
 
-    const { data, error } = await supabase
-        .from("order_items")
-        .select(`
+  const { data, error } = await supabase
+    .from("order_items")
+    .select(
+      `
             id,
             session_id,
             status,
@@ -237,41 +239,85 @@ export async function getKitchenOrders(restaurantId) {
             session:sessions!inner (
                 id,
                 restaurant_id,
+              status,
                 table_id,
                 note, 
                 tables (table_number)
             )
-        `)
-        .eq("session.restaurant_id", restaurantId)
-        .in("status", [ORDER_STATUS.PREPARING, ORDER_STATUS.READY, ORDER_STATUS.SERVED])
-        .order("created_at", { ascending: true });
+        `,
+    )
+    .eq("session.restaurant_id", restaurantId)
+    .neq("session.status", "closed")
+    .in("status", [
+      ORDER_STATUS.PREPARING,
+      ORDER_STATUS.READY,
+      ORDER_STATUS.SERVED,
+    ])
+    .order("created_at", { ascending: true });
 
-    if (error) {
-        console.error("Error fetching kitchen orders:", error);
-        return [];
-    }
-    return data;
+  if (error) {
+    console.error("Error fetching kitchen orders:", error);
+    return [];
+  }
+  return data;
 }
 
 export async function updateOrderItemStatus(itemId, newStatus) {
-    if (!itemId) throw new Error("Item ID is required");
-    const validStatuses = [ORDER_STATUS.PREPARING, ORDER_STATUS.READY, ORDER_STATUS.SERVED, ORDER_STATUS.CANCELLED];
-    if (!validStatuses.includes(newStatus)) {
-        throw new Error(`Invalid status: ${newStatus}`);
-    }
+  if (!itemId) throw new Error("Item ID is required");
+  const validStatuses = [
+    ORDER_STATUS.PREPARING,
+    ORDER_STATUS.READY,
+    ORDER_STATUS.SERVED,
+    ORDER_STATUS.CANCELLED,
+  ];
+  if (!validStatuses.includes(newStatus)) {
+    throw new Error(`Invalid status: ${newStatus}`);
+  }
 
-    const { data, error } = await supabase
-        .from("order_items")
-        .update({ status: newStatus })
-        .eq("id", itemId)
-        .select()
-        .single();
+  const { data, error } = await supabase
+    .from("order_items")
+    .update({ status: newStatus })
+    .eq("id", itemId)
+    .select()
+    .single();
 
-    if (error) {
-        console.error("Error updating order status:", error);
-        toast.error("Failed to update status");
-        throw error;
-    }
+  if (error) {
+    console.error("Error updating order status:", error);
+    toast.error("Failed to update status");
+    throw error;
+  }
 
-    return data;
+  return data;
+}
+
+export function subscribeToKitchenUpdates(onRefresh) {
+  if (typeof onRefresh !== "function") {
+    throw new Error("onRefresh callback is required");
+  }
+
+  const channel = supabase
+    .channel("chef-kitchen-updates")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "order_items",
+      },
+      onRefresh,
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "sessions",
+      },
+      onRefresh,
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
 }

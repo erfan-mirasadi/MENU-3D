@@ -16,260 +16,315 @@ import PaymentModal from "../PaymentModal";
 import VoidReasonModal from "../VoidReasonModal";
 import Loader from "@/components/ui/Loader";
 
-export default function OrderDrawer({ 
-    table, 
-    session,
-    restaurant, 
-    isOpen, 
-    onClose, 
-    role = "waiter", 
-    onCheckout,
-    onTransfer,
-    onRefetch 
+export default function OrderDrawer({
+  table,
+  session,
+  restaurant,
+  isOpen,
+  onClose,
+  role = "waiter",
+  onCheckout,
+  onTransfer,
+  onRefetch,
 }) {
-    // Pass onClose as the 5th argument to handle auto-close on table close
-    const { state, setters, actions } = useActiveOrderManager(session, table, onCheckout, role, onClose, onRefetch);
-    const {
-        loading, loadingOp, localItems, pendingItems, confirmedItems, activeItems, totalAmount,
-        isMenuOpen, isPaymentModalOpen, isVoidModalOpen, itemToVoid, isEditingGroup, groupedItems
-    } = state;
-    const { t } = useLanguage();
+  // Pass onClose as the 5th argument to handle auto-close on table close
+  const { state, setters, actions } = useActiveOrderManager(
+    session,
+    table,
+    onCheckout,
+    role,
+    onClose,
+    onRefetch,
+  );
+  const {
+    loading,
+    loadingOp,
+    localItems,
+    pendingItems,
+    confirmedItems,
+    activeItems,
+    totalAmount,
+    isMenuOpen,
+    isPaymentModalOpen,
+    isVoidModalOpen,
+    itemToVoid,
+    isEditingGroup,
+    groupedItems,
+  } = state;
+  const { t } = useLanguage();
 
-    // Animation Hook
-    const isTransitioning = useMountTransition(isOpen, 300);
+  // Animation Hook
+  const isTransitioning = useMountTransition(isOpen, 300);
 
-    // Scroll Lock
-    useEffect(() => {
-        document.body.style.overflow = isOpen ? "hidden" : "";
-        return () => { document.body.style.overflow = ""; };
-    }, [isOpen]);
+  // Scroll Lock
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
-    if (!isTransitioning && !isOpen) return null;
+  if (!isTransitioning && !isOpen) return null;
 
-    // Safe guard if table is missing but allow anim out to prevent abrupt disappearance
-    if (!table && !isTransitioning) return null; 
+  // Safe guard if table is missing but allow anim out to prevent abrupt disappearance
+  if (!table && !isTransitioning) return null;
 
-    const show = isOpen && isTransitioning;
+  const show = isOpen && isTransitioning;
 
-    return (
-        <>
-            <div 
-                onClick={onClose} 
-                className={`fixed inset-0 bg-black/60 backdrop-blur-md z-40 transition-opacity duration-300 ${show ? 'opacity-100' : 'opacity-0'}`} 
-            />
+  return (
+    <>
+      <div
+        onClick={onClose}
+        className={`fixed inset-0 bg-black/60 backdrop-blur-md z-40 transition-opacity duration-300 ${show ? "opacity-100" : "opacity-0"}`}
+      />
 
-            <div 
-                className={`fixed inset-y-0 right-0 w-full max-w-md bg-[#1F1D2B] z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-out transform ${show ? 'translate-x-0' : 'translate-x-full'}`}
-                style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      <div
+        className={`fixed inset-y-0 right-0 w-full max-w-md bg-[#1F1D2B] z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-out transform ${show ? "translate-x-0" : "translate-x-full"}`}
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
+        <DrawerHeader
+          table={table}
+          session={session}
+          onClose={onClose}
+          onOpenMenu={() => setters.setIsMenuOpen(true)}
+          onCloseTable={actions.handleForceCloseTable}
+          onTransfer={onTransfer}
+          loading={loading}
+          loadingOp={loadingOp}
+        />
+
+        {role === "cashier" && (
+          <div className="bg-[#252836] p-2 flex justify-end px-4 border-b border-white/5">
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-2 text-xs font-bold bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-gray-300 transition-colors"
             >
-                
-                <DrawerHeader
-                    table={table}
-                    session={session}
-                    onClose={onClose}
-                    onOpenMenu={() => setters.setIsMenuOpen(true)}
-                    onCloseTable={actions.handleForceCloseTable}
-                    onTransfer={onTransfer}
+              <FaPrint /> {t("printBill")}
+            </button>
+          </div>
+        )}
+
+        {/* Hidden Receipt Template (Visible only in print) */}
+        <ReceiptTemplate
+          table={table}
+          session={session}
+          items={[...confirmedItems, ...activeItems]}
+          total={totalAmount}
+          restaurant={restaurant}
+        />
+
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-8 bg-[#1F1D2B] relative">
+          {!session ? (
+            <DrawerEmptyState
+              onStartSession={actions.handleStartSession}
+              loading={loading}
+            />
+          ) : (
+            <>
+              {/* Pending Items (Both roles see them differently) */}
+              <PendingOrderList
+                items={pendingItems}
+                role={role}
+                loading={loading}
+                loadingOp={loadingOp}
+                onUpdateQty={actions.onUpdateQty}
+                onDelete={actions.onDeleteItem}
+                onConfirm={
+                  role === "cashier"
+                    ? actions.handleCashierInstantSend
+                    : actions.handleConfirmOrder
+                }
+              />
+
+              {/*Confirmed Items (Cashier specific usually) */}
+              {isEditingGroup === "confirmed" ? (
+                <ActiveOrderList
+                  items={[]}
+                  role={role}
+                  isEditingGroup={true}
+                  groupedItems={groupedItems}
+                  loading={loading}
+                  loadingOp={loadingOp}
+                  onEditOrder={() => {}}
+                  onCancelEdit={actions.handleCancelGroupEdit}
+                  onSaveEdit={actions.handleSaveGroupEdit}
+                  onUpdateGroupQty={(id, qty) =>
+                    setters.setGroupedItems((p) =>
+                      p.map((i) => (i.id === id ? { ...i, quantity: qty } : i)),
+                    )
+                  }
+                  onDeleteGroupItem={(id) =>
+                    setters.setGroupedItems((p) => p.filter((i) => i.id !== id))
+                  }
+                  onUpdateQty={() => {}}
+                  onDelete={() => {}}
+                />
+              ) : (
+                <ConfirmedOrderList
+                  items={confirmedItems}
+                  role={role}
+                  loading={loading}
+                  loadingOp={loadingOp}
+                  onUpdateQty={actions.onUpdateQty}
+                  onDelete={actions.onDeleteItem}
+                  onStartPreparing={actions.handleStartPreparing}
+                  onEditOrder={
+                    !isEditingGroup
+                      ? () => actions.handleStartGroupEdit("confirmed")
+                      : undefined
+                  }
+                  isEditingGroup={false}
+                />
+              )}
+
+              {/* In Kitchen Items (Yellow) */}
+              {isEditingGroup === "kitchen" ? (
+                <ActiveOrderList
+                  items={[]}
+                  role={role}
+                  isEditingGroup={true}
+                  groupedItems={groupedItems}
+                  loading={loading}
+                  loadingOp={loadingOp}
+                  onEditOrder={() => {}}
+                  onCancelEdit={actions.handleCancelGroupEdit}
+                  onSaveEdit={actions.handleSaveGroupEdit}
+                  onUpdateGroupQty={(id, qty) =>
+                    setters.setGroupedItems((p) =>
+                      p.map((i) => (i.id === id ? { ...i, quantity: qty } : i)),
+                    )
+                  }
+                  onDeleteGroupItem={(id) =>
+                    setters.setGroupedItems((p) => p.filter((i) => i.id !== id))
+                  }
+                  onUpdateQty={() => {}}
+                  onDelete={() => {}}
+                />
+              ) : (
+                activeItems.filter((i) => i.status !== "served").length > 0 && (
+                  <ActiveOrderList
+                    items={activeItems.filter((i) => i.status !== "served")}
+                    role={role}
+                    isEditingGroup={false}
+                    groupedItems={[]}
                     loading={loading}
                     loadingOp={loadingOp}
-                />
-
-                {role === 'cashier' && (
-                    <div className="bg-[#252836] p-2 flex justify-end px-4 border-b border-white/5">
-                        <button 
-                            onClick={() => window.print()}
-                            className="flex items-center gap-2 text-xs font-bold bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-gray-300 transition-colors"
-                        >
-                            <FaPrint /> {t('printBill')}
-                        </button>
-                    </div>
-                )}
-
-                {/* Hidden Receipt Template (Visible only in print) */}
-                <ReceiptTemplate 
-                    table={table}
-                    session={session}
-                    items={[...confirmedItems, ...activeItems]}
-                    total={totalAmount}
-                    restaurant={restaurant}
-                />
-
-                <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-8 bg-[#1F1D2B] relative">
-                    {!session ? (
-                        <DrawerEmptyState 
-                            onStartSession={actions.handleStartSession} 
-                            loading={loading} 
-                        />
-                    ) : (
-                        <>
-                            {/* Pending Items (Both roles see them differently) */}
-                            <PendingOrderList
-                                items={pendingItems}
-                                role={role}
-                                loading={loading}
-                                loadingOp={loadingOp}
-                                onUpdateQty={actions.onUpdateQty}
-                                onDelete={actions.onDeleteItem}
-                                onConfirm={
-                                    role === 'cashier' 
-                                        ? actions.handleCashierInstantSend 
-                                        : actions.handleConfirmOrder
-                                }
-                            />
-
-                            {/*Confirmed Items (Cashier specific usually) */}
-                            {isEditingGroup === 'confirmed' ? (
-                                <ActiveOrderList
-                                    items={[]}
-                                    role={role}
-                                    isEditingGroup={true}
-                                    groupedItems={groupedItems}
-                                    loading={loading}
-                                    loadingOp={loadingOp}
-                                    onEditOrder={() => {}}
-                                    onCancelEdit={actions.handleCancelGroupEdit}
-                                    onSaveEdit={actions.handleSaveGroupEdit}
-                                    onUpdateGroupQty={(id, qty) => setters.setGroupedItems(p => p.map(i => i.id === id ? {...i, quantity: qty} : i))}
-                                    onDeleteGroupItem={(id) => setters.setGroupedItems(p => p.filter(i => i.id !== id))}
-                                    onUpdateQty={() => {}}
-                                    onDelete={() => {}}
-                                />
-                            ) : (
-                                <ConfirmedOrderList
-                                    items={confirmedItems}
-                                    role={role}
-                                    loading={loading}
-                                    loadingOp={loadingOp}
-                                    onUpdateQty={actions.onUpdateQty}
-                                    onDelete={actions.onDeleteItem}
-                                    onStartPreparing={actions.handleStartPreparing}
-                                    onEditOrder={!isEditingGroup ? () => actions.handleStartGroupEdit('confirmed') : undefined}
-                                    isEditingGroup={false} 
-                                />
-                            )}
-
-                            {/* In Kitchen Items (Yellow) */}
-                            {isEditingGroup === 'kitchen' ? (
-                                <ActiveOrderList
-                                    items={[]}
-                                    role={role}
-                                    isEditingGroup={true}
-                                    groupedItems={groupedItems}
-                                    loading={loading}
-                                    loadingOp={loadingOp}
-                                    onEditOrder={() => {}}
-                                    onCancelEdit={actions.handleCancelGroupEdit}
-                                    onSaveEdit={actions.handleSaveGroupEdit}
-                                    onUpdateGroupQty={(id, qty) => setters.setGroupedItems(p => p.map(i => i.id === id ? {...i, quantity: qty} : i))}
-                                    onDeleteGroupItem={(id) => setters.setGroupedItems(p => p.filter(i => i.id !== id))}
-                                    onUpdateQty={() => {}}
-                                    onDelete={() => {}}
-                                />
-                            ) : activeItems.filter(i => i.status !== 'served').length > 0 && (
-                                <ActiveOrderList
-                                    items={activeItems.filter(i => i.status !== 'served')}
-                                    role={role}
-                                    isEditingGroup={false}
-                                    groupedItems={[]}
-                                    loading={loading}
-                                    loadingOp={loadingOp}
-                                    onEditOrder={!isEditingGroup ? () => actions.handleStartGroupEdit('kitchen') : undefined}
-                                    onCancelEdit={() => {}}
-                                    onSaveEdit={() => {}}
-                                    onUpdateGroupQty={() => {}}
-                                    onDeleteGroupItem={() => {}}
-                                    onUpdateQty={actions.onUpdateQty}
-                                    onDelete={actions.onDeleteItem}
-                                />
-                            )}
-
-                            {/* 3.2. Served Items (Green) */}
-                            {isEditingGroup === 'served' ? (
-                                <ActiveOrderList
-                                    items={[]}
-                                    role={role}
-                                    isEditingGroup={true}
-                                    groupedItems={groupedItems}
-                                    loading={loading}
-                                    loadingOp={loadingOp}
-                                    onEditOrder={() => {}}
-                                    onCancelEdit={actions.handleCancelGroupEdit}
-                                    onSaveEdit={actions.handleSaveGroupEdit}
-                                    onUpdateGroupQty={(id, qty) => setters.setGroupedItems(p => p.map(i => i.id === id ? {...i, quantity: qty} : i))}
-                                    onDeleteGroupItem={(id) => setters.setGroupedItems(p => p.filter(i => i.id !== id))}
-                                    onUpdateQty={() => {}}
-                                    onDelete={() => {}}
-                                />
-                            ) : activeItems.filter(i => i.status === 'served').length > 0 && (
-                                <ActiveOrderList
-                                    items={activeItems.filter(i => i.status === 'served')}
-                                    role={role}
-                                    isEditingGroup={false} 
-                                    groupedItems={[]}
-                                    loading={loading}
-                                    loadingOp={loadingOp}
-                                    onEditOrder={!isEditingGroup ? () => actions.handleStartGroupEdit('served') : undefined}
-                                    onCancelEdit={() => {}} 
-                                    onSaveEdit={() => {}} 
-                                    onUpdateGroupQty={() => {}}
-                                    onDeleteGroupItem={() => {}}
-                                    onUpdateQty={actions.onUpdateQty}
-                                    onDelete={actions.onDeleteItem}
-                                />
-                            )}
-                        </>
-                    )}
-                </div>
-
-                {session && (
-                    <DrawerFooter
-                        totalAmount={totalAmount}
-                        onCloseTable={actions.handlePaymentRequest}
-                        loading={loading}
-                    />
-                )}
-                {/* LOADING OVERLAY (Centered in Drawer) */}
-                {(loadingOp === 'CONFIRM_ORDER' || loadingOp === 'PREPARE_ORDER') && (
-                    <div className="absolute inset-0 z-[60] bg-black/40 backdrop-blur-[2px] flex items-center justify-center animate-in fade-in duration-200">
-                        <div className="p-4 rounded-2xl shadow-2xl border border-white/10 flex flex-col items-center gap-3">
-                             <Loader variant="inline" className="w-10 h-10" />
-                             <span className="text-white/50 text-xs font-bold tracking-wider">{t('updating')}</span>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* MODALS */}
-            <MenuModal
-                isOpen={isMenuOpen}
-                onClose={() => setters.setIsMenuOpen(false)}
-                cartItems={localItems}
-                onAdd={actions.handleMenuAdd}
-                onRemove={actions.handleMenuRemove}
-                restaurantId={session?.restaurant_id}
-            />
-
-            <PaymentModal
-                isOpen={isPaymentModalOpen}
-                onClose={() => setters.setIsPaymentModalOpen(false)}
-                session={session ? {...session, table } : null}
-                onCheckout={async (sid, method, amt) => {
-                    const res = await actions.handleCheckoutWrapper(sid, method, amt);
-                    if (res?.success && res?.fullyPaid) {
-                        setters.setIsPaymentModalOpen(false);
-                        onClose();
+                    onEditOrder={
+                      !isEditingGroup
+                        ? () => actions.handleStartGroupEdit("kitchen")
+                        : undefined
                     }
-                    return res;
-                }}
-                onRefetch={onRefetch}
-            />
+                    onCancelEdit={() => {}}
+                    onSaveEdit={() => {}}
+                    onUpdateGroupQty={() => {}}
+                    onDeleteGroupItem={() => {}}
+                    onUpdateQty={actions.onUpdateQty}
+                    onDelete={actions.onDeleteItem}
+                  />
+                )
+              )}
 
-            <VoidReasonModal
-                isOpen={isVoidModalOpen}
-                onClose={() => setters.setIsVoidModalOpen(false)}
-                onConfirm={actions.handleConfirmVoid}
-                item={itemToVoid}
-            />
-        </>
-    );
+              {/* 3.2. Served Items (Green) */}
+              {isEditingGroup === "served" ? (
+                <ActiveOrderList
+                  items={[]}
+                  role={role}
+                  isEditingGroup={true}
+                  groupedItems={groupedItems}
+                  loading={loading}
+                  loadingOp={loadingOp}
+                  onEditOrder={() => {}}
+                  onCancelEdit={actions.handleCancelGroupEdit}
+                  onSaveEdit={actions.handleSaveGroupEdit}
+                  onUpdateGroupQty={(id, qty) =>
+                    setters.setGroupedItems((p) =>
+                      p.map((i) => (i.id === id ? { ...i, quantity: qty } : i)),
+                    )
+                  }
+                  onDeleteGroupItem={(id) =>
+                    setters.setGroupedItems((p) => p.filter((i) => i.id !== id))
+                  }
+                  onUpdateQty={() => {}}
+                  onDelete={() => {}}
+                />
+              ) : (
+                activeItems.filter((i) => i.status === "served").length > 0 && (
+                  <ActiveOrderList
+                    items={activeItems.filter((i) => i.status === "served")}
+                    role={role}
+                    isEditingGroup={false}
+                    groupedItems={[]}
+                    loading={loading}
+                    loadingOp={loadingOp}
+                    onEditOrder={
+                      !isEditingGroup
+                        ? () => actions.handleStartGroupEdit("served")
+                        : undefined
+                    }
+                    onCancelEdit={() => {}}
+                    onSaveEdit={() => {}}
+                    onUpdateGroupQty={() => {}}
+                    onDeleteGroupItem={() => {}}
+                    onUpdateQty={actions.onUpdateQty}
+                    onDelete={actions.onDeleteItem}
+                  />
+                )
+              )}
+            </>
+          )}
+        </div>
+
+        {session && (
+          <DrawerFooter
+            totalAmount={totalAmount}
+            onCloseTable={actions.handlePaymentRequest}
+            loading={loading}
+          />
+        )}
+        {/* LOADING OVERLAY (Centered in Drawer) */}
+        {(loadingOp === "CONFIRM_ORDER" || loadingOp === "PREPARE_ORDER") && (
+          <div className="absolute inset-0 z-[60] bg-black/40 backdrop-blur-[2px] flex items-center justify-center animate-in fade-in duration-200">
+            <div className="p-4 rounded-2xl shadow-2xl border border-white/10 flex flex-col items-center gap-3">
+              <Loader variant="inline" className="w-10 h-10" />
+              <span className="text-white/50 text-xs font-bold tracking-wider">
+                {t("updating")}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* MODALS */}
+      <MenuModal
+        isOpen={isMenuOpen}
+        onClose={() => setters.setIsMenuOpen(false)}
+        cartItems={localItems}
+        onAdd={actions.handleMenuAdd}
+        onRemove={actions.handleMenuRemove}
+        restaurantId={session?.restaurant_id}
+      />
+
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setters.setIsPaymentModalOpen(false)}
+        session={session ? { ...session, table } : null}
+        onCheckout={async (sid, method, amt) => {
+          const res = await actions.handleCheckoutWrapper(sid, method, amt);
+          if (res?.success && res?.fullyPaid) {
+            setters.setIsPaymentModalOpen(false);
+            onClose();
+          }
+          return res;
+        }}
+        onRefetch={onRefetch}
+      />
+
+      <VoidReasonModal
+        isOpen={isVoidModalOpen}
+        onClose={() => setters.setIsVoidModalOpen(false)}
+        onConfirm={actions.handleConfirmVoid}
+        item={itemToVoid}
+      />
+    </>
+  );
 }

@@ -4,12 +4,11 @@ import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-// --- CONFIG ---
 const PARTICLE_COUNT = 5;
 const MAX_LIFE = 5.0; // Life of a single particle
 const BASE_SPEED = 0.2;
 
-// --- GLOBAL TEXTURE CACHE ---
+// GLOBAL TEXTURE CACHE
 let _smokeTexture = null;
 
 function getSmokeTexture() {
@@ -39,7 +38,7 @@ function getSmokeTexture() {
     return _smokeTexture;
 }
 
-// --- SHADERS ---
+// SHADERS
 // Vertex shader handles size attenuation and hiding dead particles
 const vertexShader = `
   attribute float aOpacity;
@@ -112,7 +111,7 @@ export default function SteamEffect() {
     const time = state.clock.elapsedTime;
     const sim = simState.current;
 
-    // --- BURST CONTROLLER ---
+    //BURST CONTROLLER
     if (!sim.active && time > sim.nextBurstTime) {
         sim.active = true;
     }

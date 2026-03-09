@@ -8,9 +8,12 @@ import { MdViewInAr, MdTouchApp } from "react-icons/md";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import CartControls from "./CartControls";
 
-const ClientCartDrawer = dynamic(() => import("@/components/shared/ClientCart/ClientCartDrawer"), {
-  ssr: false,
-});
+const ClientCartDrawer = dynamic(
+  () => import("@/components/shared/ClientCart/ClientCartDrawer"),
+  {
+    ssr: false,
+  },
+);
 
 const styles = `
   @keyframes handSwipe {
@@ -156,7 +159,6 @@ export default function UIOverlay({
         </div>
       )}
 
-      {/* --- DRAWER --- */}
       {!isGuestMode && shouldLoadCartDrawer && (
         <ClientCartDrawer
           isOpen={isCartOpen}
@@ -168,7 +170,7 @@ export default function UIOverlay({
         />
       )}
 
-      {/* --- LIQUID GLASS NAVIGATION ARROWS (CENTERED) --- */}
+      {/* LIQUID GLASS NAVIGATION ARROWS*/}
       {!isCartOpen && activeIndex > 0 && (
         <button
           onClick={(e) => {
@@ -205,7 +207,7 @@ export default function UIOverlay({
         </button>
       )}
 
-      {/* --- HEADER --- */}
+      {/* HEADER */}
       <div className="absolute top-0 left-0 w-full z-10 p-6 pt-3 text-center pointer-events-none">
         <div className="absolute top-2 right-2 pointer-events-auto">
           <LanguageSwitcher />

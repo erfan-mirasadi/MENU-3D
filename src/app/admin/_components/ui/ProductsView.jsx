@@ -16,11 +16,11 @@ export default function ProductsView({
 }) {
   const [activeTab, setActiveTab] = useState("all");
 
-  // --- Product Panel States ---
+  // Product Panel States
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
-  // --- Category Panel States (New) ---
+  //  Category Panel States
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
 
@@ -67,13 +67,11 @@ export default function ProductsView({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Category Tabs */}
       <div className=" mt-3">
         <CategoryTabs
           categories={categories}
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          // Added props for category management
           onEditCategory={handleCategoryEdit}
           onAddCategory={handleCategoryCreate}
           defaultLang={defaultLang}
@@ -84,9 +82,9 @@ export default function ProductsView({
       <div className="flex-1 overflow-y-auto px-4 sm:px-8 pb-20">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-18 pt-3 pb-15">
           {/* Create New Product Button */}
-          <AddCard 
-            onClick={handleCreateClick} 
-            label="Add new dish" 
+          <AddCard
+            onClick={handleCreateClick}
+            label="Add new dish"
             className="mt-9 min-h-[320px] bg-dark-800/30 border-gray-700 hover:bg-dark-800"
           />
 
@@ -102,7 +100,6 @@ export default function ProductsView({
         </div>
       </div>
 
-      {/* --- PANEL 1: PRODUCT FORM --- */}
       <SlidePanel
         isOpen={isPanelOpen}
         onClose={handleClosePanel}
@@ -121,7 +118,6 @@ export default function ProductsView({
         />
       </SlidePanel>
 
-      {/* --- PANEL 2: CATEGORY FORM (New) --- */}
       <SlidePanel
         isOpen={isCategoryPanelOpen}
         onClose={closeCategoryPanel}

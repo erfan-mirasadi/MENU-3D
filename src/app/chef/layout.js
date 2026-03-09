@@ -1,6 +1,5 @@
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
-import { getUserProfile } from "@/services/userService";
+import { getServerAuthContext } from "@/services/authServerService";
 import ChefLayoutClient from "./ChefLayoutClient";
 
 export const metadata = {
@@ -22,13 +21,7 @@ export const viewport = {
   themeColor: "#1f1d2b",
 };
 export default async function chefLayout({ children }) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // 1. Strict Role Check: Only 'chef'
-  const profile = await getUserProfile(supabase, user?.id);
+  const { profile } = await getServerAuthContext();
 
   if (!profile || (profile.role !== "chef" && profile.role !== "owner")) {
     redirect("/login");

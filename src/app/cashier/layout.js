@@ -1,6 +1,5 @@
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
-import { getUserProfile } from "@/services/userService";
+import { getServerAuthContext } from "@/services/authServerService";
 import CashierLayoutClient from "./CashierLayoutClient";
 
 export const metadata = {
@@ -23,13 +22,7 @@ export const viewport = {
 };
 
 export default async function CashierLayout({ children }) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // 1. Strict Role Check: Only 'cashier'
-  const profile = await getUserProfile(supabase, user?.id);
+  const { profile } = await getServerAuthContext();
 
   if (!profile || (profile.role !== "cashier" && profile.role !== "owner")) {
     redirect("/login");

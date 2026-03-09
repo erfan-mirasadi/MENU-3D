@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { getCurrentUser } from "@/services/authService";
 import {
   getRestaurantByOwnerId,
   createRestaurant,
@@ -17,14 +17,11 @@ export default function OnboardingPage() {
     name: "",
     slug: "",
   });
-
   // Check if user already has a restaurant
   useEffect(() => {
     const checkExistingRestaurant = async () => {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) return;
 
         const restaurant = await getRestaurantByOwnerId(user.id);
@@ -58,9 +55,7 @@ export default function OnboardingPage() {
     setLoading(true);
 
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error("No user found");
 
       try {
@@ -75,7 +70,7 @@ export default function OnboardingPage() {
       } catch (createError) {
         if (createError.code === "23505") {
           throw new Error(
-            "This URL slug is already taken. Please choose another."
+            "This URL slug is already taken. Please choose another.",
           );
         }
         throw createError;
@@ -160,7 +155,11 @@ export default function OnboardingPage() {
               disabled={loading}
               className="w-full bg-primary hover:bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95 mt-4 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-gray-400 flex items-center justify-center gap-2"
             >
-              {loading ? <Loader variant="inline" className="w-5 h-5 text-white" /> : "Create Dashboard"}
+              {loading ? (
+                <Loader variant="inline" className="w-5 h-5 text-white" />
+              ) : (
+                "Create Dashboard"
+              )}
             </button>
           </form>
         </div>

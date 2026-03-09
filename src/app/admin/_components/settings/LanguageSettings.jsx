@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase"; // کلاینت سمت کاربر
+import { getCurrentUser } from "@/services/authService";
 import {
   getRestaurantByOwnerId,
   updateRestaurant,
@@ -21,17 +21,13 @@ const AVAILABLE_LANGUAGES = [
 export default function LanguageSettings() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
-
-  // State for language preferences
   const [selectedLangs, setSelectedLangs] = useState(["tr"]);
   const [defaultLang, setDefaultLang] = useState("tr");
 
   useEffect(() => {
     async function initData() {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
 
         if (!user) {
           setLoading(false);
@@ -39,7 +35,6 @@ export default function LanguageSettings() {
         }
 
         setUserId(user.id);
-
         const restaurant = await getRestaurantByOwnerId(user.id);
 
         if (restaurant) {
@@ -61,7 +56,7 @@ export default function LanguageSettings() {
     if (selectedLangs.includes(code)) {
       if (code === defaultLang) {
         toast.error(
-          "Cannot remove the default language. Change default first."
+          "Cannot remove the default language. Change default first.",
         );
         return;
       }
@@ -93,19 +88,21 @@ export default function LanguageSettings() {
       }
     });
 
-    toast.promise(savePromise, {
-      loading: "Saving language preferences...",
-      success: "Settings updated successfully!",
-      error: "Could not save settings.",
-    })
-    .finally(() => setSaving(false));
+    toast
+      .promise(savePromise, {
+        loading: "Saving language preferences...",
+        success: "Settings updated successfully!",
+        error: "Could not save settings.",
+      })
+      .finally(() => setSaving(false));
   };
 
-  if (loading) return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-dark-900/50 backdrop-blur-sm">
-      <Loader />
-    </div>
-  );
+  if (loading)
+    return (
+      <div className="absolute inset-0 z-50 flex items-center justify-center bg-dark-900/50 backdrop-blur-sm">
+        <Loader />
+      </div>
+    );
 
   return (
     <div className="bg-dark-800 rounded-2xl p-6 border border-gray-800">
@@ -187,7 +184,11 @@ export default function LanguageSettings() {
           disabled={saving}
           className="text-white/80 px-6 py-2 rounded-lg font-bold border border-dark-500 transition active:scale-95 flex items-center gap-2 hover:bg-dark-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {saving ? <Loader variant="inline" className="w-5 h-5 text-white" /> : "Save Language Settings"}
+          {saving ? (
+            <Loader variant="inline" className="w-5 h-5 text-white" />
+          ) : (
+            "Save Language Settings"
+          )}
         </button>
       </div>
     </div>

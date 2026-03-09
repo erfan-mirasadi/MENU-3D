@@ -57,6 +57,25 @@ export async function createTable(tableData) {
   return data;
 }
 
+export async function updateTableLayout(tableId, layoutData) {
+  if (!tableId) throw new Error("Table ID is required");
+
+  const { data, error } = await supabase
+    .from("tables")
+    .update({ layout_data: layoutData })
+    .eq("id", tableId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating table layout:", error);
+    toast.error("Failed to update table layout");
+    throw error;
+  }
+
+  return data;
+}
+
 export async function deleteTable(tableId) {
   const { error } = await supabase.from("tables").delete().eq("id", tableId);
   if (error) {

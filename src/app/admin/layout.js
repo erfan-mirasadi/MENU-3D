@@ -1,6 +1,8 @@
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
-import { getRestaurantByOwnerId, getRestaurantById } from "@/services/restaurantService";
-import { getUserProfile } from "@/services/userService";
+import {
+  getRestaurantByOwnerId,
+  getRestaurantById,
+} from "@/services/restaurantService";
+import { getServerAuthContext } from "@/services/authServerService";
 import AdminLayoutClient from "./AdminLayoutClient";
 
 export const metadata = {
@@ -23,26 +25,21 @@ export const viewport = {
 };
 
 export default async function AdminLayout({ children }) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  
-  const profile = await getUserProfile(supabase, user?.id);
+  const { user, profile } = await getServerAuthContext();
 
   if (profile?.role !== "owner") {
-     const { redirect } = await import("next/navigation");
-     redirect("/waiter/dashboard");
+    const { redirect } = await import("next/navigation");
+    redirect("/waiter/dashboard");
   }
 
   let restaurant = null;
   if (user) {
     // 1. Try fetching by Owner ID (for original Owners)
     restaurant = await getRestaurantByOwnerId(user.id);
-    
+
     // 2. If not found, try fetching by Restaurant ID from Profile (for invited Managers)
     if (!restaurant && profile?.restaurant_id) {
-        restaurant = await getRestaurantById(profile.restaurant_id);
+      restaurant = await getRestaurantById(profile.restaurant_id);
     }
   }
 

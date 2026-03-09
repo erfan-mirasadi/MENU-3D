@@ -35,12 +35,12 @@ export default function CartControls({
       <div className="absolute bottom-48 left-10 z-40 flex flex-col items-center pointer-events-auto">
         {currentQty > 0 ? (
           // ACTIVE STATE: VERTICAL CAPSULE (DARK & GLASS)
-          <div className="flex flex-col items-center p-1.5 gap-3 bg-black/60 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-[0_10px_30px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-2 fade-in duration-300">
+          <div className="flex flex-col items-center p-1.5 gap-3 bg-black/60 backdrop-blur-xl border border-white/10 rounded-4xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-2 fade-in duration-300">
             {/* positive button */}
             <button
               type="button"
               onClick={() => onAdd(focusedProduct)}
-              className="w-10 h-10 bg-[#ea7c69] text-white rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(234,124,105,0.4)] active:scale-90 transition-all duration-200"
+              className="w-10 h-10 bg-accent text-white rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(234,124,105,0.4)] active:scale-90 transition-all duration-200"
               aria-label="Increase quantity"
             >
               <FaPlus size={14} />
@@ -73,11 +73,11 @@ export default function CartControls({
             aria-label="Add to cart"
           >
             {/* inner circle for depth effect */}
-            <div className="absolute inset-2 rounded-full border border-white/5 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+            <div className="absolute inset-2 rounded-full border border-white/5 bg-linear-to-br from-white/5 to-transparent pointer-events-none" />
 
             <FaPlus
               size={20}
-              className="text-white/90 group-hover:text-[#ea7c69] transition-colors duration-300 drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]"
+              className="text-white/90 group-hover:text-accent transition-colors duration-300 drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]"
             />
           </button>
         )}
@@ -96,12 +96,12 @@ export default function CartControls({
             <div className="relative">
               <FaShoppingBasket
                 size={22}
-                className="text-white/80 group-hover:text-[#ea7c69] transition-colors duration-300"
+                className="text-white/80 group-hover:text-accent transition-colors duration-300"
               />
             </div>
 
             {/* badge count */}
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#ea7c69] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-[0_0_10px_#ea7c69] animate-pulse">
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-[0_0_10px_#ea7c69] animate-pulse">
               {totalCartCount}
             </div>
           </button>

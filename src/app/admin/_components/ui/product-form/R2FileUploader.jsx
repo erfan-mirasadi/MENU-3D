@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { RiUploadCloud2Line, RiCloseLine, RiFileLine, RiLoader4Line } from "react-icons/ri";
+import {
+  RiUploadCloud2Line,
+  RiCloseLine,
+  RiFileLine,
+  RiLoader4Line,
+} from "react-icons/ri";
 import toast from "react-hot-toast";
 
 export default function R2FileUploader({
@@ -144,7 +149,9 @@ export default function R2FileUploader({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const isImage = value && (value.match(/\.(jpeg|jpg|png|webp)$/i) || accept.includes("image"));
+  const isImage =
+    value &&
+    (value.match(/\.(jpeg|jpg|png|webp)$/i) || accept.includes("image"));
 
   return (
     <div className="w-full">
@@ -183,7 +190,9 @@ export default function R2FileUploader({
         <div className="bg-dark-800 border border-gray-700 rounded-xl p-4">
           <div className="flex items-center gap-3 mb-2">
             <RiLoader4Line className="animate-spin text-primary" />
-            <span className="text-sm text-white">Uploading... {Math.round(progress)}%</span>
+            <span className="text-sm text-white">
+              Uploading... {Math.round(progress)}%
+            </span>
           </div>
           <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
             <div
@@ -197,24 +206,28 @@ export default function R2FileUploader({
       {value && !uploading && (
         <div className="relative group bg-dark-800 border border-gray-700 rounded-xl p-3 flex items-center gap-3">
           {isImage ? (
-            <div className="w-12 h-12 relative rounded-md overflow-hidden bg-black/20 flex-shrink-0">
-               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={value} alt="Preview" className="w-full h-full object-cover" />
+            <div className="w-12 h-12 relative rounded-md overflow-hidden bg-black/20 shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={value}
+                alt="Preview"
+                className="w-full h-full object-cover"
+              />
             </div>
           ) : (
-            <div className="w-12 h-12 rounded-md bg-dark-700 flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-md bg-dark-700 flex items-center justify-center shrink-0">
               <RiFileLine className="text-xl text-primary" />
             </div>
           )}
-          
+
           <div className="flex-1 min-w-0">
             <p className="text-sm text-white truncate font-medium">
               {value.split("/").pop()}
             </p>
-            <a 
-              href={value} 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href={value}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-xs text-primary hover:underline"
             >
               View File

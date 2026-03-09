@@ -1,9 +1,9 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
 import { RiLogoutBoxRLine } from "react-icons/ri";
+import { signOutLocal } from "@/services/authService";
 import { unsubscribeFromPushNotifications } from "@/services/notificationService";
 import GeneralForm from "@/app/admin/_components/settings/GeneralForm";
 import LanguageSettings from "@/app/admin/_components/settings/LanguageSettings";
@@ -18,8 +18,7 @@ export default function SettingsPage() {
     setLoading(true);
     try {
       await unsubscribeFromPushNotifications();
-      const { error } = await supabase.auth.signOut({ scope: 'local' });
-      if (error) throw error;
+      await signOutLocal();
 
       toast.success("Logged out successfully");
       router.push("/login?role=owner");

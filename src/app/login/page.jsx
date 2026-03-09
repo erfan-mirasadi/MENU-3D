@@ -1,9 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { getRestaurantByOwnerId } from "@/services/restaurantService";
-import { getUserProfile } from "@/services/userService";
+import {
+  getCurrentUser,
+  getCurrentUserProfile,
+  signInWithPassword,
+  signOutLocal,
+} from "@/services/authService";
 import toast from "react-hot-toast";
 import {
   RiMailLine,
@@ -33,17 +37,19 @@ export default function LoginPage() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const roleParam = params.get("role");
-      if (roleParam && ["owner", "cashier", "waiter", "chef"].includes(roleParam)) {
+      if (
+        roleParam &&
+        ["owner", "cashier", "waiter", "chef"].includes(roleParam)
+      ) {
         setRole(roleParam);
       }
 
-      // If owner is already logged in, redirect to the requested role dashboard
       const checkExistingSession = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) return;
-        const profile = await getUserProfile(supabase, user.id);
-        if (profile?.role !== "owner") return; // Non-owners handled by layout.js
-        
+        const profile = await getCurrentUserProfile(user.id);
+        if (profile?.role !== "owner") return;
+
         const target = roleParam || "owner";
         const routes = {
           owner: "/admin/dashboard",
@@ -56,46 +62,35 @@ export default function LoginPage() {
       };
       checkExistingSession();
     }
-  }, []);
+  }, [router]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Authenticate with Email/Password
-      const { data: authData, error: authError } =
-        await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        });
-
-      if (authError) throw authError;
-
-      // Fetch User Profile to check Role
-      const profile = await getUserProfile(supabase, authData.user.id);
-
+      const authData = await signInWithPassword(
+        formData.email,
+        formData.password,
+      );
+      const profile = await getCurrentUserProfile(authData.user.id);
       if (!profile) throw new Error("Profile access denied.");
 
-      // Role Enforcement
       if (profile.role !== "owner") {
-            if (profile.role === "waiter" && role !== "waiter") {
-                throw new Error("Please log in using the Waiter tab.")
-            } 
+        if (profile.role === "waiter" && role !== "waiter") {
+          throw new Error("Please log in using the Waiter tab.");
+        }
 
-            if (profile.role === "cashier" && role !== "cashier") {
-                throw new Error("Please log in using the Cashier tab.")
-            } 
-            
-            if (profile.role === "chef" && role !== "chef") {
-                throw new Error("Please log in using the Chef tab.")
-            }
+        if (profile.role === "cashier" && role !== "cashier") {
+          throw new Error("Please log in using the Cashier tab.");
+        }
+
+        if (profile.role === "chef" && role !== "chef") {
+          throw new Error("Please log in using the Chef tab.");
+        }
       }
-      // If owner, we allow them to proceed with ANY selected role. 
-
 
       toast.success(`Welcome back, ${role}!`);
-      // Owner can access any role — redirect based on selected tab
       if (role === "owner") {
         const restaurant = await getRestaurantByOwnerId(authData.user.id);
         router.push(restaurant ? "/admin/dashboard" : "/admin/onboarding");
@@ -111,13 +106,13 @@ export default function LoginPage() {
     } catch (error) {
       console.error(error);
       toast.error(error.message || "Login failed");
-      await supabase.auth.signOut({ scope: 'local' }) 
-      setLoading(false); 
-    } 
+      await signOutLocal();
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-[100dvh] w-full bg-dark-900 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-dvh w-full bg-dark-900 flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Background Ambience */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] right-[-5%] w-64 h-64 bg-primary/10 rounded-full blur-[80px]" />
@@ -125,21 +120,29 @@ export default function LoginPage() {
       </div>
 
       <div className="absolute top-6 right-6 z-50">
-        <Link 
-            href="/"
-            className="flex items-center justify-center p-2 bg-dark-800/80 backdrop-blur-md hover:bg-dark-700 rounded-2xl border border-gray-800 text-gray-400 hover:text-white transition-all shadow-lg active:scale-95"
-            title="Back to Home"
+        <Link
+          href="/"
+          className="flex items-center justify-center p-2 bg-dark-800/80 backdrop-blur-md hover:bg-dark-700 rounded-2xl border border-gray-800 text-gray-400 hover:text-white transition-all shadow-lg active:scale-95"
+          title="Back to Home"
         >
           <RiHome4Line size={18} />
         </Link>
       </div>
 
       {/* Content Container with Blur transition */}
-      <div className={`w-full max-w-sm z-10 flex flex-col gap-8 transition-all duration-1000 animate-fade-in-up ${loading ? 'blur-sm opacity-50 pointer-events-none' : ''}`}>
+      <div
+        className={`w-full max-w-sm z-10 flex flex-col gap-8 transition-all duration-1000 animate-fade-in-up ${loading ? "blur-sm opacity-50 pointer-events-none" : ""}`}
+      >
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-dark-800 border border-gray-800 shadow-2xl shadow-black/50 mb-2 animate-float">
-          <Image src="/logo-web.png" alt="logo" width={100} height={100} priority />
+            <Image
+              src="/logo-web.png"
+              alt="logo"
+              width={100}
+              height={100}
+              priority
+            />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white tracking-tight">
@@ -153,18 +156,66 @@ export default function LoginPage() {
 
         {/* Role Tabs */}
         <div className="w-full">
-            <p className="text-[10px] text-gray-500/60 font-bold tracking-widest mb-3 ml-1">Select Role :</p>
-            <SegmentedControl
-                fullWidth
-                active={role}
-                onChange={setRole}
-                options={[
-                    { value: "owner", label: <div className="flex items-center justify-center gap-1 md:gap-2"><RiUserStarLine size={20} className="md:w-[18px] md:h-[18px]" /> <span className="text-[10px] md:text-sm font-bold">Manager</span></div> },
-                    { value: "cashier", label: <div className="flex items-center justify-center gap-1 md:gap-2"><FaCashRegister size={16} className="md:w-[18px] md:h-[18px]" /> <span className="text-[10px] md:text-sm font-bold">Cashier</span></div> },
-                    { value: "waiter", label: <div className="flex items-center justify-center gap-1 md:gap-2"><BiDish size={16} className="md:w-[18px] md:h-[18px]" /> <span className="text-[10px] md:text-sm font-bold">Waiter</span></div> },
-                    { value: "chef", label: <div className="flex items-center justify-center gap-1 md:gap-2"><PiChefHat size={16} className="md:w-[18px] md:h-[18px]" /> <span className="text-[10px] md:text-sm font-bold">Chef</span></div> },
-                ]}
-            />
+          <p className="text-[10px] text-gray-500/60 font-bold tracking-widest mb-3 ml-1">
+            Select Role :
+          </p>
+          <SegmentedControl
+            fullWidth
+            active={role}
+            onChange={setRole}
+            options={[
+              {
+                value: "owner",
+                label: (
+                  <div className="flex items-center justify-center gap-1 md:gap-2">
+                    <RiUserStarLine
+                      size={20}
+                      className="md:w-[18px] md:h-[18px]"
+                    />{" "}
+                    <span className="text-[10px] md:text-sm font-bold">
+                      Manager
+                    </span>
+                  </div>
+                ),
+              },
+              {
+                value: "cashier",
+                label: (
+                  <div className="flex items-center justify-center gap-1 md:gap-2">
+                    <FaCashRegister
+                      size={16}
+                      className="md:w-[18px] md:h-[18px]"
+                    />{" "}
+                    <span className="text-[10px] md:text-sm font-bold">
+                      Cashier
+                    </span>
+                  </div>
+                ),
+              },
+              {
+                value: "waiter",
+                label: (
+                  <div className="flex items-center justify-center gap-1 md:gap-2">
+                    <BiDish size={16} className="md:w-[18px] md:h-[18px]" />{" "}
+                    <span className="text-[10px] md:text-sm font-bold">
+                      Waiter
+                    </span>
+                  </div>
+                ),
+              },
+              {
+                value: "chef",
+                label: (
+                  <div className="flex items-center justify-center gap-1 md:gap-2">
+                    <PiChefHat size={16} className="md:w-[18px] md:h-[18px]" />{" "}
+                    <span className="text-[10px] md:text-sm font-bold">
+                      Chef
+                    </span>
+                  </div>
+                ),
+              },
+            ]}
+          />
         </div>
 
         {/* Login Card */}
@@ -172,8 +223,11 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
-                <label htmlFor="email" className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                    Email
+                <label
+                  htmlFor="email"
+                  className="text-xs font-bold text-gray-400 uppercase tracking-wider"
+                >
+                  Email
                 </label>
               </div>
               <div className="relative group">
@@ -190,10 +244,10 @@ export default function LoginPage() {
                     role === "owner"
                       ? "admin@example.com"
                       : role === "cashier"
-                      ? "cashier@example.com"
-                      : role === "waiter"
-                      ? "waiter@example.com"
-                      : "chef@example.com"  
+                        ? "cashier@example.com"
+                        : role === "waiter"
+                          ? "waiter@example.com"
+                          : "chef@example.com"
                   }
                   value={formData.email}
                   onChange={(e) =>
@@ -205,7 +259,10 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
-                <label htmlFor="password" className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                <label
+                  htmlFor="password"
+                  className="text-xs font-bold text-gray-400 uppercase tracking-wider"
+                >
                   Password
                 </label>
               </div>
@@ -249,11 +306,11 @@ export default function LoginPage() {
                 : `Enter as ${
                     role === "owner"
                       ? "Manager"
-                      : role === "cashier"  
-                      ? "Cashier"
-                      : role === "chef"
-                      ? "Chef"
-                      : "Waiter"
+                      : role === "cashier"
+                        ? "Cashier"
+                        : role === "chef"
+                          ? "Chef"
+                          : "Waiter"
                   }`}
               <RiArrowRightLine className="group-hover:translate-x-1 transition-transform" />
             </button>

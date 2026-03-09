@@ -28,3 +28,19 @@ export async function getCurrentUserProfile(userId) {
 
   return profile;
 }
+
+export async function signInWithPassword(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) throw error;
+  return data;
+}
+
+export async function signOutLocal() {
+  const { error } = await supabase.auth.signOut({ scope: "local" });
+  if (error) throw error;
+  return true;
+}

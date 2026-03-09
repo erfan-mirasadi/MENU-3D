@@ -1,6 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { useState } from "react";
 import {
   createCategory,
   updateCategory,
@@ -13,7 +12,6 @@ import {
   RiImageLine,
   RiSave3Line,
   RiDeleteBin6Line,
-  RiLock2Line,
 } from "react-icons/ri";
 import R2FileUploader from "./product-form/R2FileUploader";
 import Loader from "@/components/ui/Loader";
@@ -30,21 +28,10 @@ export default function CategoryForm({
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [formData, setFormData] = useState({
-    title: {},
-    image_url: "",
-    sort_order: 0,
+    title: initialData?.title || {},
+    image_url: initialData?.image_url || "",
+    sort_order: initialData?.sort_order || 0,
   });
-
-  // Populate form (Edit Mode)
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        title: initialData.title || {},
-        image_url: initialData.image_url || "",
-        sort_order: initialData.sort_order || 0,
-      });
-    }
-  }, [initialData]);
 
   // Handle text changes for multi-language fields
   const handleLangChange = (value) => {
@@ -62,7 +49,7 @@ export default function CategoryForm({
       if (!formData.title[lang] || formData.title[lang].trim() === "") {
         setActiveLang(lang);
         return toast.error(
-          `Please enter category name for ${lang.toUpperCase()}`
+          `Please enter category name for ${lang.toUpperCase()}`,
         );
       }
     }
@@ -113,19 +100,19 @@ export default function CategoryForm({
     setDeleting(true);
 
     try {
-      // 1. Attempt Hard Delete first
+      //Attempt Hard Delete first
       await deleteCategory(initialData.id);
 
-      // 2. Success (No dependencies found)
+      //Success (No dependencies found)
       toast.success("Category deleted permanently");
       setDeleting(false);
       onClose();
       window.location.reload();
     } catch (deleteError) {
-      // 3. Foreign Key Constraint Error (Category has products)
+      // foreign Key Constraint Error (Category has products)
       if (deleteError.code === "23503") {
         const confirmArchive = window.confirm(
-          "This category contains products and cannot be fully deleted. Do you want to archive it instead?"
+          "This category contains products and cannot be fully deleted. Do you want to archive it instead?",
         );
 
         if (confirmArchive) {

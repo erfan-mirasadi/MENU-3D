@@ -1,10 +1,19 @@
-'use client';
-import { useState, useEffect, useRef } from 'react';
-import { RiCloseLine, RiDownloadLine, RiShareLine, RiAddLine } from 'react-icons/ri';
+"use client";
+import { useState, useEffect, useRef } from "react";
+import {
+  RiCloseLine,
+  RiDownloadLine,
+  RiShareLine,
+  RiAddLine,
+} from "react-icons/ri";
 
 export default function InstallPwaPopup() {
   const [showPopup, setShowPopup] = useState(false);
-  const [isIos, setIsIos] = useState(false);
+  const [isIos] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const ua = window.navigator.userAgent.toLowerCase();
+    return /iphone|ipad|ipod/.test(ua) && !window.MSStream;
+  });
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const hasChecked = useRef(false);
 
@@ -14,25 +23,22 @@ export default function InstallPwaPopup() {
 
     // Already running as installed PWA — don't show anything
     const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia("(display-mode: standalone)").matches ||
       window.navigator.standalone;
     if (isStandalone) return;
 
     // Check if user already dismissed the popup in this session
-    const dismissed = sessionStorage.getItem('pwa-popup-dismissed');
+    const dismissed = sessionStorage.getItem("pwa-popup-dismissed");
     if (dismissed) return;
 
     // Detect iOS
-    const ua = window.navigator.userAgent.toLowerCase();
-    const isIosDevice = /iphone|ipad|ipod/.test(ua) && !window.MSStream;
-    setIsIos(isIosDevice);
+    const isIosDevice = isIos;
 
     if (isIosDevice) {
       // On iOS Safari show manual instruction after a short delay
       const timer = setTimeout(() => setShowPopup(true), 2000);
       return () => clearTimeout(timer);
     }
-
     // Android / Chrome: listen for the native install prompt
     const handler = (e) => {
       e.preventDefault();
@@ -40,22 +46,22 @@ export default function InstallPwaPopup() {
       setShowPopup(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, [isIos]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    console.log('[PWA] Install prompt outcome:', outcome);
+    console.log("[PWA] Install prompt outcome:", outcome);
     setDeferredPrompt(null);
     setShowPopup(false);
   };
 
   const handleDismiss = () => {
     setShowPopup(false);
-    sessionStorage.setItem('pwa-popup-dismissed', 'true');
+    sessionStorage.setItem("pwa-popup-dismissed", "true");
   };
 
   if (!showPopup) return null;
@@ -64,12 +70,12 @@ export default function InstallPwaPopup() {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] animate-fadeIn"
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-200 animate-fadeIn"
         onClick={handleDismiss}
       />
 
       {/* Bottom Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 z-[201] animate-slideUp">
+      <div className="fixed bottom-0 left-0 right-0 z-220 animate-slideUp">
         <div className="mx-auto max-w-lg bg-dark-800 border-t border-dark-600 rounded-t-2xl shadow-2xl p-5 pb-8">
           {/* Close */}
           <button
@@ -103,7 +109,8 @@ export default function InstallPwaPopup() {
                     <RiShareLine size={18} className="text-blue-400" />
                   </div>
                   <p className="text-sm text-text-light">
-                    Tap the <strong className="text-white">Share</strong> button in Safari
+                    Tap the <strong className="text-white">Share</strong> button
+                    in Safari
                   </p>
                 </div>
 
@@ -112,7 +119,8 @@ export default function InstallPwaPopup() {
                     <RiAddLine size={18} className="text-emerald-400" />
                   </div>
                   <p className="text-sm text-text-light">
-                    Select <strong className="text-white">Add to Home Screen</strong>
+                    Select{" "}
+                    <strong className="text-white">Add to Home Screen</strong>
                   </p>
                 </div>
               </div>
@@ -128,7 +136,8 @@ export default function InstallPwaPopup() {
             /* ── Android / Chrome Install ── */
             <div className="space-y-4">
               <p className="text-sm text-text-dim leading-relaxed">
-                Install the app for a faster, full-screen experience with push notifications.
+                Install the app for a faster, full-screen experience with push
+                notifications.
               </p>
 
               <div className="flex gap-3">
@@ -150,15 +159,23 @@ export default function InstallPwaPopup() {
           )}
         </div>
       </div>
-      
+
       <style jsx>{`
         @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
         }
         @keyframes slideUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
         }
         .animate-fadeIn {
           animation: fadeIn 0.25s ease-out;

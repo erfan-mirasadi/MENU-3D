@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import Image from "next/image";
 
@@ -35,7 +34,7 @@ export default function Suggestions({ products }) {
         <span className="text-white font-black text-xl italic tracking-tighter">
           🔥 HOT DEALS
         </span>
-        <span className="text-[#ea7c69] text-xs font-mono animate-pulse">
+        <span className="text-accent text-xs font-mono animate-pulse">
           Scroll Down ↓
         </span>
       </div>
@@ -44,7 +43,7 @@ export default function Suggestions({ products }) {
         {products.map((product, index) => (
           <div
             key={product.id}
-            className="relative w-full aspect-[4/3] rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 group shrink-0 transition-all duration-1000"
+            className="relative w-full aspect-4/3 rounded-4xl overflow-hidden shadow-2xl border border-white/10 group shrink-0 transition-all duration-1000"
             style={{
               opacity: isVisible ? 1 : 0,
               transform: isVisible ? "translateY(0)" : "translateY(40px)",
@@ -52,7 +51,7 @@ export default function Suggestions({ products }) {
             }}
           >
             <div className="absolute top-0 right-0 z-20">
-              <div className="bg-[#ea7c69] text-white font-black text-sm px-4 py-2 rounded-bl-2xl shadow-lg flex flex-col items-center leading-none">
+              <div className="bg-accent text-white font-black text-sm px-4 py-2 rounded-bl-2xl shadow-lg flex flex-col items-center leading-none">
                 <span>20%</span>
                 <span className="text-[8px] opacity-80">OFF</span>
               </div>
@@ -65,7 +64,7 @@ export default function Suggestions({ products }) {
               priority={index === 0}
               className="object-cover transition-transform duration-700 group-hover:scale-110"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90" />
+            <div className="absolute inset-0 bg-linear-to-t from-black via-black/40 to-transparent opacity-90" />
             <div className="absolute bottom-0 left-0 w-full p-5">
               <h3 className="text-white text-2xl font-black leading-none drop-shadow-md mb-1">
                 {getTitle(product.title)}
@@ -80,10 +79,10 @@ export default function Suggestions({ products }) {
                     {(product.price * 1.25).toFixed(0)} ₺
                   </span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-[#ea7c69] text-3xl font-black drop-shadow-[0_0_10px_rgba(234,124,105,0.4)]">
+                    <span className="text-accent text-3xl font-black drop-shadow-[0_0_10px_rgba(234,124,105,0.4)]">
                       {Number(product.price).toLocaleString()}
                     </span>
-                    <span className="text-[#ea7c69] text-sm font-bold">₺</span>
+                    <span className="text-accent text-sm font-bold">₺</span>
                   </div>
                 </div>
 

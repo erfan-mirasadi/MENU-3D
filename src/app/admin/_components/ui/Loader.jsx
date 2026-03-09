@@ -1,5 +1,4 @@
 import { RiLoader4Line } from "react-icons/ri";
-
 export default function Loader({ size = "large", className = "" }) {
   const sizeClasses = {
     small: "text-xl",

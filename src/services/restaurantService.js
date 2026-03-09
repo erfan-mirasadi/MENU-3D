@@ -79,6 +79,23 @@ export async function updateRestaurant(ownerId, restaurantData) {
   return data;
 }
 
+export async function updateRestaurantById(restaurantId, restaurantData) {
+  const { data, error } = await supabase
+    .from("restaurants")
+    .update(restaurantData)
+    .eq("id", restaurantId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating restaurant by id:", error);
+    toast.error("Failed to update restaurant");
+    throw error;
+  }
+
+  return data;
+}
+
 export async function updateRestaurantImage(ownerId, field, url) {
   const { data, error } = await supabase
     .from("restaurants")
@@ -110,7 +127,8 @@ export async function getOperationalTables(restaurantId) {
 export async function getOperationalSessions(restaurantId) {
   const { data, error } = await supabase
     .from("sessions")
-    .select(`
+    .select(
+      `
       id, created_at, status, table_id, restaurant_id, note,
       tables (id, table_number),
       bills (id, total_amount, paid_amount, remaining_amount, status, adjustments, transactions (paid_items)),
@@ -119,7 +137,8 @@ export async function getOperationalSessions(restaurantId) {
           product:products ( title, price, image_url ) 
       ),
       service_requests ( id, status, request_type )
-    `)
+    `,
+    )
     .eq("restaurant_id", restaurantId)
     .neq("status", "closed");
 

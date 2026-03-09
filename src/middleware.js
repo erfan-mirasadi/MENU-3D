@@ -1,40 +1,14 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
+import { getMiddlewareAuthContext } from "@/services/middlewareAuthService";
 
 export async function middleware(request) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-current-path", request.nextUrl.pathname);
 
-  let response = NextResponse.next({
-    request: { headers: requestHeaders },
-  });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            request.cookies.set(name, value, options)
-          );
-          response = NextResponse.next({
-            request: { headers: requestHeaders },
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
+  const { user, response } = await getMiddlewareAuthContext(
+    request,
+    requestHeaders,
   );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
   const pathname = request.nextUrl.pathname;
 
   if (!user && pathname.startsWith("/admin") && !pathname.includes("/login")) {
@@ -51,7 +25,11 @@ export async function middleware(request) {
     return NextResponse.redirect(url);
   }
 
-  if (!user && pathname.startsWith("/cashier") && !pathname.includes("/login")) {
+  if (
+    !user &&
+    pathname.startsWith("/cashier") &&
+    !pathname.includes("/login")
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("role", "cashier");

@@ -26,7 +26,7 @@ export default function SmartMedia({
           observer.disconnect();
         }
       },
-      { rootMargin: "100px" }
+      { rootMargin: "100px" },
     );
 
     if (mediaRef.current) observer.observe(mediaRef.current);

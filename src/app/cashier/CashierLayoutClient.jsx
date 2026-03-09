@@ -2,16 +2,14 @@
 import AdminMobileNav from "@/app/admin/_components/layouts/AdminMobileNav";
 import AdminSidebar from "@/app/admin/_components/layouts/AdminSidebar";
 import { CASHIER_LINKS } from "./_components/cashierNavLinks";
-import { usePathname } from 'next/navigation';
-
+import { usePathname } from "next/navigation";
 
 export default function CashierLayoutClient({ children }) {
   const pathname = usePathname();
-  const isDashboard = pathname?.includes('/dashboard');
+  const isDashboard = pathname?.includes("/dashboard");
 
   return (
-    <div className="flex w-full h-[100dvh] bg-dark-900 text-text-light font-sans overflow-hidden">
-      {/* Sidebar with Waiter Links */}
+    <div className="flex w-full h-dvh bg-dark-900 text-text-light font-sans overflow-hidden">
       <AdminSidebar
         links={CASHIER_LINKS}
         user={{ email: "Cashier" }}
@@ -19,12 +17,12 @@ export default function CashierLayoutClient({ children }) {
       />
 
       <main className="flex-1 flex flex-col h-full relative min-w-0">
-        <div className={`flex-1 overflow-y-auto overflow-x-hidden ${isDashboard ? 'p-0' : 'p-4 md:p-8 pb-24 md:pb-8'}`}>
+        <div
+          className={`flex-1 overflow-y-auto overflow-x-hidden ${isDashboard ? "p-0" : "p-4 md:p-8 pb-24 md:pb-8"}`}
+        >
           {children}
         </div>
       </main>
-
-      {/* Mobile Nav with Waiter Links */}
       <AdminMobileNav links={CASHIER_LINKS} />
     </div>
   );
