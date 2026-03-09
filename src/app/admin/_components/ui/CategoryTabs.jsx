@@ -1,4 +1,3 @@
-"use client";
 import Image from "next/image";
 import { RiAddLine, RiFireFill } from "react-icons/ri";
 import { MdEditSquare } from "react-icons/md";

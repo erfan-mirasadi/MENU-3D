@@ -1,6 +1,10 @@
 User-agent: *
 Allow: /
 Disallow: /admin/
+Disallow: /cashier/
+Disallow: /waiter/
+Disallow: /chef/
+Disallow: /login
 Disallow: /api/
 
-Sitemap: https://www.menu-3d.com/sitemap.xml
+Sitemap: https://menu-3d.com/sitemap.xml

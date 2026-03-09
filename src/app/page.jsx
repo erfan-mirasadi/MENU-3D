@@ -1,11 +1,6 @@
-import LandingClient from "@/components/landing/LandingClient";
+import { redirect } from "next/navigation";
 
-export const metadata = {
-  title: "Menu 3D",
-  description:
-    "Experience the next generation of restaurant dining with our interactive 3D menu, seamless POS integration, and real-time waiter management.",
-};
-
+// Middleware handles / → /{lang} redirect.
 export default function Home() {
-  return <LandingClient />;
+  redirect("/en");
 }

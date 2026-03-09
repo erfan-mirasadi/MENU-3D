@@ -1,5 +1,3 @@
-"use client";
-import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -15,35 +13,13 @@ import {
   RiGlobalLine,
   RiWhatsappLine,
   RiMailLine,
-  RiEarthLine,
-  RiCheckLine,
 } from "react-icons/ri";
 import { translations } from "@/components/landing/landingTranslations";
+import LandingLangSwitcher from "./LandingLangSwitcher";
 
-const LANGUAGES = [
-  { code: "en", label: "English" },
-  { code: "tr", label: "Türkçe" },
-  { code: "fa", label: "فارسی" },
-  { code: "ar", label: "العربية" },
-  { code: "de", label: "Deutsch" },
-  { code: "ru", label: "Русский" },
-];
-
-export default function LandingClient() {
-  const [lang, setLang] = useState(() => {
-    if (typeof window === "undefined") return "en";
-    const saved = localStorage.getItem("landing_lang");
-    return saved && translations[saved] ? saved : "en";
-  });
-  const [showLangMenu, setShowLangMenu] = useState(false);
-  const t = translations[lang];
+export default function LandingClient({ lang = "en" }) {
+  const t = translations[lang] || translations.en;
   const isRtl = lang === "fa" || lang === "ar";
-
-  const handleLangChange = (code) => {
-    setLang(code);
-    localStorage.setItem("landing_lang", code);
-    setShowLangMenu(false);
-  };
 
   return (
     <main
@@ -57,34 +33,7 @@ export default function LandingClient() {
       </div>
 
       {/* Language Switcher */}
-      <div className="absolute top-6 right-6 md:top-10 md:right-10 z-50">
-        <div className="relative">
-          <button
-            onClick={() => setShowLangMenu(!showLangMenu)}
-            className="flex items-center gap-2 px-4 py-2 bg-dark-800 hover:bg-dark-700 rounded-full border border-white/10 text-text-dim hover:text-white transition-all shadow-lg"
-          >
-            <RiEarthLine size={18} className="text-accent" />
-            <span className="font-medium text-sm">
-              {LANGUAGES.find((l) => l.code === lang)?.label}
-            </span>
-          </button>
-
-          {showLangMenu && (
-            <div className="absolute right-0 top-full mt-2 w-40 bg-dark-800 border border-dark-600 rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
-              {LANGUAGES.map((l) => (
-                <button
-                  key={l.code}
-                  onClick={() => handleLangChange(l.code)}
-                  className="w-full text-left px-4 py-3 text-sm text-text-dim hover:text-white hover:bg-dark-700 transition-colors flex items-center justify-between"
-                >
-                  {l.label}
-                  {lang === l.code && <RiCheckLine className="text-accent" />}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      <LandingLangSwitcher currentLang={lang} />
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 md:py-24 flex flex-col gap-24">
         <section className="flex flex-col items-center text-center space-y-8 animate-fade-in-up">

@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import "./globals.css";
 import { Geist, Geist_Mono, Gulzar } from "next/font/google";
 import { Toaster } from "react-hot-toast";
@@ -66,9 +67,12 @@ export const viewport = {
   themeColor: "#1f1d2b",
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const headersList = await headers();
+  const pageLang = headersList.get("x-page-lang") || "en";
+
   return (
-    <html lang="en">
+    <html lang={pageLang}>
       <body
         suppressHydrationWarning={true}
         className={`${geistSans.variable} ${geistMono.variable} ${gulzarFont.variable} antialiased bg-dark-900 text-white`}
