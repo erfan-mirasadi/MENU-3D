@@ -71,7 +71,7 @@ export default function LandingClient({ lang = "en" }) {
         </section>
 
         {/* PREMIUM FEATURE SHOWCASES */}
-        <section className="flex flex-col gap-32 md:gap-40 w-full py-8">
+        <article className="flex flex-col gap-32 md:gap-40 w-full py-8">
           {/* CUSTOMER 3D MENU */}
           <div
             className={`flex flex-col lg:flex-row items-center gap-12 lg:gap-24 group`}
@@ -279,54 +279,50 @@ export default function LandingClient({ lang = "en" }) {
               </div>
             </div>
           </div>
-        </section>
+        </article>
 
         {/*FEATURES GRID */}
         <section className="bg-dark-800/30 rounded-3xl p-8 md:p-12 border border-white/5">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="space-y-3">
               <h3 className="text-white font-bold text-lg flex items-center gap-2">
-                <RiMagicLine className="text-accent text-xl" /> Stunning 3D
+                <RiMagicLine className="text-accent text-xl" /> {t.feat3dTitle}
               </h3>
-              <p className="text-sm text-gray-400">
-                High-fidelity 3D food models that make diners hungry instantly.
-              </p>
+              <p className="text-sm text-gray-400">{t.feat3dDesc}</p>
             </div>
             <div className="space-y-3">
               <h3 className="text-white font-bold text-lg flex items-center gap-2">
-                <RiFlashlightLine className="text-yellow-400 text-xl" /> Instant
-                Sync
+                <RiFlashlightLine className="text-yellow-400 text-xl" />{" "}
+                {t.featSyncTitle}
               </h3>
-              <p className="text-sm text-gray-400">
-                Powered by Supabase Realtime, everyone stays in sync. No delays.
-              </p>
+              <p className="text-sm text-gray-400">{t.featSyncDesc}</p>
             </div>
             <div className="space-y-3">
               <h3 className="text-white font-bold text-lg flex items-center gap-2">
-                <RiSmartphoneLine className="text-blue-400 text-xl" /> Fully
-                Responsive
+                <RiSmartphoneLine className="text-blue-400 text-xl" />{" "}
+                {t.featResponsiveTitle}
               </h3>
-              <p className="text-sm text-gray-400">
-                Optimized for every device: iPhone, Android, Tablet, and
-                Desktop.
-              </p>
+              <p className="text-sm text-gray-400">{t.featResponsiveDesc}</p>
             </div>
             <div className="space-y-3">
               <h3 className="text-white font-bold text-lg flex items-center gap-2">
                 <RiGlobalLine className="text-green-400 text-xl" />{" "}
-                Multi-Language
+                {t.featMultiLangTitle}
               </h3>
-              <p className="text-sm text-gray-400">
-                Built-in support for multiple languages to serve global
-                customers.
-              </p>
+              <p className="text-sm text-gray-400">{t.featMultiLangDesc}</p>
             </div>
           </div>
         </section>
 
         {/* CONTACT & FOOTER */}
-        <section className="flex flex-col items-center gap-6 pb-20 pt-10">
-          <div className="flex flex-col md:flex-row gap-6 md:gap-12">
+        <section
+          aria-label="Contact"
+          className="flex flex-col items-center gap-6 pb-20 pt-10"
+        >
+          <nav
+            aria-label="Contact links"
+            className="flex flex-col md:flex-row gap-6 md:gap-12"
+          >
             <a
               href="https://wa.me/905073542097"
               target="_blank"
@@ -360,12 +356,12 @@ export default function LandingClient({ lang = "en" }) {
                 </span>
               </div>
             </a>
-          </div>
+          </nav>
 
           <div className="w-full h-px bg-white/5 max-w-lg mt-8 mb-4"></div>
 
           <footer className="text-center text-gray-600 text-sm">
-            &copy; {new Date().getFullYear()} Menu 3D. All rights reserved.
+            &copy; {new Date().getFullYear()} Menu 3D. {t.footerRights}
           </footer>
         </section>
       </div>

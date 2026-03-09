@@ -26,6 +26,7 @@ const gulzarFont = Gulzar({
 });
 
 export const metadata = {
+  metadataBase: new URL("https://menu-3d.com"),
   title: "Menu 3D",
   description: "Pro Digital 3D Menu",
   applicationName: "Menu 3D",
@@ -46,10 +47,10 @@ export const metadata = {
     description: "Pro Digital 3D Menu",
     images: [
       {
-        url: "/logo-web.png",
-        width: 800,
-        height: 600,
-        alt: "Menu 3D Logo",
+        url: "https://menu-3d.com/logo-web.png",
+        width: 1200,
+        height: 630,
+        alt: "Menu 3D — Interactive 3D Digital Menu",
       },
     ],
     locale: "en_US",

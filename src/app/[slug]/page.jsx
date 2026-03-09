@@ -6,6 +6,7 @@ import { getRestaurantBySlug } from "@/services/restaurantService";
 import { LanguageProvider } from "@/context/LanguageContext.jsx";
 import LandingClient from "@/components/landing/LandingClient";
 
+const BASE_URL = "https://menu-3d.com";
 const LANDING_LANGS = new Set(["en", "tr", "fa", "ar", "de", "ru"]);
 
 const LANG_META = {
@@ -44,10 +45,70 @@ const LANG_META = {
 function buildLandingAlternates(currentLang) {
   const languages = {};
   for (const code of LANDING_LANGS) {
-    languages[code] = `https://menu-3d.com/${code}`;
+    languages[code] = `${BASE_URL}/${code}`;
   }
-  languages["x-default"] = "https://menu-3d.com/en";
-  return { canonical: `https://menu-3d.com/${currentLang}`, languages };
+  languages["x-default"] = `${BASE_URL}/en`;
+  return { canonical: `${BASE_URL}/${currentLang}`, languages };
+}
+
+function buildJsonLd(lang, meta) {
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Menu 3D",
+      url: BASE_URL,
+      logo: `${BASE_URL}/logo-web.png`,
+      contactPoint: {
+        "@type": "ContactPoint",
+        telephone: "+90-507-354-2097",
+        contactType: "sales",
+        availableLanguage: [
+          "English",
+          "Turkish",
+          "Persian",
+          "Arabic",
+          "German",
+          "Russian",
+        ],
+      },
+      sameAs: [],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Menu 3D",
+      url: BASE_URL,
+      inLanguage: lang,
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${BASE_URL}/{search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "Menu 3D",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      url: `${BASE_URL}/${lang}`,
+      description: meta.description,
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+      },
+      featureList: [
+        "Interactive 3D Digital Menu",
+        "Integrated POS System",
+        "Real-time Kitchen Display",
+        "Waiter Mobile App",
+        "Admin Analytics Dashboard",
+        "Multi-language Support",
+      ],
+    },
+  ];
 }
 
 export async function generateMetadata({ params }) {
@@ -63,10 +124,15 @@ export async function generateMetadata({ params }) {
       openGraph: {
         title: meta.title,
         description: meta.description,
-        url: `https://menu-3d.com/${decodedSlug}`,
+        url: `${BASE_URL}/${decodedSlug}`,
         siteName: "Menu 3D",
         images: [
-          { url: "/logo-web.png", width: 800, height: 600, alt: "Menu 3D" },
+          {
+            url: `${BASE_URL}/logo-web.png`,
+            width: 1200,
+            height: 630,
+            alt: "Menu 3D — Interactive 3D Digital Menu",
+          },
         ],
         locale:
           decodedSlug === "fa"
@@ -86,7 +152,7 @@ export async function generateMetadata({ params }) {
         card: "summary_large_image",
         title: meta.title,
         description: meta.description,
-        images: ["/logo-web.png"],
+        images: [`${BASE_URL}/logo-web.png`],
       },
     };
   }
@@ -157,7 +223,20 @@ export default async function Page({ params }) {
   const decodedSlug = decodeURIComponent(slug);
 
   if (LANDING_LANGS.has(decodedSlug)) {
-    return <LandingClient lang={decodedSlug} />;
+    const meta = LANG_META[decodedSlug] || LANG_META.en;
+    const jsonLdArr = buildJsonLd(decodedSlug, meta);
+    return (
+      <>
+        {jsonLdArr.map((schema, i) => (
+          <script
+            key={i}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          />
+        ))}
+        <LandingClient lang={decodedSlug} />
+      </>
+    );
   }
 
   const data = await getMenuData(decodedSlug);
