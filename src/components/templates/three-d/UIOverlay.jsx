@@ -140,7 +140,7 @@ export default function UIOverlay({
       {/* Run only when loading finishes (!active) and cart is closed */}
       {!isCartOpen && !isSceneLoading && showHint && <SwipeHint />}
 
-      {/* --- CONTROLS (Hidden when cart is open) --- */}
+      {/* CONTROLS (Hidden when cart is open)*/}
       {!isGuestMode && (
         <div
           className={`transition-opacity duration-300 ${isCartOpen ? "opacity-0 pointer-events-none" : "opacity-100"}`}
@@ -318,7 +318,8 @@ export default function UIOverlay({
                 className={`h- w-full flex items-center justify-center animate-text-change shrink-0 ${language === "fa" ? "pt-4" : ""}`}
                 style={{ animationDelay: "0.3s" }}
               >
-                {focusedProduct?.model_url && (
+                {(focusedProduct?.model_url ||
+                  focusedProduct?.model_url_ios) && (
                   <button
                     onClick={() => onLaunchAR()}
                     className="pointer-events-auto relative flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 backdrop-blur-2xl border border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.2)] transition-all duration-300 active:scale-95 group overflow-hidden "

@@ -12,6 +12,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { PresentationControls, Float } from "@react-three/drei";
 import * as THREE from "three";
+import Image2DModel from "./Image2DModel";
 import { easing } from "maath";
 import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
@@ -103,35 +104,40 @@ function RealModel({ url, productTitle, onLoad }) {
         if (obj.material) {
           //  Keep a reference to the original material's map (texture)
           const originalMap = obj.material.map;
-          
+
           if (originalMap) {
             //  Clone the texture so we can safely dispose it without affecting the cached model
             const clonedMap = originalMap.clone();
             clonedMap.needsUpdate = true;
-            
+
             //  Increase Anisotropy for sharp textures at glancing angles
             clonedMap.anisotropy = gl.capabilities.getMaxAnisotropy();
-            
+
             //  Convert light-heavy Standard materials to cheap Basic materials (since scanned models have baked lighting)
             obj.material = new THREE.MeshBasicMaterial({
               map: clonedMap,
               color: obj.material.color,
               transparent: true,
-              opacity: obj.material.transmission > 0 ? Math.max(0.6, 1.0 - obj.material.transmission) : obj.material.opacity,
+              opacity:
+                obj.material.transmission > 0
+                  ? Math.max(0.6, 1.0 - obj.material.transmission)
+                  : obj.material.opacity,
               side: obj.material.side,
-              alphaTest: obj.material.alphaTest
+              alphaTest: obj.material.alphaTest,
             });
-            
           } else {
-             // Fallback for objects without textures: Just clone and simplify if needed
-             obj.material = new THREE.MeshBasicMaterial({
-                color: obj.material.color,
-                transparent: obj.material.transparent,
-                opacity: obj.material.transmission > 0 ? Math.max(0.6, 1.0 - obj.material.transmission) : obj.material.opacity,
-                side: obj.material.side
-             });
+            // Fallback for objects without textures: Just clone and simplify if needed
+            obj.material = new THREE.MeshBasicMaterial({
+              color: obj.material.color,
+              transparent: obj.material.transparent,
+              opacity:
+                obj.material.transmission > 0
+                  ? Math.max(0.6, 1.0 - obj.material.transmission)
+                  : obj.material.opacity,
+              side: obj.material.side,
+            });
           }
-          
+
           obj.material.needsUpdate = true;
         }
       }
@@ -145,12 +151,12 @@ function RealModel({ url, productTitle, onLoad }) {
       if (clone) {
         clone.traverse((obj) => {
           if (obj.isMesh && obj.material) {
-             // Dispose of the texture if a map exists
-             if (obj.material.map) {
-                 obj.material.map.dispose();
-             }
-             // Dispose of the top-level material
-             obj.material.dispose();
+            // Dispose of the texture if a map exists
+            if (obj.material.map) {
+              obj.material.map.dispose();
+            }
+            // Dispose of the top-level material
+            obj.material.dispose();
           }
         });
       }
@@ -183,7 +189,13 @@ export default function FoodItem({
   const modelRef = useRef();
 
   useEffect(() => {
-    if (product && !product.model_url && !product.cached_model_url && onLoad) {
+    if (
+      product &&
+      !product.model_url &&
+      !product.cached_model_url &&
+      !product.image_url &&
+      onLoad
+    ) {
       onLoad();
     }
   }, [product, onLoad]);
@@ -234,6 +246,9 @@ export default function FoodItem({
 
   if (!product) return null;
 
+  const is3D = !!(product.model_url || product.cached_model_url);
+  const is2D = !is3D && !!product.image_url;
+
   return (
     <group ref={group}>
       <PresentationControls
@@ -243,8 +258,10 @@ export default function FoodItem({
         config={{ mass: 2, tension: 250, friction: 20 }}
         snap={false}
         rotation={[0, 0, 0]}
-        polar={[-Math.PI / 4, Math.PI / 4]}
-        azimuth={[-Infinity, Infinity]}
+        polar={
+          is3D ? [-Math.PI / 4, Math.PI / 4] : [-Math.PI / 16, Math.PI / 16]
+        }
+        azimuth={is3D ? [-Infinity, Infinity] : [-Math.PI / 16, Math.PI / 16]}
       >
         <Float
           speed={isActive ? 1.5 : 0}
@@ -253,18 +270,21 @@ export default function FoodItem({
         >
           <group ref={modelRef}>
             <Suspense fallback={<PlaceholderMesh />}>
-              {(product?.model_url || product?.cached_model_url) &&
-                shouldLoadModel && (
-                  <RealModel
-                    url={product.cached_model_url || product.model_url}
-                    productTitle={product.title?.en || `Item ${index}`}
-                    onLoad={isActive ? onLoad : undefined}
-                  />
-                )}
+              {is3D && shouldLoadModel && (
+                <RealModel
+                  url={product.cached_model_url || product.model_url}
+                  productTitle={product.title?.en || `Item ${index}`}
+                  onLoad={isActive ? onLoad : undefined}
+                />
+              )}
+              {is2D && shouldLoadModel && (
+                <Image2DModel
+                  product={product}
+                  onLoad={isActive ? onLoad : undefined}
+                />
+              )}
             </Suspense>
-            {!product.model_url && !product.cached_model_url && (
-              <PlaceholderMesh />
-            )}
+            {!is3D && !is2D && <PlaceholderMesh />}
           </group>
         </Float>
       </PresentationControls>
