@@ -221,7 +221,7 @@ export default function FoodItem({
     const is2D = !is3D && !!product.image_url;
 
     // Constrain gyro based on 2.5D limits
-    const maxGyroAngle = Math.PI / 16;
+    const maxGyroAngle = Math.PI / 8;
     const clampedGyroX = is2D
       ? THREE.MathUtils.clamp(gyroData.x, -maxGyroAngle, maxGyroAngle)
       : gyroData.x;
