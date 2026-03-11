@@ -45,6 +45,9 @@ export default function ProductForm({
         model_url_ios: initialData.model_url_ios || "",
         animation_url_android: initialData.animation_url_android || "",
         animation_url_ios: initialData.animation_url_ios || "",
+        normal_map_url: initialData.normal_map_url || "",
+        roughness_map_url: initialData.roughness_map_url || "",
+        ambient_map_url: initialData.ambient_map_url || "",
       };
     }
 
@@ -63,6 +66,9 @@ export default function ProductForm({
       model_url_ios: "",
       animation_url_android: "",
       animation_url_ios: "",
+      normal_map_url: "",
+      roughness_map_url: "",
+      ambient_map_url: "",
     };
   });
 
@@ -115,6 +121,9 @@ export default function ProductForm({
         model_url_ios: formData.model_url_ios || null,
         animation_url_android: formData.animation_url_android || null,
         animation_url_ios: formData.animation_url_ios || null,
+        normal_map_url: formData.normal_map_url || null,
+        roughness_map_url: formData.roughness_map_url || null,
+        ambient_map_url: formData.ambient_map_url || null,
       };
 
       try {
