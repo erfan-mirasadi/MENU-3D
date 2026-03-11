@@ -23,10 +23,9 @@ const VISIBLE_RANGE = 1;
 const RENDER_WINDOW = 2;
 const ITEM_SCALE_ACTIVE = 11;
 const ITEM_SCALE_SIDE = 6;
-// CACHE
+
 const gltfCache = new Map();
 
-// SINGLETONS
 let ktx2Loader = null;
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
@@ -218,15 +217,29 @@ export default function FoodItem({
       delta,
     );
 
-    const gyroX = gyroData.x;
-    const gyroY = gyroData.y;
+    const is3D = !!(product.model_url || product.cached_model_url);
+    const is2D = !is3D && !!product.image_url;
+
+    // Constrain gyro based on 2.5D limits
+    const maxGyroAngle = Math.PI / 16;
+    const clampedGyroX = is2D
+      ? THREE.MathUtils.clamp(gyroData.x, -maxGyroAngle, maxGyroAngle)
+      : gyroData.x;
+    const clampedGyroY = is2D
+      ? THREE.MathUtils.clamp(gyroData.y, -maxGyroAngle, maxGyroAngle)
+      : gyroData.y;
 
     if (isActive) {
       const currentScale = group.current.scale.x;
       group.current.scale.setScalar(
         THREE.MathUtils.lerp(currentScale, ITEM_SCALE_ACTIVE, delta * 6),
       );
-      easing.dampE(group.current.rotation, [gyroX, gyroY, 0], 0.4, delta);
+      easing.dampE(
+        group.current.rotation,
+        [clampedGyroX, clampedGyroY, 0],
+        0.4,
+        delta,
+      );
     } else {
       const currentScale = group.current.scale.x;
       group.current.scale.setScalar(
@@ -234,7 +247,7 @@ export default function FoodItem({
       );
       easing.dampE(
         group.current.rotation,
-        [gyroX, offset * -0.2 + gyroY, 0],
+        [clampedGyroX, offset * -0.2 + clampedGyroY, 0],
         0.4,
         delta,
       );
