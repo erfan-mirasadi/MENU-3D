@@ -772,7 +772,7 @@ export default function DashboardPage() {
                   title="Logout"
                 >
                   {isLoggingOut ? (
-                    <Loader size="sm" />
+                    <Loader variant="inline" />
                   ) : (
                     <RiLogoutBoxRLine size={18} />
                   )}

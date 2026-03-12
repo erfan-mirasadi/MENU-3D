@@ -24,7 +24,7 @@ export default async function chefLayout({ children }) {
   const { profile } = await getServerAuthContext();
 
   if (!profile || (profile.role !== "chef" && profile.role !== "owner")) {
-    redirect("/login");
+    redirect("/login?role=chef");
   }
 
   return (

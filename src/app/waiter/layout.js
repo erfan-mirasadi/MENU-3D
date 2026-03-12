@@ -25,7 +25,7 @@ export default async function WaiterLayout({ children }) {
   const { profile } = await getServerAuthContext();
 
   if (!profile || (profile.role !== "waiter" && profile.role !== "owner")) {
-    redirect("/login");
+    redirect("/login?role=waiter");
   }
 
   return (

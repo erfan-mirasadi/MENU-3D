@@ -27,17 +27,17 @@ export const viewport = {
 export default async function AdminLayout({ children }) {
   const { user, profile } = await getServerAuthContext();
 
-  if (profile?.role !== "owner") {
+  if (!profile || profile.role !== "owner") {
     const { redirect } = await import("next/navigation");
-    redirect("/waiter/dashboard");
+    redirect("/login?role=owner");
   }
 
   let restaurant = null;
   if (user) {
-    // 1. Try fetching by Owner ID (for original Owners)
+    // Try fetching by Owner ID (for original Owners)
     restaurant = await getRestaurantByOwnerId(user.id);
 
-    // 2. If not found, try fetching by Restaurant ID from Profile (for invited Managers)
+    // If not found, try fetching by Restaurant ID from Profile (for invited Managers)
     if (!restaurant && profile?.restaurant_id) {
       restaurant = await getRestaurantById(profile.restaurant_id);
     }

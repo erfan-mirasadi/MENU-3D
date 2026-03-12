@@ -185,14 +185,7 @@ export default function WaiterDashboard() {
   const { isEnabled } = useRestaurantFeatures();
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-[#1F1D2B]">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-gray-400 font-mono text-sm">{t("loadingFloor")}</p>
-        </div>
-      </div>
-    );
+    return <Loader />;
   }
 
   if (!isEnabled("waiter")) {
@@ -228,7 +221,7 @@ export default function WaiterDashboard() {
         </div>
       )}
 
-      {/* --- MODERN HEADER (Responsive) --- */}
+      {/*MODERN HEADER*/}
       <div className="sticky top-0 z-20 bg-[#1F1D2B]/95 backdrop-blur-xl border-b border-white/5 shadow-2xl transition-all duration-300 pt-[env(safe-area-inset-top)]">
         <div className="px-4 py-3 md:py-4">
           {/* Top Row: Info + Global Actions */}
@@ -251,11 +244,9 @@ export default function WaiterDashboard() {
               {/* Desktop: Full Title (Hidden on Mobile) */}
               <div className="hidden md:block mt-1"></div>
             </div>
-
-            {/* Right: Actions (Sort, Status, Lang, Logout) */}
             <div className="flex flex-col items-end gap-2">
               <div className="flex items-center gap-2">
-                {/* SORT BUTTON (Moved Here) */}
+                {/* SORT BUTTON*/}
                 <button
                   onClick={() =>
                     setSortingMode((prev) =>
@@ -296,7 +287,7 @@ export default function WaiterDashboard() {
                   title={t("logout")}
                 >
                   {isLoggingOut ? (
-                    <Loader size="sm" />
+                    <Loader variant="inline" />
                   ) : (
                     <RiLogoutBoxRLine size={18} />
                   )}
@@ -322,9 +313,9 @@ export default function WaiterDashboard() {
             </div>
           </div>
 
-          {/* STATUS BAR (Pure Filters)*/}
+          {/* STATUS BAR*/}
           <div className="flex gap-2 overflow-x-auto no-scrollbar items-center pb-1">
-            {/* ALERT PILL */}
+            {/* ALERTs */}
             {alertCount > 0 && (
               <div className="shrink-0 flex items-center gap-2 bg-red-600 text-white px-3 py-2 rounded-xl shadow-lg shadow-red-900/50 animate-bounce">
                 <span className="font-bold text-sm">{alertCount}</span>
@@ -334,7 +325,7 @@ export default function WaiterDashboard() {
               </div>
             )}
 
-            {/* PENDING PILL */}
+            {/* PENDING */}
             <div
               className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${
                 pendingCount > 0
@@ -348,7 +339,7 @@ export default function WaiterDashboard() {
               </span>
             </div>
 
-            {/* ACTIVE PILL */}
+            {/* ACTIVe */}
             <div className="shrink-0 flex items-center gap-2 bg-dark-800 border border-white/5 text-blue-200 px-3 py-2 rounded-xl">
               <span className="font-bold text-sm">{activeCount}</span>
               <span className="text-[10px] font-bold uppercase md:text-xs">

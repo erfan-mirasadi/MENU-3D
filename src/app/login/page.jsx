@@ -1,6 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getRestaurantByOwnerId } from "@/services/restaurantService";
 import {
   getCurrentUser,
@@ -28,41 +28,53 @@ import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const roleParam = searchParams.get("role");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("owner");
+  const [role, setRole] = useState(() =>
+    ["owner", "cashier", "waiter", "chef"].includes(roleParam)
+      ? roleParam
+      : "owner",
+  );
   const [formData, setFormData] = useState({ email: "", password: "" });
+
+  const handleRoleChange = useCallback(
+    (newRole) => {
+      setRole(newRole);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("role", newRole);
+      router.replace(`/login?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams],
+  );
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const roleParam = params.get("role");
-      if (
-        roleParam &&
-        ["owner", "cashier", "waiter", "chef"].includes(roleParam)
-      ) {
-        setRole(roleParam);
-      }
-
       const checkExistingSession = async () => {
         const user = await getCurrentUser();
         if (!user) return;
         const profile = await getCurrentUserProfile(user.id);
-        if (profile?.role !== "owner") return;
+        if (!profile) return;
 
-        const target = roleParam || "owner";
-        const routes = {
+        // Owner can access any panel; staff can only go to their own
+        const roleRoutes = {
           owner: "/admin/dashboard",
           cashier: "/cashier/dashboard",
           waiter: "/waiter/dashboard",
           chef: "/chef/dashboard",
         };
-        router.push(routes[target] || "/admin/dashboard");
-        router.refresh();
+
+        if (profile.role === "owner") {
+          const target = roleParam || "owner";
+          router.replace(roleRoutes[target] || "/admin/dashboard");
+        } else {
+          router.replace(roleRoutes[profile.role] || "/login");
+        }
       };
       checkExistingSession();
     }
-  }, [router]);
+  }, [router, roleParam]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -91,18 +103,20 @@ export default function LoginPage() {
       }
 
       toast.success(`Welcome back, ${role}!`);
+
+      let destination = "/admin/dashboard";
       if (role === "owner") {
         const restaurant = await getRestaurantByOwnerId(authData.user.id);
-        router.push(restaurant ? "/admin/dashboard" : "/admin/onboarding");
+        destination = restaurant ? "/admin/dashboard" : "/admin/onboarding";
       } else if (role === "cashier") {
-        router.push("/cashier/dashboard");
+        destination = "/cashier/dashboard";
       } else if (role === "waiter") {
-        router.push("/waiter/dashboard");
+        destination = "/waiter/dashboard";
       } else if (role === "chef") {
-        router.push("/chef/dashboard");
+        destination = "/chef/dashboard";
       }
 
-      router.refresh();
+      router.replace(destination);
     } catch (error) {
       console.error(error);
       toast.error(error.message || "Login failed");
@@ -162,7 +176,7 @@ export default function LoginPage() {
           <SegmentedControl
             fullWidth
             active={role}
-            onChange={setRole}
+            onChange={handleRoleChange}
             options={[
               {
                 value: "owner",

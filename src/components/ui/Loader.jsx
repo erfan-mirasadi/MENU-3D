@@ -42,7 +42,7 @@ export default function Loader({
     <>
       <style>{styles}</style>
       <div
-        className={`fixed inset-0 z-200] flex items-center justify-center pointer-events-none ${className}`}
+        className={`fixed inset-0 z-200 flex items-center justify-center bg-black/50 backdrop-blur-md ${className}`}
       >
         <div className="relative bg-black/30 backdrop-blur-3xl border border-white/20 rounded-[30px] p-8 shadow-2xl flex flex-col items-center gap-6 overflow-hidden">
           <div className="relative w-16 h-16 flex items-center justify-center">

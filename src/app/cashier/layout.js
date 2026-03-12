@@ -25,7 +25,7 @@ export default async function CashierLayout({ children }) {
   const { profile } = await getServerAuthContext();
 
   if (!profile || (profile.role !== "cashier" && profile.role !== "owner")) {
-    redirect("/login");
+    redirect("/login?role=cashier");
   }
 
   return (
