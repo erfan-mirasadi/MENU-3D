@@ -49,9 +49,6 @@ export default async function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="hidden sm:flex items-center gap-2 border border-gray-600 rounded-lg px-4 py-2 text-sm text-text-light hover:bg-dark-800 transition">
-            Manage Categories
-          </button>
           {restaurant.logo && (
             <Image
               src={restaurant.logo}

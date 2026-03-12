@@ -65,6 +65,24 @@ export async function deleteCategory(categoryId) {
   return true;
 }
 
+export async function updateCategorySortOrders(updates) {
+  // updates: [{ id, sort_order }]
+  for (const { id, sort_order } of updates) {
+    const { error } = await supabase
+      .from("categories")
+      .update({ sort_order })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error updating sort order for category:", id, error);
+      toast.error("Failed to update category order");
+      throw error;
+    }
+  }
+
+  return true;
+}
+
 export async function archiveCategory(categoryId) {
   const { data, error } = await supabase
     .from("categories")

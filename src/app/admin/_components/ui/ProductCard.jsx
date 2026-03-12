@@ -3,7 +3,12 @@ import { useState } from "react";
 import Loader from "./Loader";
 import SmartMedia from "@/components/ui/SmartMedia";
 
-export default function ProductCard({ product, onEdit, defaultLang = "en" }) {
+export default function ProductCard({
+  product,
+  onEdit,
+  defaultLang = "en",
+  hideActions = false,
+}) {
   const [isLoading, setIsLoading] = useState(false);
   const title =
     product.title?.[defaultLang] || product.title?.en || "Unnamed Product";
@@ -62,33 +67,35 @@ export default function ProductCard({ product, onEdit, defaultLang = "en" }) {
       </div>
 
       {/* Edit Button - Animated & With Loading */}
-      <button
-        onClick={handleEditClick}
-        disabled={isLoading}
-        className="mt-auto w-full py-2.5 rounded-xl bg-gray-800 text-gray-300 text-sm font-semibold flex items-center justify-center gap-2 hover:bg-primary hover:text-white hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-90 disabled:opacity-70 disabled:cursor-not-allowed border border-gray-700"
-      >
-        {isLoading ? (
-          <Loader size="small" className="text-current" />
-        ) : (
-          <>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            Edit
-          </>
-        )}
-      </button>
+      {!hideActions && (
+        <button
+          onClick={handleEditClick}
+          disabled={isLoading}
+          className="mt-auto w-full py-2.5 rounded-xl bg-gray-800 text-gray-300 text-sm font-semibold flex items-center justify-center gap-2 hover:bg-primary hover:text-white hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-90 disabled:opacity-70 disabled:cursor-not-allowed border border-gray-700"
+        >
+          {isLoading ? (
+            <Loader size="small" className="text-current" />
+          ) : (
+            <>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              Edit
+            </>
+          )}
+        </button>
+      )}
     </div>
   );
 }

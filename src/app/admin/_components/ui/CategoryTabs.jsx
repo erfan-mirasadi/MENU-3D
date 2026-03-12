@@ -1,6 +1,26 @@
-import Image from "next/image";
+"use client";
+import { useState, useCallback, useRef } from "react";
 import { RiAddLine, RiFireFill } from "react-icons/ri";
-import { MdEditSquare } from "react-icons/md";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { updateCategorySortOrders } from "@/services/categoryService";
+import toast from "react-hot-toast";
+import {
+  SortableCategoryTab,
+  CategoryOverlayItem,
+} from "./SortableCategoryTab";
 
 export default function CategoryTabs({
   categories,
@@ -10,88 +30,135 @@ export default function CategoryTabs({
   onAddCategory,
   defaultLang = "en",
 }) {
+  const [localCategories, setLocalCategories] = useState(categories);
+  const [activeId, setActiveId] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const isDraggingRef = useRef(false);
+
+  const pointerSensor = useSensor(PointerSensor, {
+    activationConstraint: { distance: 8 },
+  });
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: { delay: 250, tolerance: 6 },
+  });
+  const sensors = useSensors(pointerSensor, touchSensor);
+
+  const activeCategory = activeId
+    ? localCategories.find((c) => c.id === activeId)
+    : null;
+
+  const handleDragStart = useCallback((event) => {
+    setActiveId(event.active.id);
+    isDraggingRef.current = true;
+  }, []);
+
+  const handleDragEnd = useCallback(
+    async (event) => {
+      setActiveId(null);
+      const didDrag = isDraggingRef.current;
+      isDraggingRef.current = false;
+
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const oldIndex = localCategories.findIndex((c) => c.id === active.id);
+      const newIndex = localCategories.findIndex((c) => c.id === over.id);
+      const reordered = arrayMove(localCategories, oldIndex, newIndex);
+      setLocalCategories(reordered);
+
+      // Save immediately
+      setIsSaving(true);
+      try {
+        const updates = reordered.map((c, i) => ({
+          id: c.id,
+          sort_order: i + 1,
+        }));
+        await updateCategorySortOrders(updates);
+        toast.success("Category order saved!");
+      } catch {
+        // Revert on error
+        setLocalCategories(categories);
+        toast.error("Failed to save category order");
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [localCategories, categories],
+  );
+
+  const handleDragCancel = useCallback(() => {
+    setActiveId(null);
+    isDraggingRef.current = false;
+  }, []);
+
   return (
-    <div className="w-full">
-      <div className="flex items-center gap-3 overflow-x-auto pb-6 no-scrollbar pl-4 pr-4 sm:px-0 snap-x snap-mandatory scroll-pl-4">
-        {/* 'All' Tab - Styled like the screenshot (Outline) */}
-        <button
-          onClick={() => onTabChange("all")}
-          className={`shrink-0 snap-start flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 font-bold text-sm border-2 ${
-            activeTab === "all"
-              ? "bg-dark-800 border-white text-white shadow-lg shadow-white/5"
-              : "bg-dark-800/50 border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
-          }`}
+    <div className="w-full relative">
+      {isSaving && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-dark-900/50 rounded-lg">
+          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <SortableContext
+          items={localCategories.map((c) => c.id)}
+          strategy={horizontalListSortingStrategy}
         >
-          <RiFireFill
-            size={18}
-            className={activeTab === "all" ? "text-white" : "text-gray-500"}
-          />
-          All Items
-        </button>
-
-        {/* Dynamic Categories */}
-        {categories.map((cat) => {
-          const isActive = activeTab === cat.id;
-          const title = cat.title?.[defaultLang] || cat.title?.en || "Category";
-
-          return (
-            <div
-              key={cat.id}
-              onClick={() => onTabChange(cat.id)}
-              className={`group shrink-0 snap-start relative flex items-center gap-3 py-1.5 pl-1.5 pr-5 rounded-full border transition-all duration-300 select-none ${
-                isActive
-                  ? "bg-dark-800 border-gray-500 text-white shadow-md pr-3"
-                  : "bg-dark-800/50 border-gray-800 text-gray-400 hover:border-gray-600 hover:text-gray-200"
+          <div className="flex items-center gap-3 overflow-x-auto pb-6 no-scrollbar pl-4 pr-4 sm:px-0 snap-x snap-mandatory scroll-pl-4">
+            {/* 'All' Tab */}
+            <button
+              onClick={() => onTabChange("all")}
+              className={`shrink-0 snap-start flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 font-bold text-sm border-2 ${
+                activeTab === "all"
+                  ? "bg-dark-800 border-white text-white shadow-lg shadow-white/5"
+                  : "bg-dark-800/50 border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
               }`}
             >
-              {/* Category Image */}
-              <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gray-800 border border-gray-700 shrink-0">
-                {cat.image_url ? (
-                  <Image
-                    src={cat.image_url}
-                    alt={title}
-                    fill
-                    className="object-cover"
-                    sizes="40px"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-700 text-[10px] text-gray-500">
-                    N/A
-                  </div>
-                )}
-              </div>
+              <RiFireFill
+                size={18}
+                className={activeTab === "all" ? "text-white" : "text-gray-500"}
+              />
+              All Items
+            </button>
 
-              {/* Title */}
-              <span className="text-sm font-bold whitespace-nowrap">
-                {title}
-              </span>
+            {/* Sortable Categories */}
+            {localCategories.map((cat) => (
+              <SortableCategoryTab
+                key={cat.id}
+                cat={cat}
+                isActive={activeTab === cat.id}
+                onTabChange={onTabChange}
+                onEditCategory={onEditCategory}
+                defaultLang={defaultLang}
+              />
+            ))}
 
-              {/* Edit Button */}
-              {isActive && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEditCategory(cat);
-                  }}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-700 text-gray-300 hover:bg-white hover:text-black transition-all ml-1 active:scale-90 cursor-pointer"
-                  title="Edit Category"
-                >
-                  <MdEditSquare size={16} />
-                </button>
-              )}
-            </div>
-          );
-        })}
+            {/* Add Category Button */}
+            <button
+              onClick={onAddCategory}
+              className="shrink-0 snap-start w-11 h-11 rounded-full border border-dashed border-gray-600 bg-dark-800/30 flex items-center justify-center text-gray-500 hover:text-primary hover:border-primary hover:bg-dark-800 transition-all active:scale-95 ml-1"
+              title="Add New Category"
+            >
+              <RiAddLine size={22} />
+            </button>
+          </div>
+        </SortableContext>
 
-        {/* Add Category Button */}
-        <button
-          onClick={onAddCategory}
-          className="shrink-0 snap-start w-11 h-11 rounded-full border border-dashed border-gray-600 bg-dark-800/30 flex items-center justify-center text-gray-500 hover:text-primary hover:border-primary hover:bg-dark-800 transition-all active:scale-95 ml-1"
-          title="Add New Category"
-        >
-          <RiAddLine size={22} />
-        </button>
-      </div>
+        <DragOverlay dropAnimation={null}>
+          {activeCategory ? (
+            <CategoryOverlayItem
+              cat={activeCategory}
+              defaultLang={defaultLang}
+            />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 }

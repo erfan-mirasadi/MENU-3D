@@ -9,6 +9,7 @@ export async function getProducts(restaurantId) {
     .select("*")
     .eq("restaurant_id", restaurantId)
     .eq("is_deleted", false)
+    .order("sort_order", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -62,6 +63,24 @@ export async function deleteProduct(productId) {
     console.error("Error deleting product:", error);
     toast.error("Failed to delete product");
     throw error;
+  }
+
+  return true;
+}
+
+export async function updateProductSortOrders(updates) {
+  // updates: [{ id, sort_order }] — sequential updates to avoid connection issues
+  for (const { id, sort_order } of updates) {
+    const { error } = await supabase
+      .from("products")
+      .update({ sort_order })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error updating sort order for product:", id, error);
+      toast.error("Failed to update product order");
+      throw error;
+    }
   }
 
   return true;

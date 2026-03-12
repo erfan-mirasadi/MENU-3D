@@ -1,12 +1,12 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import CategoryTabs from "./CategoryTabs";
-import ProductCard from "./ProductCard";
 import SlidePanel from "./SlidePanel";
 import ProductForm from "./ProductForm";
 import CategoryForm from "./CategoryForm";
 import AddCard from "./AddCart";
 import Loader from "./Loader";
+import SortableProductGrid from "./SortableProductGrid";
 
 export default function ProductsView({
   categories,
@@ -25,12 +25,6 @@ export default function ProductsView({
   //  Category Panel States
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
-
-  // Filter products based on selected category tab
-  const filteredProducts = useMemo(() => {
-    if (activeTab === "all") return products;
-    return products.filter((p) => p.category_id === activeTab);
-  }, [activeTab, products]);
 
   const defaultLang =
     supportedLanguages && supportedLanguages.length > 0
@@ -99,27 +93,19 @@ export default function ProductsView({
         />
       </div>
 
-      {/* Product Grid */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-8 pb-20">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-18 pt-3 pb-15">
-          {/* Create New Product Button */}
-          <AddCard
-            onClick={handleCreateClick}
-            label="Add new dish"
-            className="mt-9 min-h-80 bg-dark-800/30 border-gray-700 hover:bg-dark-800"
-          />
-
-          {/* Existing Products List */}
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onEdit={handleEditClick}
-              defaultLang={defaultLang}
-            />
-          ))}
-        </div>
-      </div>
+      {/* Product Grid with Drag & Drop */}
+      <SortableProductGrid
+        products={products}
+        activeTab={activeTab}
+        onEdit={handleEditClick}
+        defaultLang={defaultLang}
+      >
+        <AddCard
+          onClick={handleCreateClick}
+          label="Add new dish"
+          className="mt-9 min-h-80 bg-dark-800/30 border-gray-700 hover:bg-dark-800"
+        />
+      </SortableProductGrid>
 
       <SlidePanel
         isOpen={isPanelOpen}
