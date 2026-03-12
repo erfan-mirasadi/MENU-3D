@@ -7,11 +7,13 @@ import { useLanguage } from "@/context/LanguageContext";
 import { MdViewInAr, MdTouchApp } from "react-icons/md";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import CartControls from "./CartControls";
+import Loader from "@/components/ui/Loader";
 
 const ClientCartDrawer = dynamic(
   () => import("@/components/shared/ClientCart/ClientCartDrawer"),
   {
     ssr: false,
+    loading: () => <Loader />,
   },
 );
 

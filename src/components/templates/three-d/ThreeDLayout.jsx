@@ -7,12 +7,15 @@ import { useParams } from "next/navigation";
 import { useCart } from "@/app/hooks/useCart";
 const Scene = dynamic(() => import("./Scene"), {
   ssr: false,
+  loading: () => <Loader />,
 });
 const UIOverlay = dynamic(() => import("./UIOverlay"), {
   ssr: false,
+  loading: () => <Loader />,
 });
 const ServiceButtons = dynamic(() => import("@/components/ui/ServiceButtons"), {
   ssr: false,
+  loading: () => <Loader />,
 });
 
 const gyroData = { x: 0, y: 0 };
