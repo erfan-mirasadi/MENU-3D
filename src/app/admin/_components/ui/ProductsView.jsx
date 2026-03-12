@@ -6,6 +6,7 @@ import SlidePanel from "./SlidePanel";
 import ProductForm from "./ProductForm";
 import CategoryForm from "./CategoryForm";
 import AddCard from "./AddCart";
+import Loader from "./Loader";
 
 export default function ProductsView({
   categories,
@@ -14,6 +15,7 @@ export default function ProductsView({
   supportedLanguages,
   restaurantSlug,
 }) {
+  const [isRefreshingProducts, setIsRefreshingProducts] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
 
   // Product Panel States
@@ -65,8 +67,27 @@ export default function ProductsView({
     setTimeout(() => setEditingCategory(null), 300);
   };
 
+  const refreshProducts = () => {
+    setIsRefreshingProducts(true);
+
+    window.setTimeout(() => {
+      window.location.reload();
+    }, 50);
+  };
+
+  const handleProductMutationComplete = () => {
+    handleClosePanel();
+    refreshProducts();
+  };
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="relative flex flex-col h-full">
+      {isRefreshingProducts && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-dark-900/75 backdrop-blur-sm">
+          <Loader />
+        </div>
+      )}
+
       <div className=" mt-3">
         <CategoryTabs
           categories={categories}
@@ -85,7 +106,7 @@ export default function ProductsView({
           <AddCard
             onClick={handleCreateClick}
             label="Add new dish"
-            className="mt-9 min-h-[320px] bg-dark-800/30 border-gray-700 hover:bg-dark-800"
+            className="mt-9 min-h-80 bg-dark-800/30 border-gray-700 hover:bg-dark-800"
           />
 
           {/* Existing Products List */}
@@ -107,6 +128,7 @@ export default function ProductsView({
       >
         <ProductForm
           onClose={handleClosePanel}
+          onMutationComplete={handleProductMutationComplete}
           categories={categories}
           restaurantId={restaurantId}
           supportedLanguages={supportedLanguages || ["en"]}

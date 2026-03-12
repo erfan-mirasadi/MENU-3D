@@ -16,6 +16,7 @@ import FormActions from "./product-form/FormActions";
 
 export default function ProductForm({
   onClose,
+  onMutationComplete,
   categories,
   restaurantId,
   supportedLanguages,
@@ -146,8 +147,7 @@ export default function ProductForm({
       })
       .then(() => {
         setLoading(false);
-        onClose();
-        window.location.reload();
+        onMutationComplete();
       })
       .catch((err) => {
         console.error(err);
@@ -166,8 +166,7 @@ export default function ProductForm({
 
       toast.success("Product deleted permanently");
       setDeleting(false);
-      onClose();
-      window.location.reload();
+      onMutationComplete();
     } catch (deleteError) {
       if (deleteError.code === "23503") {
         const confirmArchive = window.confirm(
@@ -179,8 +178,7 @@ export default function ProductForm({
             await archiveProduct(initialData.id);
             toast.success("Product archived successfully");
             setDeleting(false);
-            onClose();
-            window.location.reload();
+            onMutationComplete();
           } catch (archiveError) {
             console.error("Archive exception:", archiveError);
             toast.error("Could not archive product.");
