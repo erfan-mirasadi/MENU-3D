@@ -201,19 +201,22 @@ async function getMenuData(slug) {
     getCategories(restaurant.id),
     getProducts(restaurant.id),
   ]);
+
+  const visibleProducts = allProducts.filter(
+    (product) => product.is_available !== false,
+  );
+
   const categoriesWithProducts = categories.map((category) => ({
     ...category,
-    products: allProducts.filter(
+    products: visibleProducts.filter(
       (product) => product.category_id === category.id,
     ),
   }));
 
-  const featuredProducts = allProducts.slice(0, 5);
-
   return {
     restaurant,
     categories: categoriesWithProducts,
-    featuredProducts,
+    visibleProducts,
   };
 }
 
@@ -256,7 +259,7 @@ export default async function Page({ params }) {
         restaurant={data.restaurant}
         categories={data.categories}
         tableId={null}
-        featuredProducts={data.featuredProducts}
+        featuredProducts={data.visibleProducts}
         isGuestMode={true}
       />
     </LanguageProvider>

@@ -2,10 +2,18 @@ import dynamic from "next/dynamic";
 
 const layouts = {
   modern: dynamic(() => import("@/components/templates/modern/ModernLayout")),
-  classic: dynamic(() => import("@/components/templates/classic/ClassicLayout")),
-  minimal: dynamic(() => import("@/components/templates/minimal/MinimalLayout")),
-  immersive: dynamic(() => import("@/components/templates/immersive/ImmersiveLayout")),
-  "three-d": dynamic(() => import("@/components/templates/three-d/ThreeDLayout")),
+  classic: dynamic(
+    () => import("@/components/templates/classic/ClassicLayout"),
+  ),
+  minimal: dynamic(
+    () => import("@/components/templates/minimal/MinimalLayout"),
+  ),
+  immersive: dynamic(
+    () => import("@/components/templates/immersive/ImmersiveLayout"),
+  ),
+  "three-d": dynamic(
+    () => import("@/components/templates/three-d/ThreeDLayout"),
+  ),
 };
 
 export default function ClientWrapper({
@@ -24,13 +32,23 @@ export default function ClientWrapper({
     isGuestMode,
   };
 
-  let themeColor = "#000000"; // default to black for three-d
+  let themeColor = "#000000";
   switch (style) {
-    case "modern": themeColor = "#1F1D2B"; break;
-    case "classic": themeColor = "#FDFBF7"; break;
-    case "minimal": themeColor = "#FFFFFF"; break;
-    case "immersive": themeColor = "#0f0f0f"; break;
-    case "three-d": themeColor = "#000000"; break;
+    case "modern":
+      themeColor = "#1F1D2B";
+      break;
+    case "classic":
+      themeColor = "#FDFBF7";
+      break;
+    case "minimal":
+      themeColor = "#FFFFFF";
+      break;
+    case "immersive":
+      themeColor = "#0f0f0f";
+      break;
+    case "three-d":
+      themeColor = "#000000";
+      break;
   }
 
   const renderLayout = () => {

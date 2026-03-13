@@ -18,11 +18,21 @@ export async function generateMetadata({ params }) {
 
   let themeColor = "#000000";
   switch (restaurant.template_style) {
-    case "modern": themeColor = "#1F1D2B"; break;
-    case "classic": themeColor = "#FDFBF7"; break;
-    case "minimal": themeColor = "#FFFFFF"; break;
-    case "immersive": themeColor = "#0f0f0f"; break;
-    case "three-d": themeColor = "#000000"; break;
+    case "modern":
+      themeColor = "#1F1D2B";
+      break;
+    case "classic":
+      themeColor = "#FDFBF7";
+      break;
+    case "minimal":
+      themeColor = "#FFFFFF";
+      break;
+    case "immersive":
+      themeColor = "#0f0f0f";
+      break;
+    case "three-d":
+      themeColor = "#000000";
+      break;
   }
 
   return {
@@ -42,19 +52,22 @@ async function getMenuData(slug) {
     getCategories(restaurant.id),
     getProducts(restaurant.id),
   ]);
+
+  const visibleProducts = allProducts.filter(
+    (product) => product.is_available !== false,
+  );
+
   const categoriesWithProducts = categories.map((category) => ({
     ...category,
-    products: allProducts.filter(
+    products: visibleProducts.filter(
       (product) => product.category_id === category.id,
     ),
   }));
 
-  const featuredProducts = allProducts.slice(0, 5);
-
   return {
     restaurant,
     categories: categoriesWithProducts,
-    featuredProducts,
+    visibleProducts,
   };
 }
 
@@ -80,7 +93,7 @@ export default async function Page({ params }) {
         restaurant={data.restaurant}
         categories={data.categories}
         tableId={decodedTableId}
-        featuredProducts={data.featuredProducts}
+        featuredProducts={data.visibleProducts}
       />
     </LanguageProvider>
   );
